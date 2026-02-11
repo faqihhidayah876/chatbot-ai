@@ -4,30 +4,54 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Chat;
+use App\Models\Session;
+use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Http;
 
 class ChatController extends Controller
 {
-    public function index()
+    // Menampilkan halaman utama (Bisa kosong atau membuka chat tertentu)
+    public function index(Request $request, $sessionId = null)
     {
-        $chats = Chat::all();
-        return view('chat', compact('chats'));
+        // Ambil semua riwayat sesi untuk sidebar (urutkan dari yang terbaru)
+        $sessions = Session::orderBy('created_at', 'desc')->get();
+
+        // Jika ada sessionId, ambil chatnya. Jika tidak, kosong (New Chat).
+        $currentSession = null;
+        $chats = [];
+
+        if ($sessionId) {
+            $currentSession = Session::find($sessionId);
+            if ($currentSession) {
+                $chats = $currentSession->chats;
+            }
+        }
+
+        return view('chat', compact('sessions', 'chats', 'currentSession'));
     }
 
     public function sendMessage(Request $request)
     {
-        // Validasi
         $request->validate([
             'message' => 'required'
         ]);
 
         $userMessage = $request->message;
+        $sessionId = $request->session_id; // ID Sesi dikirim dari JavaScript
 
-        // Ambil API Key
+        // 1. LOGIKA SESSION
+        // Jika belum ada session_id (Chat Baru), buat session baru
+        if (!$sessionId) {
+            // Judul chat diambil dari 5 kata pertama pesan user
+            $title = Str::words($userMessage, 5, '...');
+            $session = Session::create(['title' => $title]);
+            $sessionId = $session->id;
+        }
+
+        // 2. LOGIKA AI (GEMINI)
         $apiKey = config('services.gemini.key') ?? env('GEMINI_API_KEY');
         $apiKey = trim($apiKey);
 
-        // Payload
         $payload = [
             "contents" => [
                 [
@@ -39,9 +63,7 @@ class ChatController extends Controller
         ];
 
         try {
-            // Menggunakan model Gemini terbaru
             $model = 'gemini-2.5-flash';
-
             $response = Http::withOptions(['verify' => false])
                 ->withHeaders(['Content-Type' => 'application/json'])
                 ->post("https://generativelanguage.googleapis.com/v1beta/models/{$model}:generateContent?key={$apiKey}", $payload);
@@ -50,32 +72,48 @@ class ChatController extends Controller
                 $data = $response->json();
                 $aiReply = $data['candidates'][0]['content']['parts'][0]['text'] ?? "AI tidak menjawab.";
             } else {
-                $errorData = $response->json();
-                $pesanError = $errorData['error']['message'] ?? 'Unknown Error';
-                $aiReply = "Error Google ({$response->status()}): " . $pesanError;
+                $aiReply = "Error API.";
             }
-
         } catch (\Exception $e) {
-            $aiReply = "Error Sistem: " . $e->getMessage();
+            $aiReply = "Error Sistem.";
         }
 
-        // Simpan ke Database
+        // 3. SIMPAN KE DATABASE (Dengan session_id)
         Chat::create([
+            'session_id' => $sessionId,
             'user_message' => $userMessage,
             'ai_response' => $aiReply
         ]);
 
-        // --- PERUBAHAN DISINI (AJAX RESPONSE) ---
-        // Kita kirim balik data JSON ke JavaScript, bukan reload halaman
+        // 4. Response ke JavaScript
         return response()->json([
+            'session_id' => $sessionId, // Penting! Kirim balik ID sesi ke JS
+            'session_title' => Str::words($userMessage, 5, '...'),
             'user_message' => $userMessage,
             'ai_response' => $aiReply
         ]);
     }
 
-    public function destroy()
+    // Tombol New Chat (Hanya redirect ke halaman bersih)
+    public function newChat()
     {
-        Chat::truncate();
-        return back(); // Kalau hapus chat, boleh reload
+        return redirect()->route('chat.index');
+    }
+    // --- FITUR BARU: RENAME & DELETE SESSION ---
+
+    public function renameSession(Request $request, $id)
+    {
+        $session = Session::findOrFail($id);
+        $session->title = $request->input('title');
+        $session->save();
+
+        return response()->json(['success' => true]);
+    }
+
+    public function deleteSession($id)
+    {
+        // Hapus sesi (otomatis menghapus chat di dalamnya karena cascade)
+        Session::destroy($id);
+        return response()->json(['success' => true]);
     }
 }
