@@ -6,10 +6,14 @@ use App\Http\Controllers\AuthController;
 
 // 1. Halaman Depan (Welcome)
 Route::get('/', function () {
+    // Jika user sudah login, langsung lempar ke chat (biar gak stuck di welcome)
+    if (Auth::check()) {
+        return redirect()->route('chat.index');
+    }
     return view('welcome');
 })->name('home');
 
-// 2. Authentication Routes (Guest Only)
+// 2. Authentication (Guest Only)
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
     Route::post('/login', [AuthController::class, 'processLogin'])->name('login.post');
@@ -17,10 +21,10 @@ Route::middleware('guest')->group(function () {
     Route::post('/register', [AuthController::class, 'processRegister'])->name('register.post');
 });
 
-// 3. Route Logout
+// 3. Route Logout (Harus POST demi keamanan)
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
-// 4. Protected Routes (Hanya bisa diakses jika Login)
+// 4. Protected Routes (Hanya User Login)
 Route::middleware('auth')->group(function () {
     Route::get('/chat', [ChatController::class, 'index'])->name('chat.index');
     Route::get('/chat/{id}', [ChatController::class, 'index'])->name('chat.show');

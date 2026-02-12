@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>SAHAJA AI</title>
-
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🤖</text></svg>">
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -13,7 +12,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
 
     <style>
-        /* --- AESTHETIC THEME VARIABLES --- */
+        /* --- CSS VARIABLES (TETAP SAMA) --- */
         :root {
             --main-bg: #0a0e17;
             --sidebar-bg: rgba(15, 23, 42, 0.95);
@@ -27,8 +26,6 @@
             --message-ai-bg: transparent;
             --footer-bg: rgba(15, 23, 42, 0.5);
             --danger-color: #ef4444;
-
-            /* Code Block Colors */
             --code-bg: #1e1e1e;
             --code-text: #e3e3e3;
             --inline-code-bg: rgba(37, 99, 235, 0.15);
@@ -44,37 +41,26 @@
             --text-secondary: #64748b;
             --message-ai-bg: transparent;
             --footer-bg: #f1f5f9;
-
-            /* Light Mode Code Colors */
             --code-bg: #f4f6f8;
             --code-text: #1f1f1f;
             --inline-code-bg: #e2e8f0;
             --inline-code-text: #d93025;
-
             background: #ffffff;
         }
 
         /* --- GLOBAL RESET --- */
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
         body { background-color: var(--main-bg); color: var(--text-primary); height: 100vh; overflow: hidden; display: flex; transition: background 0.3s, color 0.3s; }
-
-        /* Background Pattern */
         body::before { content: ''; position: absolute; inset: 0; background: radial-gradient(circle at 20% 30%, rgba(37, 99, 235, 0.15) 0%, transparent 70%), radial-gradient(circle at 80% 80%, rgba(6, 182, 212, 0.15) 0%, transparent 70%); z-index: -2; pointer-events: none; }
         body.light-mode::before { background: radial-gradient(circle at 20% 30%, rgba(37, 99, 235, 0.05) 0%, transparent 70%), radial-gradient(circle at 80% 80%, rgba(6, 182, 212, 0.05) 0%, transparent 70%); }
-
         a { text-decoration: none; color: inherit; }
         button { cursor: pointer; border: none; outline: none; background: none; color: inherit; }
 
         /* --- SIDEBAR --- */
         .sidebar { width: 280px; background: var(--sidebar-bg); border-right: 1px solid var(--glass-border); display: flex; flex-direction: column; height: 100%; transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1); z-index: 50; flex-shrink: 0; overflow: hidden; white-space: nowrap; }
 
-        /* COLLAPSED STATE */
         .sidebar.collapsed { width: 80px; }
-        .sidebar.collapsed .text-label,
-        .sidebar.collapsed .brand-text,
-        .sidebar.collapsed .sidebar-footer-details,
-        .sidebar.collapsed .options-btn { display: none !important; opacity: 0; }
-
+        .sidebar.collapsed .text-label, .sidebar.collapsed .brand-text, .sidebar.collapsed .sidebar-footer-details, .sidebar.collapsed .options-btn { display: none !important; opacity: 0; }
         .sidebar.collapsed .sidebar-brand { justify-content: center; padding: 20px 0; flex-direction: column; gap: 15px; }
         .sidebar.collapsed .brand-logo-container { margin-right: 0; }
         .sidebar.collapsed .toggle-btn-sidebar { margin-left: 0; }
@@ -107,7 +93,6 @@
 
         .history-item { padding: 10px 12px; display: flex; align-items: center; color: var(--text-secondary); text-decoration: none; font-size: 0.9rem; flex-grow: 1; min-width: 0; }
         .history-item:hover, .history-item-wrapper.active .history-item { color: var(--text-primary); }
-
         .history-link { display: flex; align-items: center; width: 100%; overflow: hidden; }
         .history-icon { margin-right: 12px; font-size: 1.1rem; flex-shrink: 0; }
         .history-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
@@ -122,21 +107,29 @@
         .option-item { padding: 8px 12px; font-size: 0.85rem; color: var(--text-primary); display: flex; align-items: center; gap: 10px; border-radius: 6px; cursor: pointer; transition: 0.2s; }
         body.light-mode .option-item { color: #333; }
         .option-item:hover { background: var(--glass-highlight); }
-        .option-item.delete { color: var(--danger-color); }
+        .option-item.delete { color: var(--danger-color); width: 100%; text-align: left; }
 
-        .sidebar-footer { padding: 20px; border-top: 1px solid var(--glass-border); background: var(--footer-bg); transition: background 0.3s; }
-        .user-profile { display: flex; align-items: center; gap: 12px; }
+        /* FOOTER & LOGOUT STYLE */
+        .sidebar-footer { padding: 20px; border-top: 1px solid var(--glass-border); background: var(--footer-bg); transition: background 0.3s; position: relative; }
+        .user-profile { display: flex; align-items: center; gap: 12px; cursor: pointer; border-radius: 12px; padding: 5px; transition: 0.2s; }
+        .user-profile:hover { background: var(--glass-highlight); }
         .user-avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--accent-gradient); display: flex; align-items: center; justify-content: center; font-weight: 700; color: white; flex-shrink: 0; }
-
         body.light-mode .sidebar-footer-details div { color: #334155 !important; }
         body.light-mode .sidebar-footer-details div:last-child { color: #64748b !important; }
 
+        /* Logout Menu */
+        .logout-menu {
+            position: absolute; bottom: 70px; left: 10px; width: 260px;
+            background: #1e293b; border: 1px solid var(--glass-border); border-radius: 12px;
+            padding: 6px; display: none; box-shadow: 0 -4px 20px rgba(0,0,0,0.3); z-index: 101;
+        }
+        body.light-mode .logout-menu { background: #ffffff; border-color: #e2e8f0; color: #333; }
+        .logout-menu.show { display: block; animation: fadeIn 0.2s ease; }
+
         /* --- MAIN CONTENT --- */
         .main-container { flex: 1; display: flex; flex-direction: column; height: 100vh; position: relative; transition: all 0.3s ease; }
-
         .chat-header { padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--glass-border); background: rgba(10, 14, 23, 0.6); backdrop-filter: blur(12px); z-index: 10; }
         body.light-mode .chat-header { background: rgba(255, 255, 255, 0.8); }
-
         .mobile-toggle-btn { display: none; font-size: 1.2rem; margin-right: 16px; color: var(--text-primary); }
         .chat-title { font-size: 1.2rem; font-weight: 700; display: flex; align-items: center; gap: 10px; color: var(--text-primary); }
         .model-badge { background: rgba(37, 99, 235, 0.15); border: 1px solid var(--accent-color); border-radius: 20px; padding: 4px 12px; font-size: 0.7rem; font-weight: 600; color: var(--accent-color); }
@@ -149,7 +142,7 @@
         .settings-menu-dropdown.show { display: block; }
 
         /* Chat Area */
-        .messages-container { flex: 1; overflow-y: auto; padding: 30px; display: flex; flex-direction: column; gap: 30px; scroll-behavior: smooth; }
+        .messages-container { flex: 1; overflow-y: auto; padding: 30px 5%; display: flex; flex-direction: column; gap: 30px; scroll-behavior: smooth; }
         .message { display: flex; gap: 16px; max-width: 100%; animation: slideUp 0.3s ease-out; }
         .message.user { flex-direction: row-reverse; }
         @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
@@ -159,67 +152,31 @@
         .ai-avatar-msg { background: var(--accent-gradient); color: white; }
 
         .message-content { display: flex; flex-direction: column; max-width: 85%; }
-
         .message-bubble { padding: 16px 20px; border-radius: 16px; line-height: 1.6; font-size: 0.95rem; position: relative; }
         .user .message-bubble { background: var(--message-user-bg); color: white; border-bottom-right-radius: 4px; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3); }
+        .ai .message-bubble { background: transparent; border: none; padding: 0 5px; color: var(--text-primary); box-shadow: none; backdrop-filter: none; }
 
-        /* GEMINI STYLE AI */
-        .ai .message-bubble {
-            background: transparent;
-            border: none;
-            padding: 0 5px;
-            color: var(--text-primary);
-            box-shadow: none;
-            backdrop-filter: none;
-        }
-
-        /* --- MARKDOWN FORMATTING (FIX GLITCH) --- */
-        /* Pastikan elemen blok punya margin dan tidak tumpuk */
+        /* MARKDOWN FORMATTING */
         .markdown-body { width: 100%; display: block; line-height: 1.7; font-size: 0.95rem; }
-        .markdown-body > *:first-child { margin-top: 0; }
-        .markdown-body > * { margin-bottom: 16px; } /* Jarak antar elemen */
-
-        .markdown-body p { margin-bottom: 16px; white-space: pre-wrap; } /* Jaga format paragraf */
-
+        .markdown-body > * { margin-bottom: 16px; }
+        .markdown-body p { margin-bottom: 16px; white-space: pre-wrap; }
         .markdown-body h1, .markdown-body h2, .markdown-body h3 { font-weight: 600; margin-top: 24px; margin-bottom: 12px; color: var(--text-primary); }
         .markdown-body h1 { font-size: 1.4rem; }
         .markdown-body h2 { font-size: 1.2rem; }
-
         .markdown-body ul, .markdown-body ol { margin-bottom: 16px; padding-left: 24px; }
         .markdown-body li { margin-bottom: 6px; }
-
-        /* Code Block */
-        .markdown-body pre {
-            background: var(--code-bg) !important;
-            border-radius: 8px;
-            padding: 16px;
-            border: 1px solid var(--glass-border);
-            overflow-x: auto;
-            margin: 16px 0;
-            color: var(--code-text);
-            display: block; /* Pastikan blok */
-        }
-        .markdown-body code {
-            font-family: 'Roboto Mono', monospace;
-            font-size: 0.9em;
-        }
-        /* Inline Code */
-        .markdown-body p code, .markdown-body li code {
-            background: var(--inline-code-bg);
-            color: var(--inline-code-text);
-            padding: 2px 6px;
-            border-radius: 4px;
-        }
-
+        .markdown-body pre { background: var(--code-bg) !important; border-radius: 8px; padding: 16px; border: 1px solid var(--glass-border); overflow-x: auto; margin: 16px 0; color: var(--code-text); display: block; }
+        .markdown-body code { font-family: 'Roboto Mono', monospace; font-size: 0.9em; }
+        .markdown-body p code, .markdown-body li code { background: var(--inline-code-bg); color: var(--inline-code-text); padding: 2px 6px; border-radius: 4px; }
         .markdown-body strong { font-weight: 600; color: var(--accent-color); }
         .markdown-body table { width: 100%; border-collapse: collapse; margin: 16px 0; }
         .markdown-body th, .markdown-body td { border: 1px solid var(--glass-border); padding: 8px 12px; text-align: left; }
         .markdown-body th { background: rgba(37, 99, 235, 0.1); }
         body.light-mode .markdown-body th { background: #f1f5f9; }
 
-        /* ANIMASI TYPING (RESTORED) */
-        .typing { display: flex; align-items: center; gap: 4px; padding: 8px 0; }
-        .typing .dot { width: 6px; height: 6px; background: var(--text-secondary); border-radius: 50%; animation: bounce 1.4s infinite ease-in-out both; }
+        /* --- ANIMASI TYPING 3 TITIK BERGOYANG --- */
+        .typing { display: flex; align-items: center; gap: 6px; padding: 8px 0; }
+        .typing .dot { width: 8px; height: 8px; background: var(--text-secondary); border-radius: 50%; animation: bounce 1.4s infinite ease-in-out both; }
         .typing .dot:nth-child(1) { animation-delay: -0.32s; }
         .typing .dot:nth-child(2) { animation-delay: -0.16s; }
         @keyframes bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }
@@ -229,17 +186,13 @@
         .action-btn { padding: 6px 10px; border-radius: 8px; font-size: 0.85rem; color: var(--text-secondary); background: transparent; border: 1px solid transparent; transition: 0.2s; display: flex; align-items: center; gap: 6px; }
         .action-btn:hover { background: var(--glass-highlight); color: var(--text-primary); border-color: var(--glass-border); }
 
-        /* Input Area & Footer */
         .input-container { padding: 16px 24px; background: rgba(10, 14, 23, 0.6); backdrop-filter: blur(12px); border-top: 1px solid var(--glass-border); display: flex; flex-direction: column; align-items: center; gap: 8px; }
         body.light-mode .input-container { background: rgba(255, 255, 255, 0.8); }
-
         .input-wrapper { width: 100%; max-width: 800px; position: relative; display: flex; align-items: flex-end; background: rgba(30, 41, 59, 0.5); border: 1px solid var(--glass-border); border-radius: 24px; padding: 8px; transition: 0.3s; }
         body.light-mode .input-wrapper { background: #f1f5f9; border-color: #e2e8f0; }
         .input-wrapper:focus-within { border-color: var(--accent-color); box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2); }
-
         .chat-input { flex: 1; background: transparent; border: none; color: var(--text-primary); font-size: 0.95rem; padding: 10px 14px; resize: none; max-height: 120px; outline: none; }
         .send-btn { width: 42px; height: 42px; background: var(--accent-gradient); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; transition: 0.3s; flex-shrink: 0; margin-left: 8px; box-shadow: 0 2px 10px rgba(37, 99, 235, 0.3); }
-
         .input-footer { font-size: 0.75rem; color: var(--text-secondary); text-align: center; margin-top: 4px; }
 
         .welcome-screen { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; }
@@ -285,11 +238,9 @@
                         <span class="history-text text-label" id="title-{{ $session->id }}">{{ $session->title ?? 'Chat Baru' }}</span>
                     </div>
                 </a>
-
                 <button class="options-btn" onclick="toggleMenu(event, 'menu-{{ $session->id }}')">
                     <i class="fas fa-ellipsis-v"></i>
                 </button>
-
                 <div class="options-menu" id="menu-{{ $session->id }}">
                     <div class="option-item" onclick="renameSession({{ $session->id }})"><i class="fas fa-pen"></i> Ganti Nama</div>
                     <div class="option-item delete" onclick="deleteSession({{ $session->id }})"><i class="fas fa-trash"></i> Hapus</div>
@@ -299,11 +250,23 @@
         </div>
 
         <div class="sidebar-footer">
-            <div class="user-profile">
-                <div class="user-avatar">A</div>
-                <div class="sidebar-footer-details text-label">
-                    <div style="font-weight: 600; color: var(--text-primary);">Admin</div>
+            <div class="user-profile" onclick="toggleMenu(event, 'logout-menu')">
+                <div class="user-avatar">
+                    {{ strtoupper(substr(Auth::user()->name ?? 'U', 0, 1)) }}
                 </div>
+                <div class="sidebar-footer-details text-label" style="margin-left: 10px;">
+                    <div style="font-weight: 600; color: var(--text-primary);">{{ Auth::user()->name ?? 'Pengguna' }}</div>
+                    <div style="font-size: 0.75rem; color: var(--text-secondary);">Premium Plan</div>
+                </div>
+            </div>
+
+            <div class="logout-menu" id="logout-menu">
+                <form action="{{ route('logout') }}" method="POST">
+                    @csrf
+                    <button type="submit" class="option-item delete" style="width: 100%;">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </button>
+                </form>
             </div>
         </div>
     </div>
@@ -318,7 +281,6 @@
                     <span class="model-badge">Powered by: Gemini Flash 2.5</span>
                 </div>
             </div>
-
             <div class="settings-container">
                 <button class="icon-btn" id="settingsBtn"><i class="fas fa-cog"></i></button>
                 <div class="settings-menu-dropdown" id="settingsMenu">
@@ -334,7 +296,7 @@
             <div class="welcome-logo"><i class="fas fa-robot"></i></div>
             <div class="welcome-text">
                 <h1 class="welcome-title">SAHAJA AI</h1>
-                <p style="color: var(--text-secondary); font-size: 1.1rem;">Halo, Apa yang bisa SAHAJA AI bantu hari ini?</p>
+                <p style="color: var(--text-secondary); font-size: 1.1rem;">Halo, {{ Auth::user()->name ?? 'Teman' }}. Apa yang bisa saya bantu?</p>
             </div>
         </div>
 
@@ -372,20 +334,16 @@
     <script>
         let currentSessionId = "{{ $currentSession ? $currentSession->id : '' }}";
         const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
-
-        // Config Marked.js agar support line break dan GFM
         marked.setOptions({ breaks: true, gfm: true });
 
-        // --- THEME TOGGLE FIX ---
+        // --- THEME LOGIC ---
         const themeToggleItem = document.getElementById('themeToggleItem');
         const themeText = document.getElementById('themeText');
         const body = document.body;
-
         if (localStorage.getItem('theme') === 'light') {
             body.classList.add('light-mode');
             themeText.innerText = 'Mode Gelap';
         }
-
         themeToggleItem.addEventListener('click', () => {
             body.classList.toggle('light-mode');
             if (body.classList.contains('light-mode')) {
@@ -401,106 +359,150 @@
         const sidebar = document.getElementById('sidebar');
         const sidebarToggleBtn = document.getElementById('sidebarToggleBtn');
         const mobileToggleBtn = document.getElementById('mobileToggleBtn');
+        sidebarToggleBtn.addEventListener('click', () => { sidebar.classList.toggle('collapsed'); });
+        mobileToggleBtn.addEventListener('click', (e) => { e.stopPropagation(); sidebar.classList.toggle('mobile-open'); });
+        document.addEventListener('click', (e) => { if (window.innerWidth <= 768 && !sidebar.contains(e.target)) sidebar.classList.remove('mobile-open'); });
 
-        sidebarToggleBtn.addEventListener('click', () => {
-            sidebar.classList.toggle('collapsed');
-        });
-
-        mobileToggleBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            sidebar.classList.toggle('mobile-open');
-        });
-
-        document.addEventListener('click', (e) => {
-            if (window.innerWidth <= 768 && !sidebar.contains(e.target) && sidebar.classList.contains('mobile-open')) {
-                sidebar.classList.remove('mobile-open');
-            }
-        });
-
-        // --- OTHERS ---
+        // --- MENU TOGGLE (Settings, Options, Logout) ---
         const settingsBtn = document.getElementById('settingsBtn');
         const settingsMenu = document.getElementById('settingsMenu');
         settingsBtn.addEventListener('click', (e) => { e.stopPropagation(); settingsMenu.classList.toggle('show'); });
-        document.addEventListener('click', (e) => { if (!settingsMenu.contains(e.target)) settingsMenu.classList.remove('show'); });
 
         function toggleMenu(event, menuId) {
             event.preventDefault(); event.stopPropagation();
-            document.querySelectorAll('.options-menu').forEach(el => { if(el.id !== menuId) el.classList.remove('show'); });
+            document.querySelectorAll('.options-menu, .settings-menu-dropdown, .logout-menu').forEach(el => { if(el.id !== menuId) el.classList.remove('show'); });
             document.getElementById(menuId).classList.toggle('show');
         }
-        window.addEventListener('click', () => { document.querySelectorAll('.options-menu').forEach(el => el.classList.remove('show')); });
+        window.addEventListener('click', () => { document.querySelectorAll('.options-menu, .settings-menu-dropdown, .logout-menu').forEach(el => el.classList.remove('show')); });
 
+        // --- FITUR SALIN DENGAN FALLBACK (ROBUST) ---
+        function copyText(btn) {
+            // Cari elemen teks
+            const messageContent = btn.closest('.message-content');
+            const textElement = messageContent.querySelector('.markdown-body');
+
+            if (!textElement) return;
+
+            const textToCopy = textElement.innerText; // Teks murni
+
+            // Fungsi feedback sukses
+            const showSuccess = () => {
+                const originalHTML = btn.innerHTML;
+                btn.innerHTML = '<i class="fas fa-check"></i> Disalin';
+                btn.style.color = '#4ade80'; // Warna hijau
+                setTimeout(() => {
+                    btn.innerHTML = originalHTML;
+                    btn.style.color = '';
+                }, 2000);
+            };
+
+            // 1. Coba modern Clipboard API
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(textToCopy)
+                    .then(showSuccess)
+                    .catch(() => fallbackCopyText(textToCopy));
+            } else {
+                // 2. Jika tidak support / bukan HTTPS, pakai fallback
+                fallbackCopyText(textToCopy);
+            }
+
+            // Fallback manual (textarea + execCommand)
+            function fallbackCopyText(text) {
+                const textArea = document.createElement("textarea");
+                textArea.value = text;
+                textArea.style.position = "fixed";
+                textArea.style.left = "-9999px";
+                textArea.style.top = "0";
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+
+                try {
+                    document.execCommand('copy');
+                    showSuccess();
+                } catch (err) {
+                    alert('Gagal menyalin teks. Browser Anda membatasi akses clipboard.');
+                }
+
+                document.body.removeChild(textArea);
+            }
+        }
+
+        // --- RENAME SESSION ---
         async function renameSession(id) {
             const newName = prompt("Nama baru:");
             if (newName) {
                 try {
-                    await fetch(`/session/${id}/rename`, { method: 'PUT', headers: {'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken}, body: JSON.stringify({title: newName}) });
+                    await fetch(`/session/${id}/rename`, {
+                        method: 'PUT',
+                        headers: {'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken},
+                        body: JSON.stringify({title: newName})
+                    });
                     document.getElementById(`title-${id}`).innerText = newName;
                 } catch(e) {}
             }
         }
 
+        // --- DELETE SESSION ---
         async function deleteSession(id) {
             if (confirm("Hapus chat ini?")) {
                 try {
-                    await fetch(`/session/${id}/delete`, { method: 'DELETE', headers: {'X-CSRF-TOKEN': csrfToken} });
+                    await fetch(`/session/${id}/delete`, {
+                        method: 'DELETE',
+                        headers: {'X-CSRF-TOKEN': csrfToken}
+                    });
                     document.getElementById(`session-${id}`).remove();
-                    if(currentSessionId == id) window.location.href = "/";
+                    if(currentSessionId == id) window.location.href = "/chat";
                 } catch(e) {}
             }
         }
 
-        // --- FIX GLITCH TEXT DI SINI ---
-        // Menggunakan textContent agar tag HTML tidak double-parsed saat load awal
+        // --- RENDER MARKDOWN UNTUK CHAT YANG SUDAH ADA ---
         document.querySelectorAll('.markdown-body').forEach(el => {
-            // Kita trim() untuk membersihkan spasi berlebih
-            const rawText = el.textContent.trim();
-            if(rawText) {
-                el.innerHTML = marked.parse(rawText);
-            }
+            const raw = el.textContent.trim();
+            if(raw) el.innerHTML = marked.parse(raw);
         });
 
+        // --- AUTO RESIZE TEXTAREA ---
         const chatInput = document.getElementById('chatInput');
         chatInput.addEventListener('input', function() {
-            this.style.height = 'auto'; this.style.height = (this.scrollHeight) + 'px';
+            this.style.height = 'auto';
+            this.style.height = (this.scrollHeight) + 'px';
         });
 
-        function copyText(btn) {
-            const text = btn.closest('.message-content').querySelector('.markdown-body').innerText;
-            navigator.clipboard.writeText(text).then(() => {
-                const original = btn.innerHTML;
-                btn.innerHTML = '<i class="fas fa-check"></i> Disalin';
-                setTimeout(() => btn.innerHTML = original, 2000);
-            });
-        }
-
+        // --- FUNGSI KIRIM PESAN ---
         async function sendMessage() {
             const message = chatInput.value.trim();
             if (!message) return;
             document.getElementById('welcomeScreen').style.display = 'none';
             document.getElementById('messagesContainer').style.display = 'flex';
-            chatInput.value = ''; chatInput.style.height = 'auto';
-
+            chatInput.value = '';
+            chatInput.style.height = 'auto';
             appendMessage('user', message);
-            const loadingId = appendLoading(); // RESTORED ANIMATION
+            const loadingId = appendLoading(); // Menampilkan animasi 3 titik
             scrollToBottom();
-
             try {
                 const response = await fetch("{{ route('chat.send') }}", {
-                    method: "POST", headers: { "Content-Type": "application/json", "X-CSRF-TOKEN": csrfToken },
+                    method: "POST",
+                    headers: { "Content-Type": "application/json", "X-CSRF-TOKEN": csrfToken },
                     body: JSON.stringify({ message: message, session_id: currentSessionId })
                 });
                 const data = await response.json();
-                document.getElementById(loadingId).remove();
+                document.getElementById(loadingId).remove(); // Hapus indikator loading
                 appendMessage('ai', data.ai_response);
                 scrollToBottom();
                 if (!currentSessionId && data.session_id) window.location.href = `/chat/${data.session_id}`;
-            } catch (error) { document.getElementById(loadingId).remove(); alert("Gagal mengirim."); }
+            } catch (error) {
+                document.getElementById(loadingId).remove();
+                alert("Gagal mengirim.");
+            }
         }
 
+        // --- APPEND PESAN (USER / AI) ---
         function appendMessage(role, text) {
             const isUser = role === 'user';
-            const div = document.createElement('div'); div.className = `message ${isUser ? 'user' : 'ai'}`;
+            const div = document.createElement('div');
+            div.className = `message ${isUser ? 'user' : 'ai'}`;
             const actionsHtml = isUser ? '' : `
                 <div class="ai-actions">
                     <button class="action-btn" onclick="copyText(this)"><i class="far fa-copy"></i> Salin</button>
@@ -516,11 +518,12 @@
             document.getElementById('messagesContainer').appendChild(div);
         }
 
-        // --- RESTORE ANIMATION FUNCTION ---
+        // --- APPEND INDIKATOR LOADING (ANIMASI 3 TITIK) ---
         function appendLoading() {
             const id = 'loading-' + Date.now();
-            const div = document.createElement('div'); div.id = id; div.className = 'message ai';
-            // Perhatikan struktur HTML di bawah ini untuk animasi
+            const div = document.createElement('div');
+            div.id = id;
+            div.className = 'message ai';
             div.innerHTML = `
                 <div class="message-avatar ai-avatar-msg"><i class="fas fa-robot"></i></div>
                 <div class="message-content">
@@ -536,9 +539,20 @@
             return id;
         }
 
-        function scrollToBottom() { const c = document.getElementById('messagesContainer'); c.scrollTop = c.scrollHeight; }
+        // --- SCROLL KE BAWAH ---
+        function scrollToBottom() {
+            const container = document.getElementById('messagesContainer');
+            container.scrollTop = container.scrollHeight;
+        }
+
+        // --- EVENT LISTENER ---
         document.getElementById('sendButton').addEventListener('click', sendMessage);
-        chatInput.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } });
+        chatInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
     </script>
 </body>
 </html>

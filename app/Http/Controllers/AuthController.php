@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash; // Untuk Enkripsi Password
+use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
@@ -21,21 +21,20 @@ class AuthController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:8|confirmed', // butuh input password_confirmation
+            'password' => 'required|string|min:8|confirmed',
         ]);
 
-        // 2. Simpan User Baru (Password di-Hash otomatis)
-        $user = User::create([
+        // 2. Simpan User Baru
+        User::create([
             'name' => $request->name,
             'email' => $request->email,
-            'password' => Hash::make($request->password), // ENKRIPSI DISINI
+            'password' => Hash::make($request->password),
         ]);
 
-        // 3. Langsung Login setelah daftar
-        Auth::login($user);
-
-        // 4. Redirect ke Chat
-        return redirect()->route('chat.index');
+        // PERUBAHAN DISINI:
+        // Hapus Auth::login($user); agar tidak auto-login
+        // Redirect ke halaman Login dengan pesan sukses (opsional)
+        return redirect()->route('login')->with('success', 'Registrasi berhasil! Silakan login.');
     }
 
     // --- LOGIN ---
@@ -46,19 +45,17 @@ class AuthController extends Controller
 
     public function processLogin(Request $request)
     {
-        // 1. Validasi
         $credentials = $request->validate([
             'email' => ['required', 'email'],
             'password' => ['required'],
         ]);
 
-        // 2. Coba Login
         if (Auth::attempt($credentials)) {
             $request->session()->regenerate();
+            // Redirect ke Chat setelah Login berhasil
             return redirect()->route('chat.index');
         }
 
-        // 3. Jika Gagal
         return back()->withErrors([
             'email' => 'Email atau password salah.',
         ])->onlyInput('email');
@@ -70,6 +67,8 @@ class AuthController extends Controller
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
+
+        // Redirect ke Halaman Welcome setelah Logout
         return redirect('/');
     }
 }

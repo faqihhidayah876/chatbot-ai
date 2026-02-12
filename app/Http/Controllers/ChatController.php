@@ -7,23 +7,33 @@ use App\Models\Chat;
 use App\Models\Session;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Auth;
 
 class ChatController extends Controller
 {
-    // Menampilkan halaman utama (Bisa kosong atau membuka chat tertentu)
-    public function index(Request $request, $sessionId = null)
+    public function index($sessionId = null)
     {
-        // Ambil semua riwayat sesi untuk sidebar (urutkan dari yang terbaru)
-        $sessions = Session::orderBy('created_at', 'desc')->get();
+        // Ambil ID User yang sedang login
+        $userId = Auth::id();
 
-        // Jika ada sessionId, ambil chatnya. Jika tidak, kosong (New Chat).
+        // Ambil sesi HANYA milik user ini
+        $sessions = Session::where('user_id', $userId)
+                           ->orderBy('updated_at', 'desc')
+                           ->get();
+
         $currentSession = null;
         $chats = [];
 
         if ($sessionId) {
-            $currentSession = Session::find($sessionId);
+            // Pastikan sesi ini milik user yang login
+            $currentSession = Session::where('id', $sessionId)
+                                     ->where('user_id', $userId)
+                                     ->first();
+
             if ($currentSession) {
                 $chats = $currentSession->chats;
+            } else {
+                return redirect()->route('chat.index');
             }
         }
 
@@ -37,83 +47,84 @@ class ChatController extends Controller
         ]);
 
         $userMessage = $request->message;
-        $sessionId = $request->session_id; // ID Sesi dikirim dari JavaScript
+        $sessionId = $request->session_id;
+        $userId = Auth::id();
 
-        // 1. LOGIKA SESSION
-        // Jika belum ada session_id (Chat Baru), buat session baru
+        // 1. BUAT SESI BARU JIKA BELUM ADA
         if (!$sessionId) {
-            // Judul chat diambil dari 5 kata pertama pesan user
             $title = Str::words($userMessage, 5, '...');
-            $session = Session::create(['title' => $title]);
+
+            // Simpan dengan user_id
+            $session = Session::create([
+                'user_id' => $userId,
+                'title' => $title
+            ]);
             $sessionId = $session->id;
+        } else {
+            // Update timestamp agar naik ke atas
+            $session = Session::where('id', $sessionId)->where('user_id', $userId)->first();
+            if($session) $session->touch();
         }
 
-        // 2. LOGIKA AI (GEMINI)
-        $apiKey = config('services.gemini.key') ?? env('GEMINI_API_KEY');
-        $apiKey = trim($apiKey);
-
-        $payload = [
-            "contents" => [
-                [
-                    "parts" => [
-                        ["text" => $userMessage]
-                    ]
-                ]
-            ]
-        ];
+        // 2. PANGGIL API GEMINI
+        $apiKey = env('GEMINI_API_KEY');
+        $url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={$apiKey}";
 
         try {
-            $model = 'gemini-2.5-flash';
             $response = Http::withOptions(['verify' => false])
                 ->withHeaders(['Content-Type' => 'application/json'])
-                ->post("https://generativelanguage.googleapis.com/v1beta/models/{$model}:generateContent?key={$apiKey}", $payload);
+                ->post($url, [
+                    "contents" => [
+                        ["parts" => [["text" => $userMessage]]]
+                    ]
+                ]);
 
             if ($response->successful()) {
                 $data = $response->json();
-                $aiReply = $data['candidates'][0]['content']['parts'][0]['text'] ?? "AI tidak menjawab.";
+                $aiReply = $data['candidates'][0]['content']['parts'][0]['text'] ?? "Maaf, saya bingung harus menjawab apa.";
+            } elseif ($response->status() == 429) {
+                // Pesan khusus jika kena Limit (Error 429)
+                $aiReply = "⏳ **Server Sedang Sibuk**\n\nMaaf, Saat ini terlalu banyak permintaan. Mohon tunggu beberapa menit sebelum mengirim pesan lagi ya. Terima kasih atas kesabarannya! 🙏";
             } else {
-                $aiReply = "Error API.";
+                // Pesan untuk error lain (Misal API Key salah, atau Google down)
+                $aiReply = "⚠️ **Gangguan Sistem**\n\nMaaf, terjadi masalah saat menghubungi AI. Kode Error: " . $response->status();
             }
+
         } catch (\Exception $e) {
-            $aiReply = "Error Sistem.";
+            $aiReply = "🔌 **Koneksi Terputus**\n\nGagal terhubung ke server. Pastikan internet Anda lancar.";
         }
 
-        // 3. SIMPAN KE DATABASE (Dengan session_id)
+        // 3. SIMPAN CHAT
         Chat::create([
             'session_id' => $sessionId,
             'user_message' => $userMessage,
             'ai_response' => $aiReply
         ]);
 
-        // 4. Response ke JavaScript
         return response()->json([
-            'session_id' => $sessionId, // Penting! Kirim balik ID sesi ke JS
-            'session_title' => Str::words($userMessage, 5, '...'),
+            'session_id' => $sessionId,
             'user_message' => $userMessage,
             'ai_response' => $aiReply
         ]);
     }
 
-    // Tombol New Chat (Hanya redirect ke halaman bersih)
-    public function newChat()
-    {
-        return redirect()->route('chat.index');
-    }
-    // --- FITUR BARU: RENAME & DELETE SESSION ---
-
     public function renameSession(Request $request, $id)
     {
-        $session = Session::findOrFail($id);
+        $session = Session::where('id', $id)->where('user_id', Auth::id())->firstOrFail();
         $session->title = $request->input('title');
         $session->save();
-
         return response()->json(['success' => true]);
     }
 
     public function deleteSession($id)
     {
-        // Hapus sesi (otomatis menghapus chat di dalamnya karena cascade)
-        Session::destroy($id);
+        $session = Session::where('id', $id)->where('user_id', Auth::id())->firstOrFail();
+        $session->delete();
         return response()->json(['success' => true]);
+    }
+
+    public function newChat()
+    {
+        return redirect()->route('chat.index');
     }
 }

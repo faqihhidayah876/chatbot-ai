@@ -54,8 +54,8 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            padding: 1.5rem;
+            justify-content: space-between;
+            padding: 1.5rem 1.5rem 0;
             position: relative;
             transition: background 0.3s, color 0.3s;
         }
@@ -98,6 +98,8 @@
             align-items: center;
             gap: 2.5rem;
             z-index: 10;
+            flex: 1;
+            justify-content: center;
         }
 
         /* HEADER */
@@ -335,22 +337,112 @@
             background: #e2e8f0;
         }
 
-        /* FOOTER */
-        .welcome-footer {
-            margin-top: 3rem;
-            font-size: 0.8rem;
+        /* ===== FOOTER BESAR ala DeepSeek AI ===== */
+        .footer-large {
+            width: 100%;
+            background: rgba(10, 14, 23, 0.95);
+            backdrop-filter: blur(20px);
+            border-top: 1px solid var(--glass-border);
+            margin-top: 4rem;
+            padding: 3rem 2rem 2rem;
             color: var(--text-secondary);
-            display: flex;
-            gap: 1.5rem;
-            justify-content: center;
         }
 
-        .welcome-footer a:hover {
+        body.light-mode .footer-large {
+            background: rgba(248, 250, 252, 0.95);
+            border-top-color: #e2e8f0;
+        }
+
+        .footer-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 2.5rem;
+        }
+
+        .footer-section h3 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 1.2rem;
+            letter-spacing: 0.5px;
+        }
+
+        .footer-section ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .footer-section li {
+            margin-bottom: 0.7rem;
+        }
+
+        .footer-section a {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            transition: color 0.2s;
+            display: inline-block;
+        }
+
+        .footer-section a:hover {
             color: var(--accent-light);
         }
 
+        .footer-bottom {
+            max-width: 1200px;
+            margin: 0 auto;
+            margin-top: 2.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--glass-border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+            font-size: 0.8rem;
+        }
+
+        .footer-bottom-left {
+            display: flex;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .footer-bottom-right {
+            display: flex;
+            gap: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .footer-bottom a {
+            color: var(--text-secondary);
+        }
+
+        .footer-bottom a:hover {
+            color: var(--accent-light);
+        }
+
+        .footer-icp {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-top: 0.5rem;
+        }
+
         /* RESPONSIVE */
+        @media (max-width: 992px) {
+            .footer-container {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 2rem;
+            }
+        }
+
         @media (max-width: 768px) {
+            body {
+                padding: 1rem 1rem 0;
+            }
+
             .hero-title {
                 font-size: 2.2rem;
             }
@@ -362,6 +454,27 @@
 
             .auth-card {
                 padding: 2rem 1.5rem;
+            }
+
+            .footer-container {
+                grid-template-columns: 1fr;
+                gap: 1.8rem;
+            }
+
+            .footer-bottom {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .footer-large {
+                padding: 2rem 1rem 1.5rem;
+            }
+
+            .footer-bottom-left {
+                flex-direction: column;
+                gap: 0.8rem;
             }
         }
     </style>
@@ -385,7 +498,7 @@
             <h1 class="hero-title">SAHAJA AI</h1>
             <div class="hero-version">V 1.0</div>
             <p class="hero-description">
-                Asisten cerdas berbasis <strong>Gemini Pro</strong> yang siap membantu tugas kuliah, coding, dan
+                Asisten cerdas berbasis <strong>Gemini 2.5</strong> yang siap membantu dan
                 brainstorming ide Anda.
             </p>
         </div>
@@ -409,11 +522,66 @@
                 </a>
             </div>
         </div>
-
-        <footer class="welcome-footer">
-            <span>© {{ date('Y') }} SAHAJA AI. By Mahasiswa SI.</span>
-        </footer>
     </div>
+
+    <!-- FOOTER BESAR ala DeepSeek AI -->
+    <footer class="footer-large">
+        <div class="footer-container">
+            <!-- Research -->
+            {{-- <div class="footer-section">
+                <h3>Research</h3>
+                <ul>
+                    <li><a href="#">DeepSeek R1</a></li>
+                    <li><a href="#">DeepSeek V3</a></li>
+                    <li><a href="#">DeepSeek Coder V2</a></li>
+                    <li><a href="#">DeepSeek VL</a></li>
+                    <li><a href="#">DeepSeek V2</a></li>
+                    <li><a href="#">DeepSeek Coder</a></li>
+                    <li><a href="#">DeepSeek Math</a></li>
+                    <li><a href="#">DeepSeek LLM</a></li>
+                </ul>
+            </div> --}}
+
+            <!-- Product -->
+            <div class="footer-section">
+                <h3>Another Project</h3>
+                <ul>
+                    <li><a href="https://surat-admin.alwaysdata.net/">Layanan Mandiri & Surat Desa</a></li>
+                    <li><a href="https://sistem-deteksi-penyakit-daun.vercel.app/">Sistem Deteksi Dini Penyakit Daun Patat</a></li>
+                </ul>
+            </div>
+
+            <!-- Legal & Safety -->
+            <div class="footer-section">
+                <h3>About Me</h3>
+                <ul>
+                    <li><a href="https://github.com/faqihhidayah876">GitHub</a></li>
+                    <li><a href="https://www.linkedin.com/in/faqih-hidayah-b4a134381/">LinkedIn</a></li>
+                </ul>
+            </div>
+
+            <!-- Join Us -->
+            {{-- <div class="footer-section">
+                <h3>Join Us</h3>
+                <ul>
+                    <li><a href="#">Job Description</a></li>
+                </ul>
+            </div> --}}
+        </div>
+
+        <div class="footer-bottom">
+            <div class="footer-bottom-left">
+                <span>© 2026 SAHAJA AI. All rights reserved.</span>
+            </div>
+            <div class="footer-bottom-right">
+                <span>SAHAJA AI by: SAHAJA Development Team</span>
+            </div>
+        </div>
+
+        <div class="footer-icp" style="max-width: 1200px; margin: 0 auto; margin-top: 0.5rem; font-size: 0.75rem; color: var(--text-secondary);">
+            <!-- Additional info if needed -->
+        </div>
+    </footer>
 
     <script>
         (function() {
