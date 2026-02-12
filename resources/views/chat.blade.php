@@ -277,7 +277,7 @@
                 <div class="chat-title">
                     <i class="fas fa-robot" style="color: var(--accent-color);"></i>
                     SAHAJA AI
-                    <span class="model-badge">Powered by: Meta llama 4 Maverick</span>
+                    <span class="model-badge">Powered by: Meta llama 3.3 70b Maverick</span>
                 </div>
             </div>
             <div class="settings-container">

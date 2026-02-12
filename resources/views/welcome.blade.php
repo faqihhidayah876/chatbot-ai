@@ -680,9 +680,9 @@
         <div class="hero-section">
             <span class="hero-badge">AI ASSISTANT</span>
             <h1 class="hero-title">SAHAJA AI</h1>
-            <div class="hero-version">V 1.0</div>
+            <div class="hero-version">V 1.1</div>
             <p class="hero-description">
-                Asisten cerdas berbasis <strong>Meta llama 4 Maverick</strong> setara dengan GPT 4, yang siap membantu dan
+                Asisten cerdas berbasis <strong>Meta llama 3.3 70b Maverick</strong> setara dengan GPT 4 siap membantu dan
                 brainstorming ide Anda.
             </p>
         </div>
