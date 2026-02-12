@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Login - SAHAJA AI</title>
+    <link href="https://fonts.bunny.net/css?family=poppins:400,500,600,700" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --main-bg: #0a0e17;
+            --glass-bg: rgba(15, 27, 45, 0.7);
+            --glass-border: rgba(98, 160, 234, 0.15);
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --accent-gradient: linear-gradient(135deg, #2563eb, #06b6d4);
+            --input-bg: rgba(30, 41, 59, 0.5);
+            --error: #ef4444;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+        body {
+            background: var(--main-bg); color: var(--text-primary);
+            min-height: 100vh; display: flex; align-items: center; justify-content: center;
+            position: relative; overflow: hidden; padding: 20px;
+        }
+        body::before {
+            content: ''; position: absolute; inset: 0;
+            background: radial-gradient(circle at 20% 30%, rgba(37, 99, 235, 0.15) 0%, transparent 60%),
+                        radial-gradient(circle at 80% 70%, rgba(6, 182, 212, 0.12) 0%, transparent 60%);
+            z-index: -1;
+        }
+        .auth-card {
+            width: 100%; max-width: 400px;
+            background: var(--glass-bg); backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border); border-radius: 24px;
+            padding: 2.5rem; text-align: center;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+        }
+        .logo { font-size: 3rem; margin-bottom: 1rem; background: var(--accent-gradient); -webkit-background-clip: text; color: transparent; }
+        h2 { margin-bottom: 0.5rem; font-size: 1.8rem; }
+        p { color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 2rem; }
+
+        .form-group { margin-bottom: 1.2rem; text-align: left; }
+        label { display: block; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.5rem; }
+        input {
+            width: 100%; padding: 0.8rem 1rem; border-radius: 12px;
+            background: var(--input-bg); border: 1px solid var(--glass-border);
+            color: var(--text-primary); font-size: 0.95rem; outline: none; transition: 0.3s;
+        }
+        input:focus { border-color: #2563eb; box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2); }
+
+        .btn {
+            width: 100%; padding: 0.9rem; border-radius: 12px; font-weight: 600;
+            background: var(--accent-gradient); color: white; border: none; cursor: pointer;
+            margin-top: 1rem; transition: 0.3s;
+        }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(37, 99, 235, 0.4); }
+
+        .footer-link { margin-top: 1.5rem; font-size: 0.85rem; color: var(--text-secondary); }
+        .footer-link a { color: #62a0ea; text-decoration: none; font-weight: 500; }
+        .footer-link a:hover { text-decoration: underline; }
+
+        .error-msg { color: var(--error); font-size: 0.8rem; margin-top: 0.3rem; }
+    </style>
+</head>
+<body>
+    <div class="auth-card">
+        <div class="logo"><i class="fas fa-robot"></i></div>
+        <h2>Selamat Datang Kembali</h2>
+        <p>Masuk untuk melanjutkan ke SAHAJA AI</p>
+
+        <form action="{{ route('login.post') }}" method="POST">
+            @csrf
+            <div class="form-group">
+                <label>Email Address</label>
+                <input type="email" name="email" placeholder="contoh@email.com" required value="{{ old('email') }}">
+                @error('email') <div class="error-msg">{{ $message }}</div> @enderror
+            </div>
+
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" name="password" placeholder="••••••••" required>
+            </div>
+
+            <button type="submit" class="btn">Masuk</button>
+        </form>
+
+        <div class="footer-link">
+            Belum punya akun? <a href="{{ route('register') }}">Daftar Sekarang</a>
+        </div>
+        <div class="footer-link" style="margin-top: 0.5rem;">
+            <a href="{{ route('home') }}"><i class="fas fa-arrow-left"></i> Kembali ke Beranda</a>
+        </div>
+    </div>
+</body>
+</html>

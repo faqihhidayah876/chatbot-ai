@@ -4,13 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>SAHAJA AI - Aesthetic Chatbot</title>
+    <title>SAHAJA AI</title>
 
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🤖</text></svg>">
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
 
     <style>
         /* --- AESTHETIC THEME VARIABLES --- */
@@ -24,21 +24,33 @@
             --accent-color: #2563eb;
             --accent-gradient: linear-gradient(135deg, #2563eb, #06b6d4);
             --message-user-bg: linear-gradient(135deg, #2563eb, #1d4ed8);
-            /* Gemini Style: AI Background Transparan */
             --message-ai-bg: transparent;
             --footer-bg: rgba(15, 23, 42, 0.5);
             --danger-color: #ef4444;
+
+            /* Code Block Colors */
+            --code-bg: #1e1e1e;
+            --code-text: #e3e3e3;
+            --inline-code-bg: rgba(37, 99, 235, 0.15);
+            --inline-code-text: #60a5fa;
         }
 
         body.light-mode {
             --main-bg: #ffffff;
             --sidebar-bg: #f8fafc;
             --glass-border: #e2e8f0;
-            --glass-highlight: #e2e8f0;
+            --glass-highlight: #f1f5f9;
             --text-primary: #1e293b;
             --text-secondary: #64748b;
             --message-ai-bg: transparent;
-            --footer-bg: #f1f5f9; /* Perbaikan Footer Light Mode */
+            --footer-bg: #f1f5f9;
+
+            /* Light Mode Code Colors */
+            --code-bg: #f4f6f8;
+            --code-text: #1f1f1f;
+            --inline-code-bg: #e2e8f0;
+            --inline-code-text: #d93025;
+
             background: #ffffff;
         }
 
@@ -89,38 +101,18 @@
         .history-container { flex: 1; overflow-y: auto; padding: 10px 12px; overflow-x: hidden; }
         .history-label { font-size: 0.75rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 12px; padding-left: 8px; text-transform: uppercase; letter-spacing: 1px; }
 
-        /* FIX: HISTORY ITEM WRAPPER (Flexbox agar sejajar) */
-        .history-item-wrapper {
-            position: relative;
-            margin-bottom: 4px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between; /* Kunci agar titik 3 dikanan */
-            border-radius: 10px;
-            transition: 0.2s;
-        }
+        .history-item-wrapper { position: relative; margin-bottom: 4px; display: flex; align-items: center; justify-content: space-between; border-radius: 10px; transition: 0.2s; }
         .history-item-wrapper:hover { background: var(--glass-highlight); }
         .history-item-wrapper.active { background: rgba(37, 99, 235, 0.15); border: 1px solid rgba(37, 99, 235, 0.3); }
 
-        .history-item {
-            padding: 10px 12px;
-            display: flex;
-            align-items: center;
-            color: var(--text-secondary);
-            text-decoration: none;
-            font-size: 0.9rem;
-            flex-grow: 1; /* Ambil sisa ruang */
-            min-width: 0; /* Agar text overflow jalan */
-        }
+        .history-item { padding: 10px 12px; display: flex; align-items: center; color: var(--text-secondary); text-decoration: none; font-size: 0.9rem; flex-grow: 1; min-width: 0; }
         .history-item:hover, .history-item-wrapper.active .history-item { color: var(--text-primary); }
 
         .history-link { display: flex; align-items: center; width: 100%; overflow: hidden; }
         .history-icon { margin-right: 12px; font-size: 1.1rem; flex-shrink: 0; }
         .history-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
 
-        .options-btn {
-            opacity: 0; transition: 0.2s; padding: 8px; border-radius: 6px; color: var(--text-secondary); flex-shrink: 0; margin-right: 5px;
-        }
+        .options-btn { opacity: 0; transition: 0.2s; padding: 8px; border-radius: 6px; color: var(--text-secondary); flex-shrink: 0; margin-right: 5px; }
         .history-item-wrapper:hover .options-btn { opacity: 1; }
         .options-btn:hover { background: rgba(255,255,255,0.1); color: var(--text-primary); }
 
@@ -132,12 +124,10 @@
         .option-item:hover { background: var(--glass-highlight); }
         .option-item.delete { color: var(--danger-color); }
 
-        /* FIX: FOOTER LIGHT MODE */
         .sidebar-footer { padding: 20px; border-top: 1px solid var(--glass-border); background: var(--footer-bg); transition: background 0.3s; }
         .user-profile { display: flex; align-items: center; gap: 12px; }
         .user-avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--accent-gradient); display: flex; align-items: center; justify-content: center; font-weight: 700; color: white; flex-shrink: 0; }
 
-        /* FIX: TEXT COLOR DI LIGHT MODE FOOTER */
         body.light-mode .sidebar-footer-details div { color: #334155 !important; }
         body.light-mode .sidebar-footer-details div:last-child { color: #64748b !important; }
 
@@ -168,21 +158,71 @@
         .user-avatar-msg { background: var(--message-user-bg); color: white; }
         .ai-avatar-msg { background: var(--accent-gradient); color: white; }
 
-        .message-content { display: flex; flex-direction: column; max-width: 80%; }
+        .message-content { display: flex; flex-direction: column; max-width: 85%; }
 
-        /* FIX: GEMINI STYLE AI (NO BUBBLE) */
         .message-bubble { padding: 16px 20px; border-radius: 16px; line-height: 1.6; font-size: 0.95rem; position: relative; }
         .user .message-bubble { background: var(--message-user-bg); color: white; border-bottom-right-radius: 4px; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3); }
 
-        /* Style untuk AI (Transparan/Gemini Style) */
+        /* GEMINI STYLE AI */
         .ai .message-bubble {
             background: transparent;
             border: none;
-            padding: 0 5px; /* Kurangi padding */
+            padding: 0 5px;
             color: var(--text-primary);
             box-shadow: none;
             backdrop-filter: none;
         }
+
+        /* --- MARKDOWN FORMATTING (FIX GLITCH) --- */
+        /* Pastikan elemen blok punya margin dan tidak tumpuk */
+        .markdown-body { width: 100%; display: block; line-height: 1.7; font-size: 0.95rem; }
+        .markdown-body > *:first-child { margin-top: 0; }
+        .markdown-body > * { margin-bottom: 16px; } /* Jarak antar elemen */
+
+        .markdown-body p { margin-bottom: 16px; white-space: pre-wrap; } /* Jaga format paragraf */
+
+        .markdown-body h1, .markdown-body h2, .markdown-body h3 { font-weight: 600; margin-top: 24px; margin-bottom: 12px; color: var(--text-primary); }
+        .markdown-body h1 { font-size: 1.4rem; }
+        .markdown-body h2 { font-size: 1.2rem; }
+
+        .markdown-body ul, .markdown-body ol { margin-bottom: 16px; padding-left: 24px; }
+        .markdown-body li { margin-bottom: 6px; }
+
+        /* Code Block */
+        .markdown-body pre {
+            background: var(--code-bg) !important;
+            border-radius: 8px;
+            padding: 16px;
+            border: 1px solid var(--glass-border);
+            overflow-x: auto;
+            margin: 16px 0;
+            color: var(--code-text);
+            display: block; /* Pastikan blok */
+        }
+        .markdown-body code {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.9em;
+        }
+        /* Inline Code */
+        .markdown-body p code, .markdown-body li code {
+            background: var(--inline-code-bg);
+            color: var(--inline-code-text);
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        .markdown-body strong { font-weight: 600; color: var(--accent-color); }
+        .markdown-body table { width: 100%; border-collapse: collapse; margin: 16px 0; }
+        .markdown-body th, .markdown-body td { border: 1px solid var(--glass-border); padding: 8px 12px; text-align: left; }
+        .markdown-body th { background: rgba(37, 99, 235, 0.1); }
+        body.light-mode .markdown-body th { background: #f1f5f9; }
+
+        /* ANIMASI TYPING (RESTORED) */
+        .typing { display: flex; align-items: center; gap: 4px; padding: 8px 0; }
+        .typing .dot { width: 6px; height: 6px; background: var(--text-secondary); border-radius: 50%; animation: bounce 1.4s infinite ease-in-out both; }
+        .typing .dot:nth-child(1) { animation-delay: -0.32s; }
+        .typing .dot:nth-child(2) { animation-delay: -0.16s; }
+        @keyframes bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }
 
         .ai-actions { display: flex; gap: 8px; margin-top: 5px; margin-left: 5px; opacity: 0; transition: 0.3s; }
         .message.ai:hover .ai-actions { opacity: 1; }
@@ -205,9 +245,6 @@
         .welcome-screen { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; }
         .welcome-logo { font-size: 5rem; margin-bottom: 20px; background: var(--accent-gradient); -webkit-background-clip: text; color: transparent; filter: drop-shadow(0 4px 12px rgba(37, 99, 235, 0.3)); }
         .welcome-title { font-size: 2.2rem; font-weight: 700; color: var(--text-primary); margin-bottom: 10px; }
-
-        .markdown-body pre { background: #0f172a !important; border-radius: 10px; padding: 16px; border: 1px solid var(--glass-border); overflow-x: auto; color: #f8fafc; }
-        .markdown-body code { color: #38bdf8; font-family: 'Courier New', monospace; }
 
         @media (max-width: 768px) {
             .sidebar { position: fixed; left: 0; top: 0; height: 100%; transform: translateX(-100%); z-index: 99; width: 280px !important; transition: transform 0.3s ease; }
@@ -241,9 +278,8 @@
         <div class="history-container">
             <div class="history-label text-label">Riwayat</div>
             @foreach($sessions as $session)
-            <div class="history-item-wrapper {{ isset($currentSession) && $currentSession->id == $session->id ? 'active' : '' }}" id="session-{{ $session->id }}">
-
-                <a href="{{ route('chat.show', $session->id) }}" class="history-item">
+            <div class="history-item-wrapper" id="session-{{ $session->id }}">
+                <a href="{{ route('chat.show', $session->id) }}" class="history-item {{ isset($currentSession) && $currentSession->id == $session->id ? 'active' : '' }}">
                     <i class="far fa-comment-dots history-icon"></i>
                     <div class="history-link">
                         <span class="history-text text-label" id="title-{{ $session->id }}">{{ $session->title ?? 'Chat Baru' }}</span>
@@ -267,7 +303,6 @@
                 <div class="user-avatar">A</div>
                 <div class="sidebar-footer-details text-label">
                     <div style="font-weight: 600; color: var(--text-primary);">Admin</div>
-                    <div style="font-size: 0.75rem; color: var(--text-secondary);">Premium Plan</div>
                 </div>
             </div>
         </div>
@@ -280,7 +315,7 @@
                 <div class="chat-title">
                     <i class="fas fa-robot" style="color: var(--accent-color);"></i>
                     SAHAJA AI
-                    <span class="model-badge">Gemini Pro</span>
+                    <span class="model-badge">Powered by: Gemini Flash 2.5</span>
                 </div>
             </div>
 
@@ -291,7 +326,6 @@
                         <i class="fas fa-adjust"></i>
                         <span id="themeText">Ganti Tema</span>
                     </div>
-                    <div class="option-item"><i class="fas fa-shield-alt"></i> Keamanan</div>
                 </div>
             </div>
         </div>
@@ -299,8 +333,8 @@
         <div class="welcome-screen" id="welcomeScreen" style="{{ count($chats) > 0 ? 'display: none;' : '' }}">
             <div class="welcome-logo"><i class="fas fa-robot"></i></div>
             <div class="welcome-text">
-                <h1 class="welcome-title">Selamat Datang, Admin</h1>
-                <p style="color: var(--text-secondary); font-size: 1.1rem;">Apa yang bisa SAHAJA AI bantu hari ini?</p>
+                <h1 class="welcome-title">SAHAJA AI</h1>
+                <p style="color: var(--text-secondary); font-size: 1.1rem;">Halo, Apa yang bisa SAHAJA AI bantu hari ini?</p>
             </div>
         </div>
 
@@ -338,6 +372,9 @@
     <script>
         let currentSessionId = "{{ $currentSession ? $currentSession->id : '' }}";
         const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+
+        // Config Marked.js agar support line break dan GFM
+        marked.setOptions({ breaks: true, gfm: true });
 
         // --- THEME TOGGLE FIX ---
         const themeToggleItem = document.getElementById('themeToggleItem');
@@ -413,7 +450,16 @@
             }
         }
 
-        document.querySelectorAll('.markdown-body').forEach(el => el.innerHTML = marked.parse(el.innerText));
+        // --- FIX GLITCH TEXT DI SINI ---
+        // Menggunakan textContent agar tag HTML tidak double-parsed saat load awal
+        document.querySelectorAll('.markdown-body').forEach(el => {
+            // Kita trim() untuk membersihkan spasi berlebih
+            const rawText = el.textContent.trim();
+            if(rawText) {
+                el.innerHTML = marked.parse(rawText);
+            }
+        });
+
         const chatInput = document.getElementById('chatInput');
         chatInput.addEventListener('input', function() {
             this.style.height = 'auto'; this.style.height = (this.scrollHeight) + 'px';
@@ -434,9 +480,11 @@
             document.getElementById('welcomeScreen').style.display = 'none';
             document.getElementById('messagesContainer').style.display = 'flex';
             chatInput.value = ''; chatInput.style.height = 'auto';
+
             appendMessage('user', message);
-            const loadingId = appendLoading();
+            const loadingId = appendLoading(); // RESTORED ANIMATION
             scrollToBottom();
+
             try {
                 const response = await fetch("{{ route('chat.send') }}", {
                     method: "POST", headers: { "Content-Type": "application/json", "X-CSRF-TOKEN": csrfToken },
@@ -468,10 +516,22 @@
             document.getElementById('messagesContainer').appendChild(div);
         }
 
+        // --- RESTORE ANIMATION FUNCTION ---
         function appendLoading() {
             const id = 'loading-' + Date.now();
             const div = document.createElement('div'); div.id = id; div.className = 'message ai';
-            div.innerHTML = `<div class="message-avatar ai-avatar-msg"><i class="fas fa-robot"></i></div><div class="message-content"><div class="message-bubble">...</div></div>`;
+            // Perhatikan struktur HTML di bawah ini untuk animasi
+            div.innerHTML = `
+                <div class="message-avatar ai-avatar-msg"><i class="fas fa-robot"></i></div>
+                <div class="message-content">
+                    <div class="message-bubble">
+                        <div class="typing">
+                            <div class="dot"></div>
+                            <div class="dot"></div>
+                            <div class="dot"></div>
+                        </div>
+                    </div>
+                </div>`;
             document.getElementById('messagesContainer').appendChild(div);
             return id;
         }
