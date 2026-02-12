@@ -13,10 +13,7 @@ class ChatController extends Controller
 {
     public function index($sessionId = null)
     {
-        // Ambil ID User yang sedang login
         $userId = Auth::id();
-
-        // Ambil sesi HANYA milik user ini
         $sessions = Session::where('user_id', $userId)
                            ->orderBy('updated_at', 'desc')
                            ->get();
@@ -25,7 +22,6 @@ class ChatController extends Controller
         $chats = [];
 
         if ($sessionId) {
-            // Pastikan sesi ini milik user yang login
             $currentSession = Session::where('id', $sessionId)
                                      ->where('user_id', $userId)
                                      ->first();
@@ -53,48 +49,58 @@ class ChatController extends Controller
         // 1. BUAT SESI BARU JIKA BELUM ADA
         if (!$sessionId) {
             $title = Str::words($userMessage, 5, '...');
-
-            // Simpan dengan user_id
             $session = Session::create([
                 'user_id' => $userId,
                 'title' => $title
             ]);
             $sessionId = $session->id;
         } else {
-            // Update timestamp agar naik ke atas
             $session = Session::where('id', $sessionId)->where('user_id', $userId)->first();
             if($session) $session->touch();
         }
 
-        // 2. PANGGIL API GEMINI
-        $apiKey = env('GEMINI_API_KEY');
-        $url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={$apiKey}";
+        // 2. PANGGIL API NVIDIA NIM
+        $apiKey = env('NVIDIA_API_KEY');
+        $modelName = env('NVIDIA_MODEL', 'meta/llama3-70b-instruct'); // Fallback jika .env kosong
+
+        // URL Standar NVIDIA NIM (OpenAI Compatible)
+        $url = "https://integrate.api.nvidia.com/v1/chat/completions";
 
         try {
             $response = Http::withOptions(['verify' => false])
+                ->withToken($apiKey) // Menggunakan Bearer Token (beda dengan Google yang pakai ?key=)
                 ->withHeaders(['Content-Type' => 'application/json'])
                 ->post($url, [
-                    "contents" => [
-                        ["parts" => [["text" => $userMessage]]]
-                    ]
+                    "model" => $modelName,
+                    "messages" => [
+                        [
+                            "role" => "user",
+                            "content" => $userMessage
+                        ]
+                    ],
+                    "temperature" => 0.5,
+                    "top_p" => 1,
+                    "max_tokens" => 1024,
                 ]);
 
+            // 3. PROSES RESPONSE (Format OpenAI Style)
             if ($response->successful()) {
                 $data = $response->json();
-                $aiReply = $data['candidates'][0]['content']['parts'][0]['text'] ?? "Maaf, saya bingung harus menjawab apa.";
+                // Perbedaan parsing JSON:
+                // Google: ['candidates'][0]['content']['parts'][0]['text']
+                // NVIDIA/OpenAI: ['choices'][0]['message']['content']
+                $aiReply = $data['choices'][0]['message']['content'] ?? "Maaf, AI tidak memberikan jawaban.";
             } elseif ($response->status() == 429) {
-                // Pesan khusus jika kena Limit (Error 429)
-                $aiReply = "⏳ **Server Sedang Sibuk**\n\nMaaf, Saat ini terlalu banyak permintaan. Mohon tunggu beberapa menit sebelum mengirim pesan lagi ya. Terima kasih atas kesabarannya! 🙏";
+                $aiReply = "⏳ **Server Sibuk**\n\nTerlalu banyak permintaan ke NVIDIA. Mohon tunggu sebentar.";
             } else {
-                // Pesan untuk error lain (Misal API Key salah, atau Google down)
-                $aiReply = "⚠️ **Gangguan Sistem**\n\nMaaf, terjadi masalah saat menghubungi AI. Kode Error: " . $response->status();
+                $aiReply = "⚠️ **Error API**\n\nKode: " . $response->status() . " - " . ($response->json()['error']['message'] ?? 'Unknown Error');
             }
 
         } catch (\Exception $e) {
-            $aiReply = "🔌 **Koneksi Terputus**\n\nGagal terhubung ke server. Pastikan internet Anda lancar.";
+            $aiReply = "🔌 **Koneksi Terputus**\n\nGagal menghubungi NVIDIA. Cek internet Anda.";
         }
 
-        // 3. SIMPAN CHAT
+        // 4. SIMPAN CHAT
         Chat::create([
             'session_id' => $sessionId,
             'user_message' => $userMessage,

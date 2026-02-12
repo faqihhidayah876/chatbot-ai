@@ -14,7 +14,7 @@
         href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🤖</text></svg>">
 
     <style>
-        /* ===== THEME VARIABLES (SAMA DENGAN CHATBOT UI) ===== */
+        /* ===== THEME VARIABLES ===== */
         :root {
             --main-bg: #0a0e17;
             --sidebar-bg: rgba(15, 23, 42, 0.95);
@@ -55,20 +55,159 @@
             flex-direction: column;
             align-items: center;
             justify-content: space-between;
-            padding: 1.5rem 1.5rem 0;
+            padding: 1.5rem 0 0 0; /* PADDING KIRI KANAN DIHAPUS */
             position: relative;
             transition: background 0.3s, color 0.3s;
+            overflow-x: hidden;
+            width: 100%;
         }
 
-        /* Background pattern */
+        /* ===== BACKGROUND 3D AESTHETIC UNTUK DARK MODE (DEFAULT) ===== */
+        .bg-3d {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        /* Grid perspektif 3D - Dark mode */
+        .bg-3d-grid {
+            position: absolute;
+            top: -50%;
+            left: -10%;
+            width: 120%;
+            height: 200%;
+            background-image:
+                linear-gradient(rgba(98, 160, 234, 0.12) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(98, 160, 234, 0.12) 1px, transparent 1px);
+            background-size: 40px 40px;
+            transform: perspective(600px) rotateX(55deg) scale(1.8);
+            transform-origin: center top;
+            opacity: 0.3;
+            animation: gridMove 30s infinite linear;
+        }
+
+        /* Floating blur shapes - Dark mode */
+        .bg-3d-shape {
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, rgba(37, 99, 235, 0.25), rgba(6, 182, 212, 0.1));
+            filter: blur(70px);
+            opacity: 0.4;
+        }
+
+        .shape1 {
+            top: 10%;
+            left: -5%;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(37, 99, 235, 0.3), rgba(37, 99, 235, 0.1));
+            transform: translateZ(-50px) rotate(20deg);
+            animation: float1 25s ease-in-out infinite;
+        }
+
+        .shape2 {
+            bottom: 5%;
+            right: -2%;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(6, 182, 212, 0.2), rgba(6, 182, 212, 0.05));
+            filter: blur(90px);
+            animation: float2 30s ease-in-out infinite;
+        }
+
+        .shape3 {
+            top: 40%;
+            right: 15%;
+            width: 250px;
+            height: 250px;
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.2), rgba(99, 102, 241, 0.05));
+            filter: blur(60px);
+            animation: float3 20s ease-in-out infinite;
+        }
+
+        /* Isometric dots - Dark mode */
+        .bg-3d-dots {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: radial-gradient(circle at 30% 40%, rgba(98, 160, 234, 0.2) 2px, transparent 2px);
+            background-size: 50px 50px;
+            opacity: 0.2;
+            transform: perspective(500px) rotateX(50deg) scale(1.5);
+            transform-origin: center;
+        }
+
+        /* ===== LIGHT MODE OVERRIDE - Background 3D lebih terang ===== */
+        body.light-mode .bg-3d-grid {
+            background-image:
+                linear-gradient(rgba(37, 99, 235, 0.08) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(37, 99, 235, 0.08) 1px, transparent 1px);
+            opacity: 0.4;
+        }
+
+        body.light-mode .bg-3d-shape {
+            opacity: 0.5;
+        }
+
+        body.light-mode .shape1 {
+            background: radial-gradient(circle, rgba(37, 99, 235, 0.2), rgba(37, 99, 235, 0.05));
+        }
+
+        body.light-mode .shape2 {
+            background: radial-gradient(circle, rgba(6, 182, 212, 0.15), rgba(6, 182, 212, 0.02));
+        }
+
+        body.light-mode .shape3 {
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.12), rgba(99, 102, 241, 0.03));
+        }
+
+        body.light-mode .bg-3d-dots {
+            background-image: radial-gradient(circle at 30% 40%, rgba(37, 99, 235, 0.1) 2px, transparent 2px);
+            opacity: 0.3;
+        }
+
+        @keyframes gridMove {
+            0% { transform: perspective(600px) rotateX(55deg) scale(1.8) translateY(0); }
+            50% { transform: perspective(600px) rotateX(55deg) scale(1.8) translateY(-20px); }
+            100% { transform: perspective(600px) rotateX(55deg) scale(1.8) translateY(0); }
+        }
+
+        @keyframes float1 {
+            0% { transform: translateZ(-50px) rotate(20deg) translate(0, 0); }
+            50% { transform: translateZ(-50px) rotate(25deg) translate(30px, -20px); }
+            100% { transform: translateZ(-50px) rotate(20deg) translate(0, 0); }
+        }
+
+        @keyframes float2 {
+            0% { transform: translate(0, 0); }
+            50% { transform: translate(-40px, 30px); }
+            100% { transform: translate(0, 0); }
+        }
+
+        @keyframes float3 {
+            0% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(20px, -30px) scale(1.1); }
+            100% { transform: translate(0, 0) scale(1); }
+        }
+
+        /* Background pattern default - tetap dipertahankan sebagai lapisan kedua */
         body::before {
             content: '';
-            position: absolute;
+            position: fixed;
             inset: 0;
             background: radial-gradient(circle at 20% 30%, rgba(37, 99, 235, 0.15) 0%, transparent 60%),
                 radial-gradient(circle at 80% 70%, rgba(6, 182, 212, 0.12) 0%, transparent 60%),
                 radial-gradient(circle at 40% 80%, rgba(37, 99, 235, 0.1) 0%, transparent 70%);
-            z-index: -1;
+            z-index: -2;
             pointer-events: none;
         }
 
@@ -100,6 +239,9 @@
             z-index: 10;
             flex: 1;
             justify-content: center;
+            padding-left: 1.5rem;  /* PADDING DIPINDAHKAN KE SINI */
+            padding-right: 1.5rem; /* PADDING DIPINDAHKAN KE SINI */
+            margin: 0 auto;
         }
 
         /* HEADER */
@@ -337,19 +479,22 @@
             background: #e2e8f0;
         }
 
-        /* ===== FOOTER BESAR ala DeepSeek AI ===== */
+        /* ===== FOOTER BESAR ala DeepSeek AI - FULL WIDTH TANPA CELAH ===== */
         .footer-large {
             width: 100%;
-            background: rgba(10, 14, 23, 0.95);
+            background: rgba(10, 14, 23, 0.98);
             backdrop-filter: blur(20px);
             border-top: 1px solid var(--glass-border);
             margin-top: 4rem;
-            padding: 3rem 2rem 2rem;
+            padding: 3rem 0 2rem 0; /* PADDING KIRI KANAN 0 */
             color: var(--text-secondary);
+            position: relative;
+            left: 0;
+            right: 0;
         }
 
         body.light-mode .footer-large {
-            background: rgba(248, 250, 252, 0.95);
+            background: rgba(248, 250, 252, 0.98);
             border-top-color: #e2e8f0;
         }
 
@@ -359,6 +504,8 @@
             display: grid;
             grid-template-columns: repeat(4, 1fr);
             gap: 2.5rem;
+            padding-left: 1.5rem;  /* PADDING DI DALAM CONTAINER */
+            padding-right: 1.5rem; /* PADDING DI DALAM CONTAINER */
         }
 
         .footer-section h3 {
@@ -401,6 +548,8 @@
             flex-wrap: wrap;
             gap: 1rem;
             font-size: 0.8rem;
+            padding-left: 1.5rem;  /* PADDING DI DALAM CONTAINER */
+            padding-right: 1.5rem; /* PADDING DI DALAM CONTAINER */
         }
 
         .footer-bottom-left {
@@ -424,10 +573,13 @@
         }
 
         .footer-icp {
-            display: flex;
-            gap: 1rem;
-            flex-wrap: wrap;
+            max-width: 1200px;
+            margin: 0 auto;
             margin-top: 0.5rem;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            padding-left: 1.5rem;
+            padding-right: 1.5rem;
         }
 
         /* RESPONSIVE */
@@ -440,7 +592,12 @@
 
         @media (max-width: 768px) {
             body {
-                padding: 1rem 1rem 0;
+                padding: 1rem 0 0 0; /* PADDING KIRI KANAN TETAP 0 */
+            }
+
+            .welcome-container {
+                padding-left: 1rem;
+                padding-right: 1rem;
             }
 
             .hero-title {
@@ -459,28 +616,55 @@
             .footer-container {
                 grid-template-columns: 1fr;
                 gap: 1.8rem;
+                padding-left: 1rem;
+                padding-right: 1rem;
             }
 
             .footer-bottom {
                 flex-direction: column;
                 align-items: flex-start;
+                padding-left: 1rem;
+                padding-right: 1rem;
+            }
+
+            .footer-large {
+                padding: 2rem 0 1.5rem 0;
             }
         }
 
         @media (max-width: 480px) {
             .footer-large {
-                padding: 2rem 1rem 1.5rem;
+                padding: 2rem 0 1.5rem 0;
             }
 
             .footer-bottom-left {
                 flex-direction: column;
                 gap: 0.8rem;
             }
+
+            .footer-container {
+                padding-left: 1rem;
+                padding-right: 1rem;
+            }
+
+            .footer-bottom {
+                padding-left: 1rem;
+                padding-right: 1rem;
+            }
         }
     </style>
 </head>
 
 <body>
+    <!-- BACKGROUND 3D ELEMENTS (ACTIVE IN BOTH DARK & LIGHT MODE) -->
+    <div class="bg-3d">
+        <div class="bg-3d-grid"></div>
+        <div class="bg-3d-shape shape1"></div>
+        <div class="bg-3d-shape shape2"></div>
+        <div class="bg-3d-shape shape3"></div>
+        <div class="bg-3d-dots"></div>
+    </div>
+
     <div class="welcome-container">
         <header class="welcome-header">
             <div class="brand">
@@ -498,7 +682,7 @@
             <h1 class="hero-title">SAHAJA AI</h1>
             <div class="hero-version">V 1.0</div>
             <p class="hero-description">
-                Asisten cerdas berbasis <strong>Gemini 2.5</strong> yang siap membantu dan
+                Asisten cerdas berbasis <strong>Meta llama 4 Maverick</strong> setara dengan GPT 4, yang siap membantu dan
                 brainstorming ide Anda.
             </p>
         </div>
@@ -524,25 +708,10 @@
         </div>
     </div>
 
-    <!-- FOOTER BESAR ala DeepSeek AI -->
+    <!-- FOOTER BESAR ala DeepSeek AI - FULL WIDTH TANPA CELAH -->
     <footer class="footer-large">
         <div class="footer-container">
-            <!-- Research -->
-            {{-- <div class="footer-section">
-                <h3>Research</h3>
-                <ul>
-                    <li><a href="#">DeepSeek R1</a></li>
-                    <li><a href="#">DeepSeek V3</a></li>
-                    <li><a href="#">DeepSeek Coder V2</a></li>
-                    <li><a href="#">DeepSeek VL</a></li>
-                    <li><a href="#">DeepSeek V2</a></li>
-                    <li><a href="#">DeepSeek Coder</a></li>
-                    <li><a href="#">DeepSeek Math</a></li>
-                    <li><a href="#">DeepSeek LLM</a></li>
-                </ul>
-            </div> --}}
-
-            <!-- Product -->
+            <!-- Another Project -->
             <div class="footer-section">
                 <h3>Another Project</h3>
                 <ul>
@@ -551,7 +720,7 @@
                 </ul>
             </div>
 
-            <!-- Legal & Safety -->
+            <!-- About Me -->
             <div class="footer-section">
                 <h3>About Me</h3>
                 <ul>
@@ -559,14 +728,6 @@
                     <li><a href="https://www.linkedin.com/in/faqih-hidayah-b4a134381/">LinkedIn</a></li>
                 </ul>
             </div>
-
-            <!-- Join Us -->
-            {{-- <div class="footer-section">
-                <h3>Join Us</h3>
-                <ul>
-                    <li><a href="#">Job Description</a></li>
-                </ul>
-            </div> --}}
         </div>
 
         <div class="footer-bottom">
@@ -578,7 +739,7 @@
             </div>
         </div>
 
-        <div class="footer-icp" style="max-width: 1200px; margin: 0 auto; margin-top: 0.5rem; font-size: 0.75rem; color: var(--text-secondary);">
+        <div class="footer-icp">
             <!-- Additional info if needed -->
         </div>
     </footer>

@@ -256,7 +256,6 @@
                 </div>
                 <div class="sidebar-footer-details text-label" style="margin-left: 10px;">
                     <div style="font-weight: 600; color: var(--text-primary);">{{ Auth::user()->name ?? 'Pengguna' }}</div>
-                    <div style="font-size: 0.75rem; color: var(--text-secondary);">Premium Plan</div>
                 </div>
             </div>
 
@@ -278,7 +277,7 @@
                 <div class="chat-title">
                     <i class="fas fa-robot" style="color: var(--accent-color);"></i>
                     SAHAJA AI
-                    <span class="model-badge">Powered by: Gemini Flash 2.5</span>
+                    <span class="model-badge">Powered by: Meta llama 4 Maverick</span>
                 </div>
             </div>
             <div class="settings-container">
