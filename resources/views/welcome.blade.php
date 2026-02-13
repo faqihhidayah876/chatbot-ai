@@ -680,7 +680,7 @@
         <div class="hero-section">
             <span class="hero-badge">AI ASSISTANT</span>
             <h1 class="hero-title">SAHAJA AI</h1>
-            <div class="hero-version">V 1.1</div>
+            <div class="hero-version">Beta V 1.1</div>
             <p class="hero-description">
                 Asisten cerdas berbasis <strong>Meta llama 3.3 70b Maverick</strong> setara dengan GPT 4 siap membantu dan
                 brainstorming ide Anda.
@@ -735,7 +735,7 @@
                 <span>© 2026 SAHAJA AI. All rights reserved.</span>
             </div>
             <div class="footer-bottom-right">
-                <span>SAHAJA AI by: SAHAJA Development Team</span>
+                <span>SAHAJA AI by: Faqih Hidayah</span>
             </div>
         </div>
 
