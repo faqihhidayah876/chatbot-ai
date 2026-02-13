@@ -45,4 +45,16 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+    public function sessions()
+    {
+        return $this->hasMany(Session::class);
+    }
+
+    // Relasi Chat (Lewat Session - Optional, tapi untuk statistik sederhana kita hitung manual di view/controller bisa)
+    // Cara mudah hitung chat user:
+    public function getChatCountAttribute()
+    {
+        // Menghitung total chat dari semua sesi milik user ini
+        return $this->sessions()->withCount('chats')->get()->sum('chats_count');
+    }
 }

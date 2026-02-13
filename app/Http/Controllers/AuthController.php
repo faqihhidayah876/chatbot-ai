@@ -52,7 +52,13 @@ class AuthController extends Controller
 
         if (Auth::attempt($credentials)) {
             $request->session()->regenerate();
-            // Redirect ke Chat setelah Login berhasil
+
+            // --- LOGIKA REDIRECT BERDASARKAN ROLE ---
+            if (Auth::user()->role === 'admin') {
+                return redirect()->route('admin.dashboard');
+            }
+
+            // Jika user biasa
             return redirect()->route('chat.index');
         }
 

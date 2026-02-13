@@ -16,7 +16,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
 
     <style>
-        /* --- CSS VARIABLES (TETAP SAMA) --- */
+        /* --- CSS VARIABLES --- */
         :root {
             --main-bg: #0a0e17;
             --sidebar-bg: rgba(15, 23, 42, 0.95);
@@ -148,7 +148,15 @@
         .settings-menu-dropdown.show { display: block; }
 
         /* Chat Area */
-        .messages-container { flex: 1; overflow-y: auto; padding: 30px 5%; display: flex; flex-direction: column; gap: 30px; scroll-behavior: smooth; }
+        .messages-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 30px 5% 40px; /* padding bawah ditambah agar tombol aksi terakhir tidak ketutupan */
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+            scroll-behavior: smooth;
+        }
         .message { display: flex; gap: 16px; max-width: 100%; animation: slideUp 0.3s ease-out; }
         .message.user { flex-direction: row-reverse; }
         @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
@@ -254,15 +262,88 @@
         .action-btn:hover { background: var(--glass-highlight); color: var(--text-primary); border-color: var(--glass-border); }
 
         /* INPUT AREA - versi desktop */
-        .input-container { padding: 12px 16px; background: rgba(10, 14, 23, 0.85); backdrop-filter: blur(12px); border-top: 1px solid var(--glass-border); display: flex; flex-direction: column; align-items: center; gap: 6px; position: relative; z-index: 20; box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.2); }
-        body.light-mode .input-container { background: rgba(255, 255, 255, 0.85); box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.05); }
-        .input-wrapper { width: 100%; max-width: 800px; position: relative; display: flex; align-items: flex-end; background: rgba(30, 41, 59, 0.6); border: 1px solid var(--glass-border); border-radius: 24px; padding: 6px 6px 6px 12px; transition: 0.3s; }
-        body.light-mode .input-wrapper { background: #f1f5f9; border-color: #e2e8f0; }
-        .input-wrapper:focus-within { border-color: var(--accent-color); box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2); }
-        .chat-input { flex: 1; background: transparent; border: none; color: var(--text-primary); font-size: 0.95rem; padding: 10px 8px 10px 4px; resize: none; max-height: 120px; outline: none; line-height: 1.5; }
-        .send-btn { width: 42px; height: 42px; background: var(--accent-gradient); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; transition: 0.3s; flex-shrink: 0; margin-left: 8px; box-shadow: 0 2px 10px rgba(37, 99, 235, 0.3); }
-        .send-btn:hover { transform: scale(1.05); box-shadow: 0 4px 15px rgba(37, 99, 235, 0.5); }
-        .input-footer { font-size: 0.7rem; color: var(--text-secondary); text-align: center; margin-top: 2px; opacity: 0.8; }
+        .input-container {
+            padding: 12px 16px;
+            background: rgba(10, 14, 23, 0.85);
+            backdrop-filter: blur(12px);
+            border-top: 1px solid var(--glass-border);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            position: relative;
+            z-index: 20;
+            box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.2);
+        }
+        body.light-mode .input-container {
+            background: rgba(255, 255, 255, 0.85) !important; /* dipaksa putih transparan */
+        }
+
+        .input-wrapper {
+            width: 100%;
+            max-width: 800px;
+            position: relative;
+            display: flex;
+            align-items: center; /* ubah dari flex-end ke center agar teks rata tengah vertikal */
+            background: rgba(30, 41, 59, 0.6);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 0 6px 0 12px; /* padding disesuaikan */
+            transition: 0.3s;
+            min-height: 48px; /* pastikan tinggi cukup */
+        }
+        body.light-mode .input-wrapper {
+            background: #f1f5f9;
+            border-color: #e2e8f0;
+        }
+        .input-wrapper:focus-within {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+        }
+
+        .chat-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: var(--text-primary);
+            font-size: 0.95rem;
+            padding: 10px 8px 10px 4px;
+            resize: none;
+            max-height: 120px;
+            outline: none;
+            line-height: 1.5;
+            align-self: center; /* jaga agar tetap di tengah */
+        }
+        body.light-mode .chat-input {
+            color: #1e293b; /* teks gelap di light mode */
+        }
+
+        .send-btn {
+            width: 42px;
+            height: 42px;
+            background: var(--accent-gradient);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            transition: 0.3s;
+            flex-shrink: 0;
+            margin-left: 8px;
+            box-shadow: 0 2px 10px rgba(37, 99, 235, 0.3);
+        }
+        .send-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 15px rgba(37, 99, 235, 0.5);
+        }
+
+        .input-footer {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            text-align: center;
+            margin-top: 2px;
+            opacity: 0.8;
+        }
 
         .welcome-screen { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; }
         .welcome-logo { font-size: 5rem; margin-bottom: 20px; background: var(--accent-gradient); -webkit-background-clip: text; color: transparent; filter: drop-shadow(0 4px 12px rgba(37, 99, 235, 0.3)); }
@@ -275,25 +356,106 @@
             .toggle-btn-sidebar { display: none; }
             .mobile-toggle-btn { display: block; }
             .main-container { width: 100%; }
-            .input-container { padding: 4px 12px !important; position: sticky !important; bottom: 0 !important; background: rgba(10, 14, 23, 0.98) !important; backdrop-filter: blur(16px) !important; }
-            body.light-mode .input-container { background: rgba(255, 255, 255, 0.98) !important; }
-            .input-wrapper { padding: 2px 2px 2px 8px !important; border-radius: 30px !important; background: rgba(30, 41, 59, 0.9) !important; min-height: 44px !important; }
-            .chat-input { padding: 6px 6px 6px 2px !important; font-size: 0.9rem !important; min-height: 38px !important; }
-            .send-btn { width: 36px !important; height: 36px !important; margin-left: 4px !important; }
-            .input-footer { font-size: 0.6rem !important; margin-top: 0 !important; }
-            .messages-container { padding: 20px 4% 4px !important; gap: 20px !important; }
-            .message-bubble { padding: 12px 16px !important; font-size: 0.9rem !important; }
-            .message-avatar { width: 34px !important; height: 34px !important; }
+
+            .input-container {
+                padding: 4px 12px !important;
+                position: sticky !important;
+                bottom: 0 !important;
+                background: rgba(10, 14, 23, 0.98) !important;
+                backdrop-filter: blur(16px) !important;
+            }
+            body.light-mode .input-container {
+                background: rgba(255, 255, 255, 0.98) !important;
+            }
+
+            .input-wrapper {
+                padding: 0 2px 0 8px !important; /* padding vertikal 0 agar teks tengah */
+                border-radius: 30px !important;
+                background: rgba(30, 41, 59, 0.9) !important;
+                min-height: 44px !important;
+                align-items: center !important;
+            }
+            body.light-mode .input-wrapper {
+                background: #ffffff !important;
+                border: 1px solid #e2e8f0 !important;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03) !important;
+            }
+
+            .chat-input {
+                padding: 8px 6px 8px 2px !important;
+                font-size: 0.9rem !important;
+                min-height: 38px !important;
+                line-height: 1.4 !important;
+            }
+            body.light-mode .chat-input {
+                color: #1e293b !important;
+            }
+
+            .send-btn {
+                width: 36px !important;
+                height: 36px !important;
+                margin-left: 4px !important;
+            }
+
+            .input-footer {
+                font-size: 0.6rem !important;
+                margin-top: 0 !important;
+            }
+
+            .messages-container {
+                padding: 20px 4% 60px !important; /* padding bawah lebih besar untuk tombol aksi */
+                gap: 20px !important;
+            }
+
+            .message-bubble {
+                padding: 12px 16px !important;
+                font-size: 0.9rem !important;
+            }
+
+            .message-avatar {
+                width: 34px !important;
+                height: 34px !important;
+            }
+
+            /* Pastikan tombol aksi di pesan terakhir tidak ketutupan */
+            .message:last-child .ai-actions {
+                margin-bottom: 10px;
+            }
         }
+
         @media (max-width: 375px) {
-            .input-container { padding: 2px 10px !important; }
-            .input-wrapper { padding: 2px 2px 2px 6px !important; min-height: 40px !important; }
-            .chat-input { padding: 5px 4px 5px 2px !important; font-size: 0.85rem !important; min-height: 34px !important; }
-            .send-btn { width: 34px !important; height: 34px !important; }
-            .messages-container { padding: 15px 3% 2px !important; }
+            .input-container {
+                padding: 2px 10px !important;
+            }
+
+            .input-wrapper {
+                padding: 0 2px 0 6px !important;
+                min-height: 40px !important;
+            }
+
+            .chat-input {
+                padding: 6px 4px 6px 2px !important;
+                font-size: 0.85rem !important;
+                min-height: 34px !important;
+            }
+
+            .send-btn {
+                width: 34px !important;
+                height: 34px !important;
+            }
+
+            .messages-container {
+                padding: 15px 3% 50px !important;
+            }
         }
+
         @supports (padding-bottom: env(safe-area-inset-bottom)) {
-            .input-container { padding-bottom: max(2px, env(safe-area-inset-bottom)) !important; }
+            .input-container {
+                padding-bottom: max(2px, env(safe-area-inset-bottom)) !important;
+            }
+            .messages-container {
+                padding-bottom: max(40px, env(safe-area-inset-bottom) + 20px) !important;
+            }
         }
     </style>
 </head>

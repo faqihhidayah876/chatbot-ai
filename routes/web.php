@@ -1,8 +1,9 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\ChatController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\ChatController;
+use App\Http\Controllers\AdminController;
 
 // 1. Halaman Depan (Welcome)
 Route::get('/', function () {
@@ -32,4 +33,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/new', [ChatController::class, 'newChat'])->name('chat.new');
     Route::put('/session/{id}/rename', [ChatController::class, 'renameSession'])->name('session.rename');
     Route::delete('/session/{id}/delete', [ChatController::class, 'deleteSession'])->name('session.delete');
+});
+
+//khusu admin
+Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/dashboard', [AdminController::class, 'index'])->name('dashboard');
+    Route::delete('/user/{id}', [AdminController::class, 'deleteUser'])->name('deleteUser');
 });
