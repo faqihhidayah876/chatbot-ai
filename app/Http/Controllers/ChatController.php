@@ -60,7 +60,7 @@ class ChatController extends Controller
 
         // 2. KONSTRUKSI CHAT (MEMORY + SYSTEM PROMPT)
         $apiKey = env('NVIDIA_API_KEY');
-        $modelName = env('NVIDIA_MODEL', 'meta/llama-3.3-70b-instruct');
+        $modelName = env('NVIDIA_MODEL', 'moonshotai/kimi-k2.5');
         $url = "https://integrate.api.nvidia.com/v1/chat/completions";
 
         // A. System Prompt (Kepribadian AI)
@@ -91,15 +91,21 @@ class ChatController extends Controller
         $messages[] = ["role" => "user", "content" => $userMessage];
 
         try {
-            $response = Http::withOptions(['verify' => false, 'http_errors' => false])
+            // KITA NAIKKAN TIMEOUT JADI 120 DETIK (2 MENIT)
+            $response = Http::withOptions([
+                'verify' => false,
+                'http_errors' => false,
+                'timeout' => 300,  // waktu tunggu AI menjawab
+                'connect_timeout' => 10
+            ])
                 ->withToken($apiKey)
                 ->withHeaders(['Content-Type' => 'application/json'])
                 ->post($url, [
                     "model" => $modelName,
-                    "messages" => $messages, // Kirim array history lengkap
+                    "messages" => $messages,
                     "temperature" => 0.5,
                     "top_p" => 1,
-                    "max_tokens" => 2048, // Naikkan dikit biar jawaban panjang muat
+                    "max_tokens" => 2048,
                 ]);
 
             if ($response->successful()) {
@@ -111,7 +117,7 @@ class ChatController extends Controller
                 $aiReply = "⚠️ **Yah, ada kendala teknis nih**\n\nKode: " . $response->status() . " - " . ($response->json()['error']['message'] ?? 'Unknown Error');
             }
         } catch (\Exception $e) {
-            $aiReply = "🔌 **Koneksi Terputus**\n\nGagal menghubungi NVIDIA. Cek internet Anda." . $e->getMessage() . "\n\nKalau masalahnya lanjut, kabari SAHAJA Team ya! 😊";
+            $aiReply = "🔌 **Koneksi Terputus**\n\nAI butuh waktu terlalu lama untuk berpikir. Coba pertanyaan yang lebih sederhana!" . $e->getMessage() . "\n\nKalau masalahnya lanjut, kabari team developer ya! 😊";
         }
 
         // 3. SIMPAN CHAT

@@ -55,14 +55,14 @@
             flex-direction: column;
             align-items: center;
             justify-content: space-between;
-            padding: 1.5rem 0 0 0; /* PADDING KIRI KANAN DIHAPUS */
+            padding: 1.5rem 0 0 0;
             position: relative;
             transition: background 0.3s, color 0.3s;
             overflow-x: hidden;
             width: 100%;
         }
 
-        /* ===== BACKGROUND 3D AESTHETIC UNTUK DARK MODE (DEFAULT) ===== */
+        /* ===== BACKGROUND 3D AESTHETIC ===== */
         .bg-3d {
             position: fixed;
             top: 0;
@@ -74,7 +74,6 @@
             overflow: hidden;
         }
 
-        /* Grid perspektif 3D - Dark mode */
         .bg-3d-grid {
             position: absolute;
             top: -50%;
@@ -91,7 +90,6 @@
             animation: gridMove 30s infinite linear;
         }
 
-        /* Floating blur shapes - Dark mode */
         .bg-3d-shape {
             position: absolute;
             width: 300px;
@@ -132,7 +130,6 @@
             animation: float3 20s ease-in-out infinite;
         }
 
-        /* Isometric dots - Dark mode */
         .bg-3d-dots {
             position: absolute;
             top: 0;
@@ -146,7 +143,6 @@
             transform-origin: center;
         }
 
-        /* ===== LIGHT MODE OVERRIDE - Background 3D lebih terang ===== */
         body.light-mode .bg-3d-grid {
             background-image:
                 linear-gradient(rgba(37, 99, 235, 0.08) 1px, transparent 1px),
@@ -199,7 +195,6 @@
             100% { transform: translate(0, 0) scale(1); }
         }
 
-        /* Background pattern default - tetap dipertahankan sebagai lapisan kedua */
         body::before {
             content: '';
             position: fixed;
@@ -239,8 +234,8 @@
             z-index: 10;
             flex: 1;
             justify-content: center;
-            padding-left: 1.5rem;  /* PADDING DIPINDAHKAN KE SINI */
-            padding-right: 1.5rem; /* PADDING DIPINDAHKAN KE SINI */
+            padding-left: 1.5rem;
+            padding-right: 1.5rem;
             margin: 0 auto;
         }
 
@@ -479,14 +474,77 @@
             background: #e2e8f0;
         }
 
-        /* ===== FOOTER BESAR ala DeepSeek AI - FULL WIDTH TANPA CELAH ===== */
+        /* ===== SECTION KIMI K 2.5 ===== */
+        .kimi-section {
+            width: 100%;
+            max-width: 900px;
+            margin: 2rem auto;
+            text-align: center;
+        }
+
+        .kimi-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            background: linear-gradient(to right, var(--accent-light), #ffffff);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        body.light-mode .kimi-title {
+            background: linear-gradient(to right, var(--accent-color), #1e293b);
+            -webkit-background-clip: text;
+            color: transparent;
+        }
+
+        .kimi-description {
+            font-size: 1rem;
+            color: var(--text-secondary);
+            max-width: 700px;
+            margin: 0 auto 2rem;
+            line-height: 1.6;
+        }
+
+        .kimi-image-wrapper {
+            width: 100%;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            transition: transform 0.3s ease;
+            background-color: #1a1a2e; /* Background fallback jika gambar gagal load */
+            min-height: 200px; /* Memberi ruang minimal */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* .kimi-image-wrapper:hover {
+            transform: scale(1.02);
+        } */
+
+        .kimi-image-wrapper img {
+            width: 100%;
+            height: auto;
+            display: block;
+            border: none;
+            max-width: 100%;
+        }
+
+        /* Fallback text jika gambar gagal dimuat */
+        .kimi-image-wrapper img[alt] {
+            font-family: 'Poppins', sans-serif;
+            color: var(--text-secondary);
+        }
+
+        /* ===== FOOTER ===== */
         .footer-large {
             width: 100%;
             background: rgba(10, 14, 23, 0.98);
             backdrop-filter: blur(20px);
             border-top: 1px solid var(--glass-border);
             margin-top: 4rem;
-            padding: 3rem 0 2rem 0; /* PADDING KIRI KANAN 0 */
+            padding: 3rem 0 2rem 0;
             color: var(--text-secondary);
             position: relative;
             left: 0;
@@ -504,8 +562,8 @@
             display: grid;
             grid-template-columns: repeat(4, 1fr);
             gap: 2.5rem;
-            padding-left: 1.5rem;  /* PADDING DI DALAM CONTAINER */
-            padding-right: 1.5rem; /* PADDING DI DALAM CONTAINER */
+            padding-left: 1.5rem;
+            padding-right: 1.5rem;
         }
 
         .footer-section h3 {
@@ -548,8 +606,8 @@
             flex-wrap: wrap;
             gap: 1rem;
             font-size: 0.8rem;
-            padding-left: 1.5rem;  /* PADDING DI DALAM CONTAINER */
-            padding-right: 1.5rem; /* PADDING DI DALAM CONTAINER */
+            padding-left: 1.5rem;
+            padding-right: 1.5rem;
         }
 
         .footer-bottom-left {
@@ -592,7 +650,7 @@
 
         @media (max-width: 768px) {
             body {
-                padding: 1rem 0 0 0; /* PADDING KIRI KANAN TETAP 0 */
+                padding: 1rem 0 0 0;
             }
 
             .welcome-container {
@@ -611,6 +669,14 @@
 
             .auth-card {
                 padding: 2rem 1.5rem;
+            }
+
+            .kimi-title {
+                font-size: 1.6rem;
+            }
+
+            .kimi-description {
+                font-size: 0.95rem;
             }
 
             .footer-container {
@@ -656,7 +722,7 @@
 </head>
 
 <body>
-    <!-- BACKGROUND 3D ELEMENTS (ACTIVE IN BOTH DARK & LIGHT MODE) -->
+    <!-- BACKGROUND 3D ELEMENTS -->
     <div class="bg-3d">
         <div class="bg-3d-grid"></div>
         <div class="bg-3d-shape shape1"></div>
@@ -680,9 +746,9 @@
         <div class="hero-section">
             <span class="hero-badge">AI ASSISTANT</span>
             <h1 class="hero-title">SAHAJA AI</h1>
-            <div class="hero-version">Beta V 1.1</div>
+            <div class="hero-version">Beta V 2.0</div>
             <p class="hero-description">
-                Asisten cerdas berbasis <strong>Meta llama 3.3 70b Maverick</strong> setara dengan GPT 4 siap membantu dan
+                Asisten cerdas berbasis <strong>Kimi K 2.5</strong> setara dengan GPT 5.2 siap membantu dan
                 brainstorming ide Anda.
             </p>
         </div>
@@ -706,9 +772,32 @@
                 </a>
             </div>
         </div>
+
+        <!-- ===== SECTION KIMI K 2.5 ===== -->
+        <div class="kimi-section">
+            <h2 class="kimi-title">Hadir dengan Kimi K 2.5</h2>
+            <p class="kimi-description">
+                SAHAJA AI kini hadir dengan mesin AI terbaru dari Kimi, model reasoning yang handal dan model open-source paling canggih, mampu menandingi Opus 4.5 dan GPT 5.2 dalam beberapa skenario.
+            </p>
+            <div class="kimi-image-wrapper">
+                <!-- Menggunakan tag img langsung tanpa link di sekitarnya untuk menghindari masalah -->
+                <img src="https://platform.moonshot.ai/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fk25-en.4301d842.png&w=3840&q=75"
+                     alt="benchmark-kimi-k-2-5"
+                     border="0"
+                     onerror="this.onerror=null; this.src='https://via.placeholder.com/800x400?text=Gambar+Tidak+Dapat+Dimuat'; this.style.opacity='0.7';">
+
+                <!-- Teks kecil untuk membantu debugging -->
+                <div style="display: none;" id="debug-info"></div>
+            </div>
+
+            <!-- Link terpisah untuk gambar jika ingin mengunjungi sumber -->
+            <p style="margin-top: 0.5rem; font-size: 0.8rem; color: var(--text-secondary);">
+                Sumber gambar: <a href="https://platform.moonshot.ai/docs/guide/kimi-k2-5-quickstart#overview-of-kimi-k25-model" target="_blank" style="color: var(--accent-light); text-decoration: underline;">moonshoot.ai</a>
+            </p>
+        </div>
     </div>
 
-    <!-- FOOTER BESAR ala DeepSeek AI - FULL WIDTH TANPA CELAH -->
+    <!-- FOOTER -->
     <footer class="footer-large">
         <div class="footer-container">
             <!-- Another Project -->
@@ -769,6 +858,17 @@
                     themeLabel.innerText = 'Mode Gelap';
                 }
             });
+
+            // Debugging: Cek apakah gambar berhasil dimuat
+            const img = document.querySelector('.kimi-image-wrapper img');
+            if (img) {
+                img.addEventListener('load', function() {
+                    console.log('Gambar berhasil dimuat');
+                });
+                img.addEventListener('error', function() {
+                    console.error('Gambar gagal dimuat. URL:', img.src);
+                });
+            }
         })();
     </script>
 </body>

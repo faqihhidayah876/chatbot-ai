@@ -322,10 +322,10 @@
     <div class="modal-overlay" id="updateModal">
         <div class="modal-content">
             <button class="modal-close" id="closeModalBtn"><i class="fas fa-times"></i></button>
-            <h2>PEMBARUAN SAHAJA AI</h2>
+            <h2><center>PEMBARUAN SAHAJA AI</center></h2>
             <div class="modal-body">
                 <p><strong>1. Perubahan pada API</strong><br>
-                SAHAJA AI kini menggunakan API dari Nvidia, dengan mesin terbaru yang lebih bertenaga, yakni llama 3.3 70b Maverick, yang dimana setara dengan GPT 4.</p>
+                SAHAJA AI kini menggunakan API dari Nvidia, dengan mesin terbaru yang lebih bertenaga, yakni Kimi K 2.5 sebagai model reasoning, setara dengan GPT 5.2, kemungkinan respon AI akan memakan waktu hingga diatas 1 menit, situasi ini bergantung pada server pusat, kami mohon maaf atas ketidaknyamanan ini.</p>
                 <p><strong>2. Peningkatan Tampilan Pengguna</strong><br>
                 Peningkatan tampilan chatbot dan juga beberapa fitur dan bug yang masih ada, seperti bug pada teks placeholder pada mode gelap. Ini membuat kenyamanan user menjadi lebih baik.</p>
                 <p><strong>3. Penyesuaian Kepribadian SAHAJA AI</strong><br>
@@ -399,7 +399,7 @@
                 <div class="chat-title">
                     <i class="fas fa-robot" style="color: var(--accent-color);"></i>
                     SAHAJA AI
-                    <span class="model-badge">Powered by: Meta llama 3.3 70b Maverick</span>
+                    <span class="model-badge">Powered by: Kimi K 2.5</span>
                 </div>
             </div>
             <div class="settings-container">
