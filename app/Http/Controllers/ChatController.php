@@ -91,11 +91,10 @@ class ChatController extends Controller
         $messages[] = ["role" => "user", "content" => $userMessage];
 
         try {
-            // KITA NAIKKAN TIMEOUT JADI 120 DETIK (2 MENIT)
             $response = Http::withOptions([
                 'verify' => false,
                 'http_errors' => false,
-                'timeout' => 300,  // waktu tunggu AI menjawab
+                'timeout' => 300,  // waktu tunggu AI menjawab 5 menit
                 'connect_timeout' => 10
             ])
                 ->withToken($apiKey)
@@ -105,7 +104,7 @@ class ChatController extends Controller
                     "messages" => $messages,
                     "temperature" => 0.5,
                     "top_p" => 1,
-                    "max_tokens" => 2048,
+                    "max_tokens" => 4096, // -> ini utk ngatur seberapa panjang jawaban AI
                 ]);
 
             if ($response->successful()) {
