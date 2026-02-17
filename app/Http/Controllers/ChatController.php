@@ -14,163 +14,146 @@ class ChatController extends Controller
     public function index($sessionId = null)
     {
         $userId = Auth::id();
-        $sessions = Session::where('user_id', $userId)
-                           ->orderBy('updated_at', 'desc')
-                           ->get();
-
+        $sessions = Session::where('user_id', $userId)->orderBy('updated_at', 'desc')->get();
         $currentSession = null;
         $chats = [];
 
         if ($sessionId) {
-            $currentSession = Session::where('id', $sessionId)
-                                     ->where('user_id', $userId)
-                                     ->first();
-
+            $currentSession = Session::where('id', $sessionId)->where('user_id', $userId)->first();
             if ($currentSession) {
                 $chats = $currentSession->chats;
             } else {
                 return redirect()->route('chat.index');
             }
         }
-
         return view('chat', compact('sessions', 'chats', 'currentSession'));
     }
 
     public function sendMessage(Request $request)
     {
-        $request->validate([
-            'message' => 'required'
-        ]);
+        // Cegah PHP timeout (Max execution time diperpanjang jadi 5 menit)
+        set_time_limit(300);
+
+        $request->validate(['message' => 'required']);
 
         $userMessage = $request->message;
         $sessionId = $request->session_id;
         $userId = Auth::id();
 
-        // 1. BUAT/UPDATE SESI
+        // 1. LOGIKA DUAL MODEL
+        $isSimple = $this->isSimpleQuery($userMessage);
+
+        if ($isSimple) {
+            $selectedModel = 'moonshotai/kimi-k2-instruct'; // Fast
+            $timeout = 25;
+        } else {
+            $selectedModel = 'moonshotai/kimi-k2.5'; // Smart
+            $timeout = 180; // 3 Menit
+        }
+
+        $apiKey = env('NVIDIA_API_KEY');
+        $url = "https://integrate.api.nvidia.com/v1/chat/completions";
+
+        // 2. SETUP SESSION
         if (!$sessionId) {
             $title = Str::words($userMessage, 5, '...');
             $session = Session::create(['user_id' => $userId, 'title' => $title]);
             $sessionId = $session->id;
         } else {
             $session = Session::where('id', $sessionId)->where('user_id', $userId)->first();
-            if($session) $session->touch();
+            if ($session) {
+                $session->touch();
+            }
         }
 
-        // 2. KONSTRUKSI CHAT (MEMORY + SYSTEM PROMPT)
-        $apiKey = env('NVIDIA_API_KEY');
-        $modelName = env('NVIDIA_MODEL', 'moonshotai/kimi-k2.5');
-        $url = "https://integrate.api.nvidia.com/v1/chat/completions";
-
-        // A. SYSTEM PROMPT (PERBAIKAN: GABUNGKAN SEMUA CONFIG)
-        // Kita ambil config array secara utuh
+        // 3. SYSTEM PROMPT
         $configSahaja = config('sahaja');
-
-        // Cek apakah config berupa array (format baru) atau string biasa (format lama)
         if (is_array($configSahaja)) {
             $systemPrompt = $configSahaja['personality'];
-
-            // Tambahkan bagian shortcuts, context, dll jika ada
             if (isset($configSahaja['shortcuts'])) {
-                $systemPrompt .= "\n\n### ⚡ SHORTCUT COMMANDS:\n" . json_encode($configSahaja['shortcuts'], JSON_PRETTY_PRINT);
+                $systemPrompt .= "\n\n### SHORTCUTS:\n" . json_encode($configSahaja['shortcuts']);
             }
             if (isset($configSahaja['context_rules'])) {
-                $systemPrompt .= "\n\n### 🌍 CONTEXT AWARENESS:\n" . json_encode($configSahaja['context_rules'], JSON_PRETTY_PRINT);
-            }
-            if (isset($configSahaja['error_patterns'])) {
-                $systemPrompt .= "\n\n### ⚠️ ERROR HANDLING PATTERNS:\n" . json_encode($configSahaja['error_patterns'], JSON_PRETTY_PRINT);
+                $systemPrompt .= "\n\n### CONTEXT:\n" . json_encode($configSahaja['context_rules']);
             }
         } else {
-            // Fallback jika config masih string biasa
             $systemPrompt = $configSahaja;
         }
 
-        $messages = [
-            [
-                "role" => "system",
-                "content" => $systemPrompt
-            ]
-        ];
+        $messages = [["role" => "system", "content" => $systemPrompt]];
 
-        // ========== B. SMART CONTEXT AWARENESS (Optimasi Token) ==========
+        // 4. CONTEXT MEMORY
         if ($sessionId) {
-            // Ambil SEMUA chat untuk analisis
-            $allChats = Chat::where('session_id', $sessionId)
-                            ->orderBy('created_at', 'asc')
-                            ->get();
-
+            $allChats = Chat::where('session_id', $sessionId)->orderBy('created_at', 'asc')->get();
             if ($allChats->count() > 0) {
-                // Strategi 1: Selalu ambil 2 chat terakhir (most recent context)
-                $recentChats = $allChats->slice(-2);
-
-                // Strategi 2: Ambil 2 chat pertama (establish context awal)
-                $initialChats = $allChats->slice(0, 2);
-
-                // Strategi 3: Keyword Matching untuk relevansi
-                $relevantChats = $allChats->filter(function($chat) use ($userMessage) {
-                    $keywords = $this->extractKeywords($userMessage);
-                    foreach ($keywords as $keyword) {
-                        if (stripos($chat->user_message, $keyword) !== false ||
-                            stripos($chat->ai_response, $keyword) !== false) {
-                            return true;
-                        }
-                    }
-                    return false;
-                })->slice(-2); // Maks 2 relevant chat
-
-                // Gabungkan, Unique, dan Sort ulang berdasarkan waktu
-                $contextChats = $initialChats
-                    ->merge($relevantChats)
-                    ->merge($recentChats)
-                    ->unique('id')
-                    ->sortBy('created_at');
-
-                // Limit hard 6 chat terakhir agar tidak jebol token
-                if ($contextChats->count() > 6) {
-                    $contextChats = $contextChats->slice(-6);
-                }
-
+                $contextChats = $allChats->slice(-4);
                 foreach ($contextChats as $chat) {
                     $messages[] = ["role" => "user", "content" => $chat->user_message];
                     $messages[] = ["role" => "assistant", "content" => $chat->ai_response];
                 }
             }
         }
-
-        // C. Pesan User Sekarang
         $messages[] = ["role" => "user", "content" => $userMessage];
 
+        // 5. EKSEKUSI REQUEST DENGAN TRY-CATCH-RETRY
+        $aiReply = "";
+        $isFallback = false;
+
         try {
+            // COBA REQUEST UTAMA
             $response = Http::withOptions([
                 'verify' => false,
-                'http_errors' => false,
-                'timeout' => 300,  // 5 menit timeout
+                'http_errors' => true, // Throw exception jika 4xx/5xx
+                'timeout' => $timeout,
                 'connect_timeout' => 10
             ])
             ->withToken($apiKey)
             ->withHeaders(['Content-Type' => 'application/json'])
             ->post($url, [
-                "model" => $modelName,
+                "model" => $selectedModel,
                 "messages" => $messages,
-                "temperature" => 0.6, // Agak kreatif dikit (0.5 -> 0.6)
-                "top_p" => 1,
-                "max_tokens" => 4096,
+                "temperature" => 0.6,
+                "max_tokens" => 2048,
             ]);
 
-            if ($response->successful()) {
-                $data = $response->json();
-                $aiReply = $data['choices'][0]['message']['content'] ?? "Maaf, AI tidak memberikan jawaban.";
-            } elseif ($response->status() == 429) {
-                $aiReply = "⏳ **Server Sibuk**\n\nTerlalu banyak permintaan ke NVIDIA. Mohon tunggu beberapa saat ya 😊";
-            } else {
-                $errorMsg = $response->json()['error']['message'] ?? 'Unknown Error';
-                $aiReply = "⚠️ **Yah, ada kendala teknis nih**\n\nKode: " . $response->status() . " - " . $errorMsg;
-            }
-
+            $data = $response->json();
+            $aiReply = $data['choices'][0]['message']['content'] ?? "Maaf, tidak ada respon.";
         } catch (\Exception $e) {
-            $aiReply = "🔌 **Koneksi Terputus**\n\nAI butuh waktu terlalu lama untuk berpikir. Detail: " . $e->getMessage();
+            // 🔥 DISINI LETAK MAGIC-NYA 🔥
+            // Jika K2.5 Timeout atau Error, Langsung Switch ke K2
+            if ($selectedModel === 'moonshotai/kimi-k2.5') {
+                try {
+                    $isFallback = true;
+                    // Retry pakai Model Ringan
+                    $responseRetry = Http::withOptions([
+                        'verify' => false,
+                        'timeout' => 30 // Kasih waktu 30 detik buat fallback
+                    ])
+                    ->withToken($apiKey)
+                    ->post($url, [
+                        "model" => 'moonshotai/kimi-k2-instruct', // MODEL CADANGAN
+                        "messages" => $messages,
+                        "temperature" => 0.6,
+                        "max_tokens" => 2048,
+                    ]);
+
+                    if ($responseRetry->successful()) {
+                        $dataRetry = $responseRetry->json();
+                        $aiReply = $dataRetry['choices'][0]['message']['content'] ?? "Error Fallback.";
+                        $aiReply .= "\n\n*(Jaringan sibuk, beralih ke Mode Cepat)*";
+                    } else {
+                        throw new \Exception("Fallback juga gagal");
+                    }
+                } catch (\Exception $ex) {
+                    $aiReply = "🔌 **Koneksi Padat**\n\nServer NVIDIA sedang antri parah (>1400 request). Coba lagi nanti ya.";
+                }
+            } else {
+                // Jika yang error memang model K2 (Simple), ya sudahlah
+                $aiReply = "🔌 **Koneksi Timeout**\n\nCek koneksi internetmu.";
+            }
         }
 
-        // 3. SIMPAN CHAT
+        // 6. SIMPAN CHAT
         Chat::create([
             'session_id' => $sessionId,
             'user_message' => $userMessage,
@@ -184,6 +167,76 @@ class ChatController extends Controller
         ]);
     }
 
+    // --- FUNGSI DETEKSI QUERY (DIPERBAIKI) ---
+    private function isSimpleQuery($text)
+    {
+        $text = strtolower(trim($text));
+
+    // --- 1. DETEKSI INSTANT (Greeting/Ultra-simple) ---
+        $instantPatterns = [
+        '/^(halo|hai|hello|hi|p|ping|tes|test)\b/i',
+        '/^(pagi|siang|sore|malam|makasih|thanks|thx)\b/i',
+        '/^(wkwk|haha|hehe|lol)\b/i',
+        '/^(siapa kamu|who are you)\b/i',
+        ];
+
+        foreach ($instantPatterns as $pattern) {
+            if (preg_match($pattern, $text)) {
+                return true;
+            }
+        }
+
+    // --- 2. SCORING SYSTEM ---
+        $score = 0;
+
+    // Faktor: Panjang (bobot besar)
+        $wordCount = str_word_count($text);
+        if ($wordCount < 5) {
+            $score += 3;      // Sangat pendek = simple
+        } elseif ($wordCount < 15) {
+            $score += 1; // Pendek = cenderung simple
+        } elseif ($wordCount > 50) {
+            $score -= 3; // Panjang = kompleks
+        } elseif ($wordCount > 30) {
+            $score -= 1; // Cukup panjang
+        }
+
+    // Faktor: Keyword Simple (+1 each, max +3)
+        $simpleIndicators = [
+        'ngobrol', 'curhat', 'cerita', 'ketawa', 'bantu', 'tolong',
+        'gimana', 'kenapa', 'apa', 'siapa', 'kapan', 'dimana', 'sederhana', 'k2',
+        'simple', 'simpel', 'buatkan'
+        ];
+        $simpleHits = 0;
+        foreach ($simpleIndicators as $ind) {
+            if (str_contains($text, $ind)) {
+                $score += 1;
+                if (++$simpleHits >= 3) {
+                    break; // Max +3
+                }
+            }
+        }
+
+    // Faktor: Keyword Complex (-2 each, instant switch!)
+        $complexIndicators = [
+        'coding', 'program', 'script', 'aplikasi', 'website', 'sistem',
+        'database', 'query', 'error', 'debug', 'laravel', 'react', 'vue',
+        'analisis', 'laporan', 'skripsi', 'makalah', 'ppt', 'presentasi',
+        'generate', 'deploy', 'hosting', 'server', 'api', 'kompleks',
+        'lengkap', 'aethetic'
+        ];
+        foreach ($complexIndicators as $ind) {
+            if (str_contains($text, $ind)) {
+                return false; // INSTANT kompleks, tidak perlu lanjut!
+            }
+        }
+
+    // --- 3. DECISION ---
+    // Score >= 2 = Simple, else Complex
+        return $score >= 2;
+    }
+
+    // Function lain tetap sama...
     public function renameSession(Request $request, $id)
     {
         $session = Session::where('id', $id)->where('user_id', Auth::id())->firstOrFail();
@@ -202,24 +255,5 @@ class ChatController extends Controller
     public function newChat()
     {
         return redirect()->route('chat.index');
-    }
-
-    /**
-     * Ekstrak kata kunci penting dari teks untuk pencarian relevansi.
-     */
-    private function extractKeywords($text)
-    {
-        $commonWords = ['saya', 'anda', 'kamu', 'aku', 'yang', 'dan', 'atau', 'ini', 'itu', 'dari', 'ke', 'di', 'dengan', 'untuk', 'pada', 'adalah', 'bisa', 'bagaimana', 'apa', 'mengapa', 'kapan', 'dimana', 'kenapa', 'tolong', 'minta', 'buat', 'buatkan'];
-
-        // Hapus simbol dan ubah ke lowercase
-        $text = preg_replace('/[^\p{L}\p{N}\s]/u', '', strtolower($text));
-
-        $words = explode(' ', $text);
-        $keywords = array_diff($words, $commonWords);
-
-        // Ambil hanya kata dengan panjang > 3 karakter
-        return array_filter($keywords, function($word) {
-            return strlen($word) > 3;
-        });
     }
 }

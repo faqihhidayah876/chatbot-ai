@@ -606,7 +606,8 @@
             display: flex;
             flex-direction: column;
             max-width: 85%;
-            min-width: 0; /* Penting: memungkinkan konten menyusut */
+            min-width: 0;
+            /* Penting: memungkinkan konten menyusut */
         }
 
         .message-bubble {
@@ -639,7 +640,8 @@
             display: block;
             line-height: 1.7;
             font-size: 0.95rem;
-            overflow-x: auto; /* Scroll horizontal jika ada konten lebar */
+            overflow-x: auto;
+            /* Scroll horizontal jika ada konten lebar */
         }
 
         .markdown-body>* {
@@ -715,12 +717,27 @@
             animation: typingBounce 1.4s infinite ease-in-out both;
         }
 
-        .typing-dot:nth-child(1) { animation-delay: -0.32s; }
-        .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+        .typing-dot:nth-child(1) {
+            animation-delay: -0.32s;
+        }
+
+        .typing-dot:nth-child(2) {
+            animation-delay: -0.16s;
+        }
 
         @keyframes typingBounce {
-            0%, 80%, 100% { transform: scale(0.6); opacity: 0.5; }
-            40% { transform: scale(1); opacity: 1; }
+
+            0%,
+            80%,
+            100% {
+                transform: scale(0.6);
+                opacity: 0.5;
+            }
+
+            40% {
+                transform: scale(1);
+                opacity: 1;
+            }
         }
 
         .typing-text {
@@ -796,6 +813,13 @@
         body.light-mode .code-header .code-copy-btn:hover {
             background: var(--accent-color);
             color: white;
+        }
+
+        /* Memastikan header dan pre menyatu tanpa gap */
+        .code-header + pre {
+            margin-top: 0 !important;
+            border-top: none !important;
+            border-radius: 0 0 8px 8px !important;
         }
 
         /* ===== OLD TYPING STYLES (dipertahankan untuk kompatibilitas, tapi tidak dipakai) ===== */
@@ -1093,6 +1117,12 @@
             border-color: rgba(34, 197, 94, 1) !important;
         }
 
+        .code-header+pre {
+            margin-top: 0 !important;
+            border-top: none !important;
+            border-radius: 0 0 8px 8px !important;
+        }
+
         /* RESPONSIVE */
         @media (max-width: 768px) {
             .sidebar {
@@ -1249,7 +1279,8 @@
             </h2>
             <div class="modal-body">
                 <p><strong>1. Perbaikan Bug Tampilan</strong><br>
-                    Terdapat beberapa bug yang telah diperbaiki, seperti tombol salin yang hilang ketika light mode, dan juga code block yang lebih tertata.
+                    Terdapat beberapa bug yang telah diperbaiki, seperti tombol salin yang hilang ketika light mode, dan
+                    juga code block yang lebih tertata.
                 </p>
                 <p><strong>2. Penyesuaian Kepribadian SAHAJA AI 2.0</strong><br>
                     Sekarang, SAHAJA AI lebih friendly, dan menjawab chat anda berdasarkan gaya bahasa yang anda
@@ -1398,6 +1429,7 @@
 
         // MARKED + HIGHLIGHT.JS INTEGRATION
         marked.setOptions({
+            sanitize: true,
             breaks: true,
             gfm: true,
             highlight: function(code, lang) {
@@ -1669,13 +1701,51 @@
         async function sendMessage() {
             const message = chatInput.value.trim();
             if (!message) return;
+
+            // 1. UI Setup Awal
             document.getElementById('welcomeScreen').style.display = 'none';
             document.getElementById('messagesContainer').style.display = 'flex';
             chatInput.value = '';
             chatInput.style.height = 'auto';
+
+            // Tampilkan pesan user
             appendMessage('user', message);
+
+            // Tampilkan bubble loading
             const loadingId = appendLoading();
             scrollToBottom();
+
+            // ============================================================
+            // 🔥 MULAI: FITUR PSIKOLOGI LOADING (ANIMASI TEKS)
+            // ============================================================
+            const loadingTexts = [
+                "Sedang berpikir...",
+                "Menganalisis pertanyaanmu...",
+                "Membuka referensi...",
+                "Membuat jawaban terbaik...",
+                "Sedikit lagi, sabar ya..."
+            ];
+
+            let textIndex = 0;
+
+            // Fungsi untuk update teks
+            const updateLoadingText = () => {
+                const loadingElement = document.getElementById(loadingId);
+                if (loadingElement) {
+                    // Cari elemen dengan class 'typing-text' di dalam loading element
+                    const textSpan = loadingElement.querySelector('.typing-text');
+                    if (textSpan) {
+                        textSpan.innerText = loadingTexts[textIndex % loadingTexts.length];
+                        textIndex++;
+                    }
+                }
+            };
+
+            // Jalankan update setiap 2.5 detik
+            const loadingInterval = setInterval(updateLoadingText, 2500);
+            // ============================================================
+            // 🔥 SELESAI: SETUP ANIMASI
+            // ============================================================
 
             try {
                 const response = await fetch("{{ route('chat.send') }}", {
@@ -1689,35 +1759,56 @@
                         session_id: currentSessionId
                     })
                 });
+
+                // ========================================================
+                // 🛑 STOP ANIMASI: KETIKA RESPON DITERIMA
+                // ========================================================
+                clearInterval(loadingInterval);
+
                 const data = await response.json();
 
                 const loadingBubble = document.getElementById(loadingId);
-                const aiMessageDiv = document.createElement('div');
-                aiMessageDiv.className = 'message ai';
-                aiMessageDiv.innerHTML = `
-                    <div class="message-avatar ai-avatar-msg"><i class="fas fa-robot"></i></div>
-                    <div class="message-content">
-                        <div class="message-bubble markdown-body"></div>
-                        <div class="ai-actions">
-                            <button class="action-btn" onclick="copyText(this)"><i class="far fa-copy"></i> Salin</button>
-                            <button class="action-btn"><i class="far fa-thumbs-up"></i></button>
-                            <button class="action-btn"><i class="far fa-thumbs-down"></i></button>
-                        </div>
+
+                // Cek jika loadingBubble masih ada (kadang user refresh/pindah page)
+                if (loadingBubble) {
+                    const aiMessageDiv = document.createElement('div');
+                    aiMessageDiv.className = 'message ai';
+                    aiMessageDiv.innerHTML = `
+                <div class="message-avatar ai-avatar-msg"><i class="fas fa-robot"></i></div>
+                <div class="message-content">
+                    <div class="message-bubble markdown-body"></div>
+                    <div class="ai-actions">
+                        <button class="action-btn" onclick="copyText(this)"><i class="far fa-copy"></i> Salin</button>
+                        <button class="action-btn"><i class="far fa-thumbs-up"></i></button>
+                        <button class="action-btn"><i class="far fa-thumbs-down"></i></button>
                     </div>
-                `;
+                </div>
+            `;
 
-                loadingBubble.parentNode.replaceChild(aiMessageDiv, loadingBubble);
-                const bubble = aiMessageDiv.querySelector('.message-bubble');
-                typeWriter(bubble, data.ai_response, 12);
+                    loadingBubble.parentNode.replaceChild(aiMessageDiv, loadingBubble);
+                    const bubble = aiMessageDiv.querySelector('.message-bubble');
 
-                scrollToBottom();
+                    // Render teks jawaban AI (Typewriter Effect)
+                    typeWriter(bubble, data.ai_response, 12);
+
+                    scrollToBottom();
+                }
 
                 if (!currentSessionId && data.session_id) {
-                    window.location.href = `/chat/${data.session_id}`;
+                    // Update URL tanpa reload (opsional, biar lebih smooth)
+                    window.history.pushState({}, '', `/chat/${data.session_id}`);
+                    currentSessionId = data.session_id;
                 }
+
             } catch (error) {
+                // ========================================================
+                // 🛑 STOP ANIMASI: KETIKA ERROR
+                // ========================================================
+                clearInterval(loadingInterval);
+
                 document.getElementById(loadingId)?.remove();
-                alert("Gagal mengirim.");
+                console.error(error);
+                alert("Gagal mengirim pesan. Cek koneksi internetmu.");
             }
         }
 
