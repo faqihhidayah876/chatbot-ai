@@ -512,16 +512,12 @@
             overflow: hidden;
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
             transition: transform 0.3s ease;
-            background-color: #1a1a2e; /* Background fallback jika gambar gagal load */
-            min-height: 200px; /* Memberi ruang minimal */
+            background-color: #1a1a2e;
+            min-height: 200px;
             display: flex;
             align-items: center;
             justify-content: center;
         }
-
-        /* .kimi-image-wrapper:hover {
-            transform: scale(1.02);
-        } */
 
         .kimi-image-wrapper img {
             width: 100%;
@@ -535,6 +531,99 @@
         .kimi-image-wrapper img[alt] {
             font-family: 'Poppins', sans-serif;
             color: var(--text-secondary);
+        }
+
+        /* ===== SECTION TABEL PERBANDINGAN ===== */
+        .comparison-section {
+            width: 100%;
+            max-width: 1200px;
+            margin: 3rem auto;
+            text-align: center;
+        }
+
+        .comparison-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(to right, var(--accent-light), #ffffff);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        body.light-mode .comparison-title {
+            background: linear-gradient(to right, var(--accent-color), #1e293b);
+            -webkit-background-clip: text;
+            color: transparent;
+        }
+
+        .comparison-sub {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            margin-bottom: 2rem;
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+            border-radius: 20px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            padding: 1.5rem;
+        }
+
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.95rem;
+            min-width: 800px;
+        }
+
+        .comparison-table th {
+            background: rgba(37, 99, 235, 0.15);
+            color: var(--accent-light);
+            font-weight: 600;
+            padding: 1rem;
+            text-align: center;
+            border-bottom: 2px solid var(--glass-border);
+        }
+
+        .comparison-table td {
+            padding: 0.8rem 1rem;
+            border-bottom: 1px solid var(--glass-border);
+            text-align: center;
+        }
+
+        .comparison-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .comparison-table tbody tr:hover {
+            background: var(--glass-highlight);
+        }
+
+        .comparison-table td:first-child {
+            font-weight: 600;
+            color: var(--text-primary);
+            text-align: left;
+        }
+
+        .comparison-table .check {
+            color: #10b981;
+            font-size: 1.1rem;
+        }
+
+        .comparison-table .cross {
+            color: #ef4444;
+            font-size: 1.1rem;
+        }
+
+        .comparison-table .warning {
+            color: #f59e0b;
+            font-size: 1.1rem;
         }
 
         /* ===== FOOTER ===== */
@@ -679,6 +768,18 @@
                 font-size: 0.95rem;
             }
 
+            .comparison-title {
+                font-size: 1.6rem;
+            }
+
+            .comparison-sub {
+                font-size: 1rem;
+            }
+
+            .table-wrapper {
+                padding: 1rem;
+            }
+
             .footer-container {
                 grid-template-columns: 1fr;
                 gap: 1.8rem;
@@ -746,7 +847,7 @@
         <div class="hero-section">
             <span class="hero-badge">AI ASSISTANT</span>
             <h1 class="hero-title">SAHAJA AI</h1>
-            <div class="hero-version">Beta V 2.0</div>
+            <div class="hero-version">Beta V 2.1</div>
             <p class="hero-description">
                 Asisten cerdas berbasis <strong>Kimi K 2.5</strong> setara dengan GPT 5.2 siap membantu dan
                 brainstorming ide Anda.
@@ -780,20 +881,81 @@
                 SAHAJA AI kini hadir dengan mesin AI terbaru dari Kimi, model reasoning yang handal dan model open-source paling canggih, mampu menandingi Opus 4.5 dan GPT 5.2 dalam beberapa skenario.
             </p>
             <div class="kimi-image-wrapper">
-                <!-- Menggunakan tag img langsung tanpa link di sekitarnya untuk menghindari masalah -->
                 <img src="https://platform.moonshot.ai/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fk25-en.4301d842.png&w=3840&q=75"
                      alt="benchmark-kimi-k-2-5"
                      border="0"
                      onerror="this.onerror=null; this.src='https://via.placeholder.com/800x400?text=Gambar+Tidak+Dapat+Dimuat'; this.style.opacity='0.7';">
-
-                <!-- Teks kecil untuk membantu debugging -->
                 <div style="display: none;" id="debug-info"></div>
             </div>
-
-            <!-- Link terpisah untuk gambar jika ingin mengunjungi sumber -->
             <p style="margin-top: 0.5rem; font-size: 0.8rem; color: var(--text-secondary);">
                 Sumber gambar: <a href="https://platform.moonshot.ai/docs/guide/kimi-k2-5-quickstart#overview-of-kimi-k25-model" target="_blank" style="color: var(--accent-light); text-decoration: underline;">moonshoot.ai</a>
             </p>
+        </div>
+
+        <!-- ===== SECTION TABEL PERBANDINGAN ===== -->
+        <div class="comparison-section">
+            <h2 class="comparison-title">Alasan mengapa Anda harus menggunakan SAHAJA AI</h2>
+            <p class="comparison-sub">
+                Setelah dilakukan beberapa penyesuaian, SAHAJA AI menjadi AI lokal yang authentic dan juga cerdas dalam memberikan jawaban.
+            </p>
+
+            <div class="table-wrapper">
+                <table class="comparison-table">
+                    <thead>
+                        <tr>
+                            <th>Aspek</th>
+                            <th>SAHAJA AI v2.1</th>
+                            <th>ChatGPT</th>
+                            <th>Gemini</th>
+                            <th>DeepSeek</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Reasoning</td>
+                            <td><span class="check">✅ CoT eksplisit</span></td>
+                            <td><span class="warning">⚠️ Tersirat</span></td>
+                            <td><span class="check">✅ Multi-perspective</span></td>
+                            <td><span class="check">✅ Chain-of-thought</span></td>
+                        </tr>
+                        <tr>
+                            <td>Local Context</td>
+                            <td><span class="check">✅ Indonesia banget</span></td>
+                            <td><span class="cross">❌ Global generik</span></td>
+                            <td><span class="warning">⚠️ Regional terbatas</span></td>
+                            <td><span class="cross">❌ Global generik</span></td>
+                        </tr>
+                        <tr>
+                            <td>Technical Depth</td>
+                            <td><span class="check">✅ Fullstack + AI + Cloud</span></td>
+                            <td><span class="warning">⚠️ Luas tapi generik</span></td>
+                            <td><span class="check">✅ Teknis kuat</span></td>
+                            <td><span class="check">✅ Coding kuat</span></td>
+                        </tr>
+                        <tr>
+                            <td>Output Control</td>
+                            <td><span class="check">✅ Strict formatting</span></td>
+                            <td><span class="warning">⚠️ Variatif</span></td>
+                            <td><span class="check">✅ Konsisten</span></td>
+                            <td><span class="warning">⚠️ Variatif</span></td>
+                        </tr>
+                        <tr>
+                            <td>Safety Protocol</td>
+                            <td><span class="check">✅ Detail + lokal</span></td>
+                            <td><span class="check">✅ Global</span></td>
+                            <td><span class="check">✅ Global</span></td>
+                            <td><span class="check">✅ Global</span></td>
+                        </tr>
+                        <tr>
+                            <td>Personality</td>
+                            <td><span class="check">✅ Authentic + lokal</span></td>
+                            <td><span class="warning">⚠️ Netral</span></td>
+                            <td><span class="warning">⚠️ Profesional</span></td>
+                            <td><span class="warning">⚠️ Netral</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 
