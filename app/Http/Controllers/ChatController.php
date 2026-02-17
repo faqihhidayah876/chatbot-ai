@@ -172,6 +172,24 @@ class ChatController extends Controller
     {
         $text = strtolower(trim($text));
 
+    // --- 0. EXCEPTION: Buat + Dokumen Sederhana = SIMPLE ---
+    // Pattern 1: "buat ppt sederhana" (dengan kata sederhana)
+        if (preg_match('/(bantu|buat|bikin|tolong).{0,20}(ppt|powerpoint|slide|presentasi).{0,10}(sederhana|simple|simpel|dasar)/i', $text)) {
+            return true;
+        }
+
+    // Pattern 2: "buat ppt" saja (tanpa lengkap/kompleks)
+        if (preg_match('/(buat|bikin|bantu|tolong).{0,20}(ppt|powerpoint|slide|presentasi)/i', $text)) {
+            if (
+                !str_contains($text, 'lengkap') &&
+                !str_contains($text, 'kompleks') &&
+                !str_contains($text, 'detail') &&
+                !str_contains($text, 'aesthetic')
+            ) {
+                return true;
+            }
+        }
+
     // --- 1. DETEKSI INSTANT (Greeting/Ultra-simple) ---
         $instantPatterns = [
         '/^(halo|hai|hello|hi|p|ping|tes|test)\b/i',
@@ -192,47 +210,46 @@ class ChatController extends Controller
     // Faktor: Panjang (bobot besar)
         $wordCount = str_word_count($text);
         if ($wordCount < 5) {
-            $score += 3;      // Sangat pendek = simple
+            $score += 3;
         } elseif ($wordCount < 15) {
-            $score += 1; // Pendek = cenderung simple
+            $score += 1;
         } elseif ($wordCount > 50) {
-            $score -= 3; // Panjang = kompleks
+            $score -= 3;
         } elseif ($wordCount > 30) {
-            $score -= 1; // Cukup panjang
+            $score -= 1;
         }
 
     // Faktor: Keyword Simple (+1 each, max +3)
         $simpleIndicators = [
         'ngobrol', 'curhat', 'cerita', 'ketawa', 'bantu', 'tolong',
-        'gimana', 'kenapa', 'apa', 'siapa', 'kapan', 'dimana', 'sederhana', 'k2',
-        'simple', 'simpel', 'buatkan'
+        'gimana', 'kenapa', 'apa', 'siapa', 'kapan', 'dimana',
+        'sederhana', 'k2', 'simple', 'simpel', 'buatkan',
+        'ppt', 'presentasi', 'powerpoint', 'slide' // ✅ TAMBAH
         ];
         $simpleHits = 0;
         foreach ($simpleIndicators as $ind) {
             if (str_contains($text, $ind)) {
                 $score += 1;
                 if (++$simpleHits >= 3) {
-                    break; // Max +3
+                    break;
                 }
             }
         }
 
-    // Faktor: Keyword Complex (-2 each, instant switch!)
+    // Faktor: Keyword Complex (instant switch!)
         $complexIndicators = [
         'coding', 'program', 'script', 'aplikasi', 'website', 'sistem',
         'database', 'query', 'error', 'debug', 'laravel', 'react', 'vue',
-        'analisis', 'laporan', 'skripsi', 'makalah', 'ppt', 'presentasi',
-        'generate', 'deploy', 'hosting', 'server', 'api', 'kompleks',
-        'lengkap', 'aethetic'
+        'analisis', 'analisa', 'skripsi', 'generate', 'deploy', 'hosting',
+        'server', 'api', 'kompleks', 'lengkap', 'aesthetic' // ✅ FIX TYPO
         ];
         foreach ($complexIndicators as $ind) {
             if (str_contains($text, $ind)) {
-                return false; // INSTANT kompleks, tidak perlu lanjut!
+                return false;
             }
         }
 
     // --- 3. DECISION ---
-    // Score >= 2 = Simple, else Complex
         return $score >= 2;
     }
 
