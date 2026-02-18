@@ -725,6 +725,43 @@
             animation-delay: -0.16s;
         }
 
+        /* ===== BADGE & SWITCH BTN (NEW) ===== */
+        .mode-badge {
+            font-size: 0.75rem;
+            padding: 4px 8px;
+            border-radius: 12px;
+            margin-bottom: 5px;
+            display: inline-block;
+            font-weight: 600;
+        }
+
+        .mode-smart {
+            background: rgba(255, 215, 0, 0.15);
+            color: #d4a017;
+            border: 1px solid rgba(255, 215, 0, 0.3);
+        }
+
+        .mode-fast {
+            background: rgba(78, 205, 196, 0.15);
+            color: #2a9d8f;
+            border: 1px solid rgba(78, 205, 196, 0.3);
+        }
+
+        /* Tombol Switch */
+        .switch-btn {
+            background: none;
+            border: none;
+            color: #e74c3c;
+            font-size: 0.75rem;
+            text-decoration: underline;
+            cursor: pointer;
+            margin-left: 5px;
+        }
+
+        .switch-btn:hover {
+            color: #c0392b;
+        }
+
         @keyframes typingBounce {
 
             0%,
@@ -816,47 +853,10 @@
         }
 
         /* Memastikan header dan pre menyatu tanpa gap */
-        .code-header + pre {
+        .code-header+pre {
             margin-top: 0 !important;
             border-top: none !important;
             border-radius: 0 0 8px 8px !important;
-        }
-
-        /* ===== OLD TYPING STYLES (dipertahankan untuk kompatibilitas, tapi tidak dipakai) ===== */
-        .typing {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            padding: 8px 0;
-        }
-
-        .typing .dot {
-            width: 8px;
-            height: 8px;
-            background: var(--text-secondary);
-            border-radius: 50%;
-            animation: bounce 1.4s infinite ease-in-out both;
-        }
-
-        .typing .dot:nth-child(1) {
-            animation-delay: -0.32s;
-        }
-
-        .typing .dot:nth-child(2) {
-            animation-delay: -0.16s;
-        }
-
-        @keyframes bounce {
-
-            0%,
-            80%,
-            100% {
-                transform: scale(0);
-            }
-
-            40% {
-                transform: scale(1);
-            }
         }
 
         .ai-actions {
@@ -1090,39 +1090,6 @@
             color: var(--accent-color);
         }
 
-        /* Duplikasi .code-copy-btn (untuk kompatibilitas) */
-        .code-copy-btn {
-            /* ini adalah gaya untuk tombol copy yang mungkin masih ada di beberapa tempat */
-        }
-
-        /* FIX UTAMA: Light mode styling yang proper */
-        body.light-mode .code-copy-btn {
-            background: rgba(30, 41, 59, 0.9);
-            color: #f1f5f9;
-            border-color: rgba(255, 255, 255, 0.2);
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-
-        body.light-mode .code-copy-btn:hover {
-            background: var(--accent-color);
-            color: white;
-            border-color: var(--accent-color);
-        }
-
-        /* Saat berhasil dicopy (state success) - harus works di kedua mode */
-        .code-copy-btn.copied,
-        body.light-mode .code-copy-btn.copied {
-            background: rgba(34, 197, 94, 0.9) !important;
-            color: white !important;
-            border-color: rgba(34, 197, 94, 1) !important;
-        }
-
-        .code-header+pre {
-            margin-top: 0 !important;
-            border-top: none !important;
-            border-radius: 0 0 8px 8px !important;
-        }
-
         /* RESPONSIVE */
         @media (max-width: 768px) {
             .sidebar {
@@ -1270,7 +1237,6 @@
 
 <body>
 
-    <!-- MODAL POPUP -->
     <div class="modal-overlay" id="updateModal">
         <div class="modal-content">
             <button class="modal-close" id="closeModalBtn"><i class="fas fa-times"></i></button>
@@ -1278,18 +1244,22 @@
                 <center>PEMBARUAN SAHAJA AI</center>
             </h2>
             <div class="modal-body">
-                <p><strong>1. Perbaikan Bug Tampilan</strong><br>
-                    Terdapat beberapa bug yang telah diperbaiki, seperti tombol salin yang hilang ketika light mode, dan
-                    juga code block yang lebih tertata.
+                <p><strong>1. Penyesuaian Mesin Kimi</strong><br>
+                    Dikarenakan High Demand dari Kimi K 2.5 yang membuat respon menjadi lama, kini respon akan dialihkan
+                    ke Kimi K2 jika bobot prompt tidak complex, teredia juga tombol untuk beralih mode ke cepat jika mode smart terasa lama.
                 </p>
                 <p><strong>2. Penyesuaian Kepribadian SAHAJA AI 2.0</strong><br>
                     Sekarang, SAHAJA AI lebih friendly, dan menjawab chat anda berdasarkan gaya bahasa yang anda
-                    berikan juga memiliki identitas yang sangat kuat.</p>
+                    berikan juga memiliki identitas yang sangat kuat.
+                </p>
+                <p><strong>3. Peningkatan User Experience & Fixing Bug</strong><br>
+                    User Experience telah ditingkatkan, seperti menambahkan Animasi saat AI sedang berfikir dan juga
+                    memperbaiki beberapa bug yang masih ada.
+                </p>
             </div>
         </div>
     </div>
 
-    <!-- SIDEBAR -->
     <div class="sidebar" id="sidebar">
         <div class="sidebar-brand">
             <div class="brand-logo-container">
@@ -1351,7 +1321,6 @@
         </div>
     </div>
 
-    <!-- MAIN CONTAINER -->
     <div class="main-container">
         <div class="chat-header">
             <div style="display: flex; align-items: center;">
@@ -1373,7 +1342,6 @@
             </div>
         </div>
 
-        <!-- WELCOME SCREEN -->
         <div class="welcome-screen" id="welcomeScreen" style="{{ count($chats) > 0 ? 'display: none;' : '' }}">
             <div class="welcome-logo"><i class="fas fa-robot"></i></div>
             <div class="welcome-text">
@@ -1383,7 +1351,6 @@
             </div>
         </div>
 
-        <!-- MESSAGES CONTAINER -->
         <div class="messages-container" id="messagesContainer"
             style="{{ count($chats) == 0 ? 'display: none;' : '' }}">
             @foreach ($chats as $chat)
@@ -1408,7 +1375,6 @@
             @endforeach
         </div>
 
-        <!-- INPUT AREA -->
         <div class="input-container">
             <div class="input-wrapper">
                 <textarea class="chat-input" id="chatInput" placeholder="Ketik pesan Anda di sini..." rows="1"></textarea>
@@ -1418,7 +1384,6 @@
         </div>
     </div>
 
-    <!-- SCRIPTS -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
 
@@ -1426,21 +1391,202 @@
         // ========== KONFIGURASI AWAL ==========
         let currentSessionId = "{{ $currentSession ? $currentSession->id : '' }}";
         const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+        let currentController = null;
+        let lastUserMessage = "";
 
-        // MARKED + HIGHLIGHT.JS INTEGRATION
+        // MARKED SETUP
         marked.setOptions({
-            sanitize: true,
-            breaks: true,
-            gfm: true,
+            sanitize: true, breaks: true, gfm: true,
             highlight: function(code, lang) {
                 const language = hljs.getLanguage(lang) ? lang : 'plaintext';
-                return hljs.highlight(code, {
-                    language
-                }).value;
+                return hljs.highlight(code, { language }).value;
             }
         });
 
-        // ========== FUNGSI COPY UNTUK CODE BLOCK ==========
+        // ========== FUNGSI GLOBAL SWITCH MODE (FIXED BUG) ==========
+        // Fungsi ini HARUS ada di luar scope lain agar tombol HTML bisa mengaksesnya
+        function switchToFastMode() {
+            console.log("Switching to fast mode...");
+
+            // 1. Cancel request yang sedang berjalan
+            if (currentController) {
+                currentController.abort();
+                currentController = null;
+            }
+
+            // 2. Hapus loading bubble yang lama
+            const oldLoading = document.querySelector('.message.ai:last-child');
+            if (oldLoading && oldLoading.querySelector('.typing-indicator')) {
+                oldLoading.remove();
+            }
+
+            // 3. Kirim ulang dengan forceFast = true
+            sendMessage(true);
+        }
+
+        // ========== FUNGSI KIRIM PESAN ==========
+        async function sendMessage(forceFast = false) {
+            const messageInput = chatInput.value.trim();
+
+            // Logika Retry Message
+            let message;
+            if (forceFast) {
+                if (!lastUserMessage) return; // Safety check
+                message = lastUserMessage;
+            } else {
+                if (!messageInput) return;
+                message = messageInput;
+                lastUserMessage = message;
+            }
+
+            // UI Setup
+            if (!forceFast) {
+                document.getElementById('welcomeScreen').style.display = 'none';
+                document.getElementById('messagesContainer').style.display = 'flex';
+                chatInput.value = '';
+                chatInput.style.height = 'auto';
+                appendMessage('user', message);
+            }
+
+            // 1. DETEKSI MODE
+            const isComplex = detectComplexity(message);
+            const mode = (forceFast) ? 'fast' : (isComplex ? 'smart' : 'fast');
+
+            // 2. TAMPILKAN LOADING
+            const loadingId = appendLoadingWithMode(mode);
+            scrollToBottom();
+
+            // 3. SETUP ABORT CONTROLLER
+            if (currentController) currentController.abort();
+            currentController = new AbortController();
+
+            try {
+                const payload = {
+                    message: message,
+                    session_id: currentSessionId
+                };
+                if (forceFast) payload.force_mode = 'fast';
+
+                const response = await fetch("{{ route('chat.send') }}", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRF-TOKEN": csrfToken,
+                        "Accept": "application/json" // Penting biar Laravel tau kita minta JSON
+                    },
+                    body: JSON.stringify(payload),
+                    signal: currentController.signal
+                });
+
+                // Cek status HTTP dulu
+                if (!response.ok) {
+                    throw new Error(`Server Error: ${response.status}`);
+                }
+
+                const data = await response.json();
+
+                // Cek error dari backend (Logic Global Catch)
+                if (data.error) {
+                    throw new Error(data.message);
+                }
+
+                const loadingBubble = document.getElementById(loadingId);
+                if (loadingBubble) {
+                    // Update tampilan AI Response
+                    const aiMessageDiv = document.createElement('div');
+                    aiMessageDiv.className = 'message ai';
+
+                    const modelLabel = (mode === 'smart') ? 'Mode Cerdas' : 'Mode Cepat';
+                    const badgeClass = (mode === 'smart') ? 'mode-smart' : 'mode-fast';
+
+                    aiMessageDiv.innerHTML = `
+                        <div class="message-avatar ai-avatar-msg"><i class="fas fa-robot"></i></div>
+                        <div class="message-content">
+                            <div class="mode-badge ${badgeClass}">${modelLabel}</div>
+                            <div class="message-bubble markdown-body"></div>
+                            <div class="ai-actions">
+                                <button class="action-btn" onclick="copyText(this)"><i class="far fa-copy"></i> Salin</button>
+                                <button class="action-btn"><i class="far fa-thumbs-up"></i></button>
+                                <button class="action-btn"><i class="far fa-thumbs-down"></i></button>
+                            </div>
+                        </div>
+                    `;
+
+                    loadingBubble.parentNode.replaceChild(aiMessageDiv, loadingBubble);
+                    const bubble = aiMessageDiv.querySelector('.message-bubble');
+                    typeWriter(bubble, data.ai_response, 12);
+                    scrollToBottom();
+                }
+
+                if (!currentSessionId && data.session_id) {
+                    window.history.pushState({}, '', `/chat/${data.session_id}`);
+                    currentSessionId = data.session_id;
+                }
+
+            } catch (error) {
+                // Hapus loading bubble jika error
+                document.getElementById(loadingId)?.remove();
+
+                if (error.name === 'AbortError') {
+                    console.log("Request dibatalkan oleh user (Switch Mode)");
+                } else {
+                    console.error("Detail Error:", error);
+                    // Tampilkan pesan error yang lebih detail ke user
+                    alert("Gagal: " + error.message);
+                }
+            }
+        }
+
+        // FUNGSI LOADING BARU
+        function appendLoadingWithMode(mode) {
+            const id = 'loading-' + Date.now();
+            const div = document.createElement('div');
+            div.id = id;
+            div.className = 'message ai';
+
+            let badgeHtml, textHtml;
+
+            if (mode === 'smart') {
+                badgeHtml = `<div class="mode-badge mode-smart"><i class="fas fa-brain"></i> Mode Cerdas (K2.5)</div>`;
+                // Perhatikan: onclick="switchToFastMode()" sekarang akan berhasil memanggil fungsi global
+                textHtml = `
+                    <span class="typing-text">
+                        Menganalisis logika kompleks (1-3 menit)...
+                        <button class="switch-btn" onclick="switchToFastMode()">[Beralih ke Cepat]</button>
+                    </span>`;
+            } else {
+                badgeHtml = `<div class="mode-badge mode-fast"><i class="fas fa-bolt"></i> Mode Cepat (K2)</div>`;
+                textHtml = `<span class="typing-text">SAHAJA AI sedang berpikir...</span>`;
+            }
+
+            div.innerHTML = `
+                <div class="message-avatar ai-avatar-msg"><i class="fas fa-robot"></i></div>
+                <div class="message-content">
+                    ${badgeHtml}
+                    <div class="message-bubble">
+                        <div class="typing-indicator">
+                            <div class="typing-dot"></div>
+                            <div class="typing-dot"></div>
+                            <div class="typing-dot"></div>
+                            ${textHtml}
+                        </div>
+                    </div>
+                </div>`;
+
+            document.getElementById('messagesContainer').appendChild(div);
+            return id;
+        }
+
+        function detectComplexity(text) {
+            const t = text.toLowerCase();
+            const complex = ['coding', 'buatkan', 'analisis', 'html', 'laravel', 'script', 'error', 'database'];
+            const simple = ['halo', 'hai', 'tes', 'ngoding', 'cerita'];
+            if (complex.some(k => t.includes(k))) return true;
+            if (t.split(' ').length < 10 && simple.some(k => t.includes(k))) return false;
+            return t.split(' ').length > 15;
+        }
+
+        // -- FUNGSI UI LAINNYA --
         function copyCode(button, codeElement) {
             const textToCopy = codeElement.textContent || codeElement.innerText;
             const showSuccess = () => {
@@ -1461,7 +1607,6 @@
             } else {
                 fallbackCopyText(textToCopy);
             }
-
             function fallbackCopyText(text) {
                 const textArea = document.createElement("textarea");
                 textArea.value = text;
@@ -1475,55 +1620,31 @@
                     document.execCommand('copy');
                     showSuccess();
                 } catch (err) {
-                    alert('Gagal menyalin kode.');
+                    alert('Gagal menyalin teks.');
                 }
                 document.body.removeChild(textArea);
             }
         }
 
-        // ========== FUNGSI MENAMBAHKAN HEADER DAN TOMBOL COPY PADA CODE BLOCK ==========
         function addCopyButtonsToCodeBlocks() {
             document.querySelectorAll('.markdown-body pre').forEach((pre) => {
-                // Cek apakah sudah diproses (dengan header)
                 if (pre.previousElementSibling?.classList.contains('code-header')) return;
-
                 const code = pre.querySelector('code');
                 if (!code) return;
-
-                // Deteksi bahasa dari class (misal: "language-php")
                 let language = 'plaintext';
                 const langClass = code.className.match(/language-(\w+)/);
-                if (langClass) {
-                    language = langClass[1];
-                }
-
-                // Buat header
+                if (langClass) { language = langClass[1]; }
                 const header = document.createElement('div');
                 header.className = 'code-header';
-                header.innerHTML = `
-                    <span class="code-lang">${language}</span>
-                    <button class="code-copy-btn" aria-label="Salin kode">
-                        <i class="far fa-copy"></i> Salin
-                    </button>
-                `;
-
-                // Sisipkan header sebelum pre
+                header.innerHTML = `<span class="code-lang">${language}</span><button class="code-copy-btn" aria-label="Salin kode"><i class="far fa-copy"></i> Salin</button>`;
                 pre.parentNode.insertBefore(header, pre);
-
-                // Sesuaikan gaya pre agar terhubung dengan header
                 pre.style.borderRadius = '0 0 8px 8px';
                 pre.style.marginTop = '0';
-
-                // Tambahkan fungsi copy ke tombol
                 const copyBtn = header.querySelector('.code-copy-btn');
-                copyBtn.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    copyCode(copyBtn, code);
-                });
+                copyBtn.addEventListener('click', (e) => { e.preventDefault(); copyCode(copyBtn, code); });
             });
         }
 
-        // ========== FUNGSI TYPEWRITER (EFEK NGETIK) ==========
         function typeWriter(element, markdownText, speed = 12) {
             const html = marked.parse(markdownText);
             const dummy = document.createElement('div');
@@ -1531,7 +1652,6 @@
             const plainText = dummy.textContent || dummy.innerText || '';
             let i = 0;
             element.textContent = '';
-
             function typing() {
                 if (i < plainText.length) {
                     element.textContent += plainText.charAt(i);
@@ -1539,70 +1659,49 @@
                     setTimeout(typing, speed);
                 } else {
                     element.innerHTML = html;
-                    element.querySelectorAll('pre code').forEach((block) => {
-                        hljs.highlightElement(block);
-                    });
+                    element.querySelectorAll('pre code').forEach((block) => { hljs.highlightElement(block); });
                     addCopyButtonsToCodeBlocks();
                 }
             }
             typing();
         }
 
-        // ========== SIDEBAR & THEME ==========
-        const sidebar = document.getElementById('sidebar');
-        const sidebarToggleBtn = document.getElementById('sidebarToggleBtn');
-        const mobileToggleBtn = document.getElementById('mobileToggleBtn');
-        sidebarToggleBtn.addEventListener('click', () => {
-            sidebar.classList.toggle('collapsed');
-        });
-        mobileToggleBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            sidebar.classList.toggle('mobile-open');
-        });
-        document.addEventListener('click', (e) => {
-            if (window.innerWidth <= 768 && !sidebar.contains(e.target)) sidebar.classList.remove('mobile-open');
-        });
-
-        const themeToggleItem = document.getElementById('themeToggleItem');
-        const themeText = document.getElementById('themeText');
-        const body = document.body;
-        if (localStorage.getItem('theme') === 'light') {
-            body.classList.add('light-mode');
-            themeText.innerText = 'Mode Gelap';
+        function appendMessage(role, text) {
+            const isUser = role === 'user';
+            const div = document.createElement('div');
+            div.className = `message ${isUser ? 'user' : 'ai'}`;
+            const bubbleContent = isUser ? text : marked.parse(text);
+            const actionsHtml = isUser ? '' : `<div class="ai-actions"><button class="action-btn" onclick="copyText(this)"><i class="far fa-copy"></i> Salin</button><button class="action-btn"><i class="far fa-thumbs-up"></i></button><button class="action-btn"><i class="far fa-thumbs-down"></i></button></div>`;
+            div.innerHTML = `<div class="message-avatar ${isUser ? 'user-avatar-msg' : 'ai-avatar-msg'}"><i class="fas fa-${isUser ? 'user' : 'robot'}"></i></div><div class="message-content"><div class="message-bubble ${isUser ? '' : 'markdown-body'}">${bubbleContent}</div>${actionsHtml}</div>`;
+            document.getElementById('messagesContainer').appendChild(div);
+            if (!isUser) { div.querySelectorAll('pre code').forEach((block) => { hljs.highlightElement(block); }); addCopyButtonsToCodeBlocks(); }
         }
-        themeToggleItem.addEventListener('click', () => {
-            body.classList.toggle('light-mode');
-            if (body.classList.contains('light-mode')) {
-                localStorage.setItem('theme', 'light');
-                themeText.innerText = 'Mode Gelap';
-            } else {
-                localStorage.setItem('theme', 'dark');
-                themeText.innerText = 'Mode Terang';
+
+        function scrollToBottom() { const container = document.getElementById('messagesContainer'); container.scrollTop = container.scrollHeight; }
+
+        async function renameSession(id) {
+            const newName = prompt("Nama baru:");
+            if (newName) {
+                try {
+                    await fetch(`/session/${id}/rename`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken },
+                        body: JSON.stringify({ title: newName })
+                    });
+                    document.getElementById(`title-${id}`).innerText = newName;
+                } catch (e) {}
             }
-        });
-
-        // ========== MENU TOGGLE ==========
-        const settingsBtn = document.getElementById('settingsBtn');
-        const settingsMenu = document.getElementById('settingsMenu');
-        settingsBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            settingsMenu.classList.toggle('show');
-        });
-
-        function toggleMenu(event, menuId) {
-            event.preventDefault();
-            event.stopPropagation();
-            document.querySelectorAll('.options-menu, .settings-menu-dropdown, .logout-menu').forEach(el => {
-                if (el.id !== menuId) el.classList.remove('show');
-            });
-            document.getElementById(menuId).classList.toggle('show');
         }
-        window.addEventListener('click', () => {
-            document.querySelectorAll('.options-menu, .settings-menu-dropdown, .logout-menu').forEach(el => el
-                .classList.remove('show'));
-        });
+        async function deleteSession(id) {
+            if (confirm("Hapus chat ini?")) {
+                try {
+                    await fetch(`/session/${id}/delete`, { method: 'DELETE', headers: { 'X-CSRF-TOKEN': csrfToken } });
+                    document.getElementById(`session-${id}`).remove();
+                    if (currentSessionId == id) window.location.href = "/chat";
+                } catch (e) {}
+            }
+        }
 
-        // ========== FUNGSI COPY (UNTUK PESAN) ==========
         function copyText(btn) {
             const messageContent = btn.closest('.message-content');
             const textElement = messageContent.querySelector('.markdown-body');
@@ -1624,7 +1723,6 @@
             } else {
                 fallbackCopyText(textToCopy);
             }
-
             function fallbackCopyText(text) {
                 const textArea = document.createElement("textarea");
                 textArea.value = text;
@@ -1644,228 +1742,53 @@
             }
         }
 
-        // ========== RENAME & DELETE SESSION ==========
-        async function renameSession(id) {
-            const newName = prompt("Nama baru:");
-            if (newName) {
-                try {
-                    await fetch(`/session/${id}/rename`, {
-                        method: 'PUT',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': csrfToken
-                        },
-                        body: JSON.stringify({
-                            title: newName
-                        })
-                    });
-                    document.getElementById(`title-${id}`).innerText = newName;
-                } catch (e) {}
-            }
-        }
-        async function deleteSession(id) {
-            if (confirm("Hapus chat ini?")) {
-                try {
-                    await fetch(`/session/${id}/delete`, {
-                        method: 'DELETE',
-                        headers: {
-                            'X-CSRF-TOKEN': csrfToken
-                        }
-                    });
-                    document.getElementById(`session-${id}`).remove();
-                    if (currentSessionId == id) window.location.href = "/chat";
-                } catch (e) {}
-            }
-        }
+        // ===== EVENT LISTENERS =====
+        const sidebar = document.getElementById('sidebar');
+        const sidebarToggleBtn = document.getElementById('sidebarToggleBtn');
+        const mobileToggleBtn = document.getElementById('mobileToggleBtn');
+        sidebarToggleBtn.addEventListener('click', () => { sidebar.classList.toggle('collapsed'); });
+        mobileToggleBtn.addEventListener('click', (e) => { e.stopPropagation(); sidebar.classList.toggle('mobile-open'); });
+        document.addEventListener('click', (e) => { if (window.innerWidth <= 768 && !sidebar.contains(e.target)) sidebar.classList.remove('mobile-open'); });
 
-        // ========== RENDER MARKDOWN & HIGHLIGHT UNTUK CHAT LAMA ==========
-        document.querySelectorAll('.markdown-body').forEach(el => {
-            const raw = el.textContent.trim();
-            if (raw) {
-                el.innerHTML = marked.parse(raw);
-                el.querySelectorAll('pre code').forEach((block) => {
-                    hljs.highlightElement(block);
-                });
+        const themeToggleItem = document.getElementById('themeToggleItem');
+        const themeText = document.getElementById('themeText');
+        const body = document.body;
+        if (localStorage.getItem('theme') === 'light') {
+            body.classList.add('light-mode');
+            themeText.innerText = 'Mode Gelap';
+        }
+        themeToggleItem.addEventListener('click', () => {
+            body.classList.toggle('light-mode');
+            if (body.classList.contains('light-mode')) {
+                localStorage.setItem('theme', 'light');
+                themeText.innerText = 'Mode Gelap';
+            } else {
+                localStorage.setItem('theme', 'dark');
+                themeText.innerText = 'Mode Terang';
             }
         });
-        addCopyButtonsToCodeBlocks();
 
-        // ========== AUTO RESIZE TEXTAREA ==========
+        const settingsBtn = document.getElementById('settingsBtn');
+        const settingsMenu = document.getElementById('settingsMenu');
+        settingsBtn.addEventListener('click', (e) => { e.stopPropagation(); settingsMenu.classList.toggle('show'); });
+
+        function toggleMenu(event, menuId) {
+            event.preventDefault(); event.stopPropagation();
+            document.querySelectorAll('.options-menu, .settings-menu-dropdown, .logout-menu').forEach(el => {
+                if (el.id !== menuId) el.classList.remove('show');
+            });
+            document.getElementById(menuId).classList.toggle('show');
+        }
+        window.addEventListener('click', () => {
+            document.querySelectorAll('.options-menu, .settings-menu-dropdown, .logout-menu').forEach(el => el.classList.remove('show'));
+        });
+
+        document.getElementById('sendButton').addEventListener('click', () => sendMessage());
         const chatInput = document.getElementById('chatInput');
         chatInput.addEventListener('input', function() {
             this.style.height = 'auto';
             this.style.height = (this.scrollHeight) + 'px';
         });
-
-        // ========== FUNGSI KIRIM PESAN (DENGAN TYPEWRITER) ==========
-        async function sendMessage() {
-            const message = chatInput.value.trim();
-            if (!message) return;
-
-            // 1. UI Setup Awal
-            document.getElementById('welcomeScreen').style.display = 'none';
-            document.getElementById('messagesContainer').style.display = 'flex';
-            chatInput.value = '';
-            chatInput.style.height = 'auto';
-
-            // Tampilkan pesan user
-            appendMessage('user', message);
-
-            // Tampilkan bubble loading
-            const loadingId = appendLoading();
-            scrollToBottom();
-
-            // ============================================================
-            // 🔥 MULAI: FITUR PSIKOLOGI LOADING (ANIMASI TEKS)
-            // ============================================================
-            const loadingTexts = [
-                "Sedang berpikir...",
-                "Menganalisis pertanyaanmu...",
-                "Membuka referensi...",
-                "Membuat jawaban terbaik...",
-                "Sedikit lagi, sabar ya..."
-            ];
-
-            let textIndex = 0;
-
-            // Fungsi untuk update teks
-            const updateLoadingText = () => {
-                const loadingElement = document.getElementById(loadingId);
-                if (loadingElement) {
-                    // Cari elemen dengan class 'typing-text' di dalam loading element
-                    const textSpan = loadingElement.querySelector('.typing-text');
-                    if (textSpan) {
-                        textSpan.innerText = loadingTexts[textIndex % loadingTexts.length];
-                        textIndex++;
-                    }
-                }
-            };
-
-            // Jalankan update setiap 2.5 detik
-            const loadingInterval = setInterval(updateLoadingText, 2500);
-            // ============================================================
-            // 🔥 SELESAI: SETUP ANIMASI
-            // ============================================================
-
-            try {
-                const response = await fetch("{{ route('chat.send') }}", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "X-CSRF-TOKEN": csrfToken
-                    },
-                    body: JSON.stringify({
-                        message: message,
-                        session_id: currentSessionId
-                    })
-                });
-
-                // ========================================================
-                // 🛑 STOP ANIMASI: KETIKA RESPON DITERIMA
-                // ========================================================
-                clearInterval(loadingInterval);
-
-                const data = await response.json();
-
-                const loadingBubble = document.getElementById(loadingId);
-
-                // Cek jika loadingBubble masih ada (kadang user refresh/pindah page)
-                if (loadingBubble) {
-                    const aiMessageDiv = document.createElement('div');
-                    aiMessageDiv.className = 'message ai';
-                    aiMessageDiv.innerHTML = `
-                <div class="message-avatar ai-avatar-msg"><i class="fas fa-robot"></i></div>
-                <div class="message-content">
-                    <div class="message-bubble markdown-body"></div>
-                    <div class="ai-actions">
-                        <button class="action-btn" onclick="copyText(this)"><i class="far fa-copy"></i> Salin</button>
-                        <button class="action-btn"><i class="far fa-thumbs-up"></i></button>
-                        <button class="action-btn"><i class="far fa-thumbs-down"></i></button>
-                    </div>
-                </div>
-            `;
-
-                    loadingBubble.parentNode.replaceChild(aiMessageDiv, loadingBubble);
-                    const bubble = aiMessageDiv.querySelector('.message-bubble');
-
-                    // Render teks jawaban AI (Typewriter Effect)
-                    typeWriter(bubble, data.ai_response, 12);
-
-                    scrollToBottom();
-                }
-
-                if (!currentSessionId && data.session_id) {
-                    // Update URL tanpa reload (opsional, biar lebih smooth)
-                    window.history.pushState({}, '', `/chat/${data.session_id}`);
-                    currentSessionId = data.session_id;
-                }
-
-            } catch (error) {
-                // ========================================================
-                // 🛑 STOP ANIMASI: KETIKA ERROR
-                // ========================================================
-                clearInterval(loadingInterval);
-
-                document.getElementById(loadingId)?.remove();
-                console.error(error);
-                alert("Gagal mengirim pesan. Cek koneksi internetmu.");
-            }
-        }
-
-        function appendMessage(role, text) {
-            const isUser = role === 'user';
-            const div = document.createElement('div');
-            div.className = `message ${isUser ? 'user' : 'ai'}`;
-            const actionsHtml = isUser ? '' : `
-                <div class="ai-actions">
-                    <button class="action-btn" onclick="copyText(this)"><i class="far fa-copy"></i> Salin</button>
-                    <button class="action-btn"><i class="far fa-thumbs-up"></i></button>
-                    <button class="action-btn"><i class="far fa-thumbs-down"></i></button>
-                </div>`;
-            const bubbleContent = isUser ? text : marked.parse(text);
-            div.innerHTML = `
-                <div class="message-avatar ${isUser ? 'user-avatar-msg' : 'ai-avatar-msg'}"><i class="fas fa-${isUser ? 'user' : 'robot'}"></i></div>
-                <div class="message-content">
-                    <div class="message-bubble ${isUser ? '' : 'markdown-body'}">${bubbleContent}</div>
-                    ${actionsHtml}
-                </div>`;
-            document.getElementById('messagesContainer').appendChild(div);
-            if (!isUser) {
-                div.querySelectorAll('pre code').forEach((block) => {
-                    hljs.highlightElement(block);
-                });
-                addCopyButtonsToCodeBlocks();
-            }
-        }
-
-        // ========== APPEND LOADING (ANIMASI TYPING BARU) ==========
-        function appendLoading() {
-            const id = 'loading-' + Date.now();
-            const div = document.createElement('div');
-            div.id = id;
-            div.className = 'message ai';
-            div.innerHTML = `
-                <div class="message-avatar ai-avatar-msg"><i class="fas fa-robot"></i></div>
-                <div class="message-content">
-                    <div class="message-bubble">
-                        <div class="typing-indicator">
-                            <div class="typing-dot"></div>
-                            <div class="typing-dot"></div>
-                            <div class="typing-dot"></div>
-                            <span class="typing-text">SAHAJA AI sedang berpikir...</span>
-                        </div>
-                    </div>
-                </div>`;
-            document.getElementById('messagesContainer').appendChild(div);
-            return id;
-        }
-
-        function scrollToBottom() {
-            const container = document.getElementById('messagesContainer');
-            container.scrollTop = container.scrollHeight;
-        }
-
-        document.getElementById('sendButton').addEventListener('click', sendMessage);
         chatInput.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
@@ -1873,26 +1796,27 @@
             }
         });
 
-        // ========== MODAL POPUP - HANYA SEKALI PER SESI ==========
-        document.addEventListener('DOMContentLoaded', () => {
-            document.querySelectorAll('pre code').forEach((block) => {
-                hljs.highlightElement(block);
-            });
-            addCopyButtonsToCodeBlocks();
+        // Initial Render
+        document.querySelectorAll('.markdown-body').forEach(el => {
+            const raw = el.textContent.trim();
+            if (raw) {
+                el.innerHTML = marked.parse(raw);
+                el.querySelectorAll('pre code').forEach((block) => { hljs.highlightElement(block); });
+            }
+        });
+        addCopyButtonsToCodeBlocks();
 
+        // Modal Logic
+        document.addEventListener('DOMContentLoaded', () => {
             const modal = document.getElementById('updateModal');
             const closeBtn = document.getElementById('closeModalBtn');
-
-            // Cek apakah modal sudah pernah ditampilkan di sesi ini
             if (!sessionStorage.getItem('sahajaModalShown')) {
                 modal.classList.add('show');
                 sessionStorage.setItem('sahajaModalShown', 'true');
             }
-
             closeBtn.addEventListener('click', () => {
                 modal.classList.remove('show');
             });
-
             modal.addEventListener('click', (e) => {
                 if (e.target === modal) {
                     modal.classList.remove('show');
