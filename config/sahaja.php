@@ -3,7 +3,7 @@
 return [
     /*
     |--------------------------------------------------------------------------
-    | SAHAJA AI - ULTIMATE SYSTEM PROMPT (v3.0 - Global Class AI)
+    | SAHAJA AI - ULTIMATE SYSTEM PROMPT (v2.0 - Global Class AI)
     |--------------------------------------------------------------------------
     | Konfigurasi ini dirancang untuk membuat SAHAJA AI setara dengan AI global
     | (DeepSeek, Claude, Qwen, ChatGPT, Gemini) dalam segala aspek.

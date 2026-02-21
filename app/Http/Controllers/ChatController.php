@@ -45,16 +45,21 @@ class ChatController extends Controller
             // 1. DETEKSI MODEL
             $isSimple = $this->isSimpleQuery($userMessage);
 
-            if ($request->has('force_mode') && $request->force_mode === 'fast') {
-                $isSimple = true;
+            // Cek apakah ada paksaan dari User (Dua Arah)
+            if ($request->has('force_mode')) {
+                if ($request->force_mode === 'fast') {
+                    $isSimple = true; // Paksa Cepat
+                } elseif ($request->force_mode === 'smart') {
+                    $isSimple = false; // Paksa Cerdas
+                }
             }
 
             if ($isSimple) {
                 $selectedModel = 'moonshotai/kimi-k2-instruct';
-                $timeout = 25;
+                $timeout = 40;
             } else {
                 $selectedModel = 'moonshotai/kimi-k2.5';
-                $timeout = 100; // Kurangi dikit biar gak kena timeout server
+                $timeout = 100;
             }
 
             // 2. HANDLE SESSION
@@ -174,7 +179,7 @@ class ChatController extends Controller
         $text = strtolower(trim($text));
 
         $instantPatterns = [
-            '/^(halo|hai|hello|hi|p|ping|tes|test)\b/i',
+            '/^(halo|hai|hey|hei|hello|hi|p|ping|tes|test)\b/i', // Tambah hey/hei
             '/^(pagi|siang|sore|malam|makasih|thanks|thx)\b/i',
             '/^(wkwk|haha|hehe|lol|wkwkwk)\b/i',
             '/^(siapa kamu|who are you)\b/i',
@@ -197,7 +202,8 @@ class ChatController extends Controller
         $score = 0;
         $wordCount = str_word_count($text);
 
-        if ($wordCount < 5) $score += 3;
+        // PERBAIKAN SKOR: Kalimat <= 8 kata langsung dapet skor 2 (Auto Cepat)
+        if ($wordCount <= 8) $score += 2;
         elseif ($wordCount < 15) $score += 1;
         elseif ($wordCount > 50) $score -= 3;
         elseif ($wordCount > 30) $score -= 1;
@@ -205,7 +211,7 @@ class ChatController extends Controller
         $simpleIndicators = [
             'ngobrol', 'curhat', 'cerita', 'ketawa', 'bantu', 'tolong',
             'gimana', 'kenapa', 'apa', 'siapa', 'kapan', 'dimana', 'sederhana',
-            'simple', 'simpel', 'kabar', 'ngoding', 'k2'
+            'simple', 'simpel', 'kabar', 'ngoding', 'k2', 'puasa', 'ramadhan', 'makan'
         ];
 
         $simpleHits = 0;

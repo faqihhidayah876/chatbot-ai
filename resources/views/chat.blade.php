@@ -1244,15 +1244,15 @@
                 <center>PEMBARUAN SAHAJA AI</center>
             </h2>
             <div class="modal-body">
-                <p><strong>1. Penyesuaian Mesin Kimi</strong><br>
-                    Dikarenakan High Demand dari Kimi K 2.5 yang membuat respon menjadi lama, kini respon akan dialihkan
-                    ke Kimi K2 jika bobot prompt tidak complex, teredia juga tombol untuk beralih mode ke cepat jika mode smart terasa lama.
+                <p><strong>1. Fitur Fleksibel Switching Model</strong><br>
+                    Sekarang anda bisa mengubah mode jawaban respon AI dari cepat ke cerdas dan juga sebaliknya ketika AI masih
+                    loading untuk menjawab pertanyaan Anda.
                 </p>
-                <p><strong>2. Penyesuaian Kepribadian SAHAJA AI 2.0</strong><br>
+                {{-- <p><strong>2. Penyesuaian Kepribadian SAHAJA AI 2.0</strong><br>
                     Sekarang, SAHAJA AI lebih friendly, dan menjawab chat anda berdasarkan gaya bahasa yang anda
                     berikan juga memiliki identitas yang sangat kuat.
-                </p>
-                <p><strong>3. Peningkatan User Experience & Fixing Bug</strong><br>
+                </p> --}}
+                <p><strong>2. Peningkatan User Experience & Fixing Bug</strong><br>
                     User Experience telah ditingkatkan, seperti menambahkan Animasi saat AI sedang berfikir dan juga
                     memperbaiki beberapa bug yang masih ada.
                 </p>
@@ -1393,20 +1393,27 @@
         const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
         let currentController = null;
         let lastUserMessage = "";
+        let forceMode = null;
 
         // MARKED SETUP
         marked.setOptions({
-            sanitize: true, breaks: true, gfm: true,
+            sanitize: true,
+            breaks: true,
+            gfm: true,
             highlight: function(code, lang) {
                 const language = hljs.getLanguage(lang) ? lang : 'plaintext';
-                return hljs.highlight(code, { language }).value;
+                return hljs.highlight(code, {
+                    language
+                }).value;
             }
         });
 
         // ========== FUNGSI GLOBAL SWITCH MODE (FIXED BUG) ==========
         // Fungsi ini HARUS ada di luar scope lain agar tombol HTML bisa mengaksesnya
-        function switchToFastMode() {
-            console.log("Switching to fast mode...");
+        function switchToMode(targetMode) {
+            console.log("Switching to " + targetMode + " mode...");
+
+            forceMode = targetMode;
 
             // 1. Cancel request yang sedang berjalan
             if (currentController) {
@@ -1420,17 +1427,22 @@
                 oldLoading.remove();
             }
 
-            // 3. Kirim ulang dengan forceFast = true
-            sendMessage(true);
+            // 3. Kirim ulang dengan mode paksaan
+            sendMessage(targetMode);
+        }
+
+        // Alias untuk kompatibilitas (jika ada kode lama yang pakai nama ini)
+        function switchToFastMode() {
+            switchToMode('fast');
         }
 
         // ========== FUNGSI KIRIM PESAN ==========
-        async function sendMessage(forceFast = false) {
+        async function sendMessage() {
             const messageInput = chatInput.value.trim();
 
             // Logika Retry Message
             let message;
-            if (forceFast) {
+            if (forceMode !== null) {
                 if (!lastUserMessage) return; // Safety check
                 message = lastUserMessage;
             } else {
@@ -1440,7 +1452,7 @@
             }
 
             // UI Setup
-            if (!forceFast) {
+            if (forceMode === null) {
                 document.getElementById('welcomeScreen').style.display = 'none';
                 document.getElementById('messagesContainer').style.display = 'flex';
                 chatInput.value = '';
@@ -1450,7 +1462,7 @@
 
             // 1. DETEKSI MODE
             const isComplex = detectComplexity(message);
-            const mode = (forceFast) ? 'fast' : (isComplex ? 'smart' : 'fast');
+            const mode = (forceMode !== null) ? 'fast' : (isComplex ? 'smart' : 'fast');
 
             // 2. TAMPILKAN LOADING
             const loadingId = appendLoadingWithMode(mode);
@@ -1465,7 +1477,10 @@
                     message: message,
                     session_id: currentSessionId
                 };
-                if (forceFast) payload.force_mode = 'fast';
+                // Masukkan flag paksaan ke request
+                if (forceMode !== null) {
+                    payload.force_mode = forceMode;
+                }
 
                 const response = await fetch("{{ route('chat.send') }}", {
                     method: "POST",
@@ -1495,14 +1510,21 @@
                     // Update tampilan AI Response
                     const aiMessageDiv = document.createElement('div');
                     aiMessageDiv.className = 'message ai';
+                    let finalModelLabel = '';
+                    let finalBadgeClass = '';
 
-                    const modelLabel = (mode === 'smart') ? 'Mode Cerdas' : 'Mode Cepat';
-                    const badgeClass = (mode === 'smart') ? 'mode-smart' : 'mode-fast';
+                    if (data.model_used && data.model_used.includes('k2.5')) {
+                        finalModelLabel = '🧠 Mode Cerdas';
+                        finalBadgeClass = 'mode-smart';
+                    } else if (data.model_used && data.model_used.includes('k2')) {
+                        finalModelLabel = '⚡ Mode Cepat';
+                        finalBadgeClass = 'mode-fast';
+                    }
 
                     aiMessageDiv.innerHTML = `
                         <div class="message-avatar ai-avatar-msg"><i class="fas fa-robot"></i></div>
                         <div class="message-content">
-                            <div class="mode-badge ${badgeClass}">${modelLabel}</div>
+                            <div class="mode-badge ${finalBadgeClass}">${finalModelLabel}</div>
                             <div class="message-bubble markdown-body"></div>
                             <div class="ai-actions">
                                 <button class="action-btn" onclick="copyText(this)"><i class="far fa-copy"></i> Salin</button>
@@ -1523,6 +1545,8 @@
                     currentSessionId = data.session_id;
                 }
 
+                forceMode = null;
+
             } catch (error) {
                 // Hapus loading bubble jika error
                 document.getElementById(loadingId)?.remove();
@@ -1534,6 +1558,7 @@
                     // Tampilkan pesan error yang lebih detail ke user
                     alert("Gagal: " + error.message);
                 }
+                forceMode = null;
             }
         }
 
@@ -1556,7 +1581,12 @@
                     </span>`;
             } else {
                 badgeHtml = `<div class="mode-badge mode-fast"><i class="fas fa-bolt"></i> Mode Cepat (K2)</div>`;
-                textHtml = `<span class="typing-text">SAHAJA AI sedang berpikir...</span>`;
+                textHtml = `
+                    <span class="typing-text">
+                        SAHAJA AI sedang berpikir...
+                        <button class="switch-btn" style="color: #d4a017;" onclick="switchToMode('smart')">[Beralih ke Cerdas]</button>
+                    </span>
+                `;
             }
 
             div.innerHTML = `
@@ -1607,6 +1637,7 @@
             } else {
                 fallbackCopyText(textToCopy);
             }
+
             function fallbackCopyText(text) {
                 const textArea = document.createElement("textarea");
                 textArea.value = text;
@@ -1633,15 +1664,21 @@
                 if (!code) return;
                 let language = 'plaintext';
                 const langClass = code.className.match(/language-(\w+)/);
-                if (langClass) { language = langClass[1]; }
+                if (langClass) {
+                    language = langClass[1];
+                }
                 const header = document.createElement('div');
                 header.className = 'code-header';
-                header.innerHTML = `<span class="code-lang">${language}</span><button class="code-copy-btn" aria-label="Salin kode"><i class="far fa-copy"></i> Salin</button>`;
+                header.innerHTML =
+                    `<span class="code-lang">${language}</span><button class="code-copy-btn" aria-label="Salin kode"><i class="far fa-copy"></i> Salin</button>`;
                 pre.parentNode.insertBefore(header, pre);
                 pre.style.borderRadius = '0 0 8px 8px';
                 pre.style.marginTop = '0';
                 const copyBtn = header.querySelector('.code-copy-btn');
-                copyBtn.addEventListener('click', (e) => { e.preventDefault(); copyCode(copyBtn, code); });
+                copyBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    copyCode(copyBtn, code);
+                });
             });
         }
 
@@ -1652,6 +1689,7 @@
             const plainText = dummy.textContent || dummy.innerText || '';
             let i = 0;
             element.textContent = '';
+
             function typing() {
                 if (i < plainText.length) {
                     element.textContent += plainText.charAt(i);
@@ -1659,7 +1697,9 @@
                     setTimeout(typing, speed);
                 } else {
                     element.innerHTML = html;
-                    element.querySelectorAll('pre code').forEach((block) => { hljs.highlightElement(block); });
+                    element.querySelectorAll('pre code').forEach((block) => {
+                        hljs.highlightElement(block);
+                    });
                     addCopyButtonsToCodeBlocks();
                 }
             }
@@ -1671,13 +1711,23 @@
             const div = document.createElement('div');
             div.className = `message ${isUser ? 'user' : 'ai'}`;
             const bubbleContent = isUser ? text : marked.parse(text);
-            const actionsHtml = isUser ? '' : `<div class="ai-actions"><button class="action-btn" onclick="copyText(this)"><i class="far fa-copy"></i> Salin</button><button class="action-btn"><i class="far fa-thumbs-up"></i></button><button class="action-btn"><i class="far fa-thumbs-down"></i></button></div>`;
-            div.innerHTML = `<div class="message-avatar ${isUser ? 'user-avatar-msg' : 'ai-avatar-msg'}"><i class="fas fa-${isUser ? 'user' : 'robot'}"></i></div><div class="message-content"><div class="message-bubble ${isUser ? '' : 'markdown-body'}">${bubbleContent}</div>${actionsHtml}</div>`;
+            const actionsHtml = isUser ? '' :
+                `<div class="ai-actions"><button class="action-btn" onclick="copyText(this)"><i class="far fa-copy"></i> Salin</button><button class="action-btn"><i class="far fa-thumbs-up"></i></button><button class="action-btn"><i class="far fa-thumbs-down"></i></button></div>`;
+            div.innerHTML =
+                `<div class="message-avatar ${isUser ? 'user-avatar-msg' : 'ai-avatar-msg'}"><i class="fas fa-${isUser ? 'user' : 'robot'}"></i></div><div class="message-content"><div class="message-bubble ${isUser ? '' : 'markdown-body'}">${bubbleContent}</div>${actionsHtml}</div>`;
             document.getElementById('messagesContainer').appendChild(div);
-            if (!isUser) { div.querySelectorAll('pre code').forEach((block) => { hljs.highlightElement(block); }); addCopyButtonsToCodeBlocks(); }
+            if (!isUser) {
+                div.querySelectorAll('pre code').forEach((block) => {
+                    hljs.highlightElement(block);
+                });
+                addCopyButtonsToCodeBlocks();
+            }
         }
 
-        function scrollToBottom() { const container = document.getElementById('messagesContainer'); container.scrollTop = container.scrollHeight; }
+        function scrollToBottom() {
+            const container = document.getElementById('messagesContainer');
+            container.scrollTop = container.scrollHeight;
+        }
 
         async function renameSession(id) {
             const newName = prompt("Nama baru:");
@@ -1685,8 +1735,13 @@
                 try {
                     await fetch(`/session/${id}/rename`, {
                         method: 'PUT',
-                        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken },
-                        body: JSON.stringify({ title: newName })
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': csrfToken
+                        },
+                        body: JSON.stringify({
+                            title: newName
+                        })
                     });
                     document.getElementById(`title-${id}`).innerText = newName;
                 } catch (e) {}
@@ -1695,7 +1750,12 @@
         async function deleteSession(id) {
             if (confirm("Hapus chat ini?")) {
                 try {
-                    await fetch(`/session/${id}/delete`, { method: 'DELETE', headers: { 'X-CSRF-TOKEN': csrfToken } });
+                    await fetch(`/session/${id}/delete`, {
+                        method: 'DELETE',
+                        headers: {
+                            'X-CSRF-TOKEN': csrfToken
+                        }
+                    });
                     document.getElementById(`session-${id}`).remove();
                     if (currentSessionId == id) window.location.href = "/chat";
                 } catch (e) {}
@@ -1723,6 +1783,7 @@
             } else {
                 fallbackCopyText(textToCopy);
             }
+
             function fallbackCopyText(text) {
                 const textArea = document.createElement("textarea");
                 textArea.value = text;
@@ -1746,9 +1807,16 @@
         const sidebar = document.getElementById('sidebar');
         const sidebarToggleBtn = document.getElementById('sidebarToggleBtn');
         const mobileToggleBtn = document.getElementById('mobileToggleBtn');
-        sidebarToggleBtn.addEventListener('click', () => { sidebar.classList.toggle('collapsed'); });
-        mobileToggleBtn.addEventListener('click', (e) => { e.stopPropagation(); sidebar.classList.toggle('mobile-open'); });
-        document.addEventListener('click', (e) => { if (window.innerWidth <= 768 && !sidebar.contains(e.target)) sidebar.classList.remove('mobile-open'); });
+        sidebarToggleBtn.addEventListener('click', () => {
+            sidebar.classList.toggle('collapsed');
+        });
+        mobileToggleBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            sidebar.classList.toggle('mobile-open');
+        });
+        document.addEventListener('click', (e) => {
+            if (window.innerWidth <= 768 && !sidebar.contains(e.target)) sidebar.classList.remove('mobile-open');
+        });
 
         const themeToggleItem = document.getElementById('themeToggleItem');
         const themeText = document.getElementById('themeText');
@@ -1770,17 +1838,22 @@
 
         const settingsBtn = document.getElementById('settingsBtn');
         const settingsMenu = document.getElementById('settingsMenu');
-        settingsBtn.addEventListener('click', (e) => { e.stopPropagation(); settingsMenu.classList.toggle('show'); });
+        settingsBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            settingsMenu.classList.toggle('show');
+        });
 
         function toggleMenu(event, menuId) {
-            event.preventDefault(); event.stopPropagation();
+            event.preventDefault();
+            event.stopPropagation();
             document.querySelectorAll('.options-menu, .settings-menu-dropdown, .logout-menu').forEach(el => {
                 if (el.id !== menuId) el.classList.remove('show');
             });
             document.getElementById(menuId).classList.toggle('show');
         }
         window.addEventListener('click', () => {
-            document.querySelectorAll('.options-menu, .settings-menu-dropdown, .logout-menu').forEach(el => el.classList.remove('show'));
+            document.querySelectorAll('.options-menu, .settings-menu-dropdown, .logout-menu').forEach(el => el
+                .classList.remove('show'));
         });
 
         document.getElementById('sendButton').addEventListener('click', () => sendMessage());
@@ -1801,7 +1874,9 @@
             const raw = el.textContent.trim();
             if (raw) {
                 el.innerHTML = marked.parse(raw);
-                el.querySelectorAll('pre code').forEach((block) => { hljs.highlightElement(block); });
+                el.querySelectorAll('pre code').forEach((block) => {
+                    hljs.highlightElement(block);
+                });
             }
         });
         addCopyButtonsToCodeBlocks();
