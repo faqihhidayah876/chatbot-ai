@@ -75,29 +75,24 @@
                     <div class="message-avatar user-avatar-msg"><i class="fas fa-user"></i></div>
                     <div class="message-content">
                         @php
-                            $rawMsg = trim($chat->user_message);
+                            $displayMsg = trim($chat->user_message);
+                            // PERBAIKAN: Menggunakan str_contains agar kebal terhadap spasi/enter tersembunyi
+                            if (str_contains($displayMsg, '[Lampiran Dokumen:')) {
+                                preg_match('/\[Lampiran Dokumen:\s*(.*?)\]/', $displayMsg, $match);
+                                $fName = $match[1] ?? 'Dokumen';
 
-                            // Gunakan Regex (tambah flag /i untuk case-insensitive dan /s untuk multiline)
-                            // Pola ini akan mendeteksi bracket meski ada spasi/enter di dalamnya
-                            if (preg_match('/\[\s*Lampiran Dokumen\s*:\s*(.*?)\s*\]/is', $rawMsg, $match)) {
-                                $fName = !empty($match[1]) ? trim($match[1]) : 'Dokumen';
+                                // Cari kata kunci Instruksi User
+                                $pos = strpos($displayMsg, 'Instruksi User:');
+                                if ($pos !== false) {
+                                    $inst = trim(substr($displayMsg, $pos + 15));
+                                    $inst = ltrim($inst, ': '); // bersihkan kalau ada titik dua lebih
+                                } else {
+                                    $inst = '';
+                                }
 
-                                // Ambil semua teks SETELAH kurung siku penutup ']'
-                                $parts = explode(']', $rawMsg, 2);
-                                $inst = isset($parts[1]) ? trim($parts[1]) : '';
-
-                                // Bersihkan kata "Instruksi User:" jika ada di awal teks (case-insensitive)
-                                $inst = preg_replace('/^Instruksi User\s*:\s*/is', '', $inst);
-
-                                $displayMsg = "📎 [" . $fName . "]\n\n" . $inst;
-                            } else {
-                                // Jika tidak ada lampiran, tampilkan pesan apa adanya
-                                $displayMsg = $rawMsg;
+                                $displayMsg = "📎 [" . $fName . "]\n" . $inst;
                             }
                         @endphp
-
-                        {{-- Gunakan nl2br(e()) untuk menjamin \n berubah menjadi <br> di HTML dengan aman --}}
-                        <div class="message-bubble">{!! nl2br(e($displayMsg)) !!}</div>
                         <div class="message-bubble">{{ $displayMsg }}</div>
                     </div>
                 </div>
