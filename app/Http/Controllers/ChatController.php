@@ -15,6 +15,7 @@ class ChatController extends Controller
     public function index($sessionId = null)
     {
         $userId = Auth::id();
+        \App\Models\Session::where('user_id', \Illuminate\Support\Facades\Auth::id())->doesntHave('chats')->delete();
         $sessions = Session::where('user_id', $userId)->orderBy('updated_at', 'desc')->get();
         $currentSession = null;
         $chats = [];

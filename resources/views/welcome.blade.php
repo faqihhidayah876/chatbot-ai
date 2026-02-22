@@ -847,7 +847,7 @@
         <div class="hero-section">
             <span class="hero-badge">AI ASSISTANT</span>
             <h1 class="hero-title">SAHAJA AI</h1>
-            <div class="hero-version">Beta V 2.2</div>
+            <div class="hero-version">Beta V 3.0</div>
             <p class="hero-description">
                 Asisten cerdas berbasis <strong>Kimi K 2.5</strong> setara dengan GPT 5.2 siap membantu dan
                 brainstorming ide Anda.
@@ -904,7 +904,7 @@
                     <thead>
                         <tr>
                             <th>Aspek</th>
-                            <th>SAHAJA AI v2.1</th>
+                            <th>SAHAJA AI v3.0</th>
                             <th>ChatGPT</th>
                             <th>Gemini</th>
                             <th>DeepSeek</th>

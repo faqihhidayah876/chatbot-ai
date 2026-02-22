@@ -67,6 +67,16 @@
                 <div class="message user">
                     <div class="message-avatar user-avatar-msg"><i class="fas fa-user"></i></div>
                     <div class="message-content">
+                        @php
+                            $displayMsg = $chat->user_message;
+                            if (strpos($displayMsg, '[Lampiran Dokumen: ') === 0) {
+                                preg_match('/\[Lampiran Dokumen: (.*?)\]/', $displayMsg, $match);
+                                $fName = $match[1] ?? 'Dokumen';
+                                $pos = strrpos($displayMsg, 'Instruksi User: ');
+                                $inst = $pos !== false ? trim(substr($displayMsg, $pos + 16)) : '';
+                                $displayMsg = "📎 [" . $fName . "]\n" . $inst;
+                            }
+                        @endphp
                         <div class="message-bubble">{{ $chat->user_message }}</div>
                     </div>
                 </div>

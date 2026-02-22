@@ -35,14 +35,17 @@ Route::middleware('auth')->group(function () {
     Route::delete('/session/{id}/delete', [ChatController::class, 'deleteSession'])->name('session.delete');
 });
 
-//khusu admin
+// 5. Khusus Admin
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [AdminController::class, 'index'])->name('dashboard');
     Route::delete('/user/{id}', [AdminController::class, 'deleteUser'])->name('deleteUser');
+
+    // PERBAIKAN DI SINI: URL jadi '/user/{id}/chats' dan name jadi 'clearChats'
+    Route::delete('/user/{id}/chats', [AdminController::class, 'clearUserChats'])->name('clearChats');
 });
 
-// Route untuk membuat link share (Harus login)
-Route::post('/session/{id}/share', [App\Http\Controllers\ChatController::class, 'shareSession'])->name('chat.share')->middleware('auth');
+// 6. Route untuk membuat link share (Harus login)
+Route::post('/session/{id}/share', [ChatController::class, 'shareSession'])->name('chat.share')->middleware('auth');
 
-// Route untuk melihat chat publik (TIDAK PERLU LOGIN, biar temenmu bisa buka)
-Route::get('/share/{token}', [App\Http\Controllers\ChatController::class, 'showPublicSession'])->name('chat.public');
+// 7. Route untuk melihat chat publik (TIDAK PERLU LOGIN, biar temenmu bisa buka)
+Route::get('/share/{token}', [ChatController::class, 'showPublicSession'])->name('chat.public');
