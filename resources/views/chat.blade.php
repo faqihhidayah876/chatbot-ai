@@ -1379,33 +1379,32 @@
         });
 
         // ==========================================
-        // FITUR VOICE INPUT (WEB SPEECH API) 🎙️ (VERSI STABIL)
+        // FITUR VOICE INPUT (WEB SPEECH API) 🎙️ (STANDAR CHROME)
         // ==========================================
         let recognition = null;
         let isRecording = false;
+        let final_transcript = ''; // KUNCI UTAMA: Wajib di luar fungsi agar Chrome tidak lupa ingatan!
 
         if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             recognition = new SpeechRecognition();
             recognition.lang = 'id-ID';
             recognition.interimResults = true;
-
-            // PERBAIKAN 1: Jadikan false agar tidak bentrok di browser HP
-            recognition.continuous = false;
+            recognition.continuous = false; // Pastikan false agar tidak bentrok di HP
 
             recognition.onstart = function() {
                 isRecording = true;
+                final_transcript = ''; // Kosongkan ingatan setiap kali mulai rekam baru
                 voiceBtn.classList.add('recording');
                 voiceBtn.innerHTML = '<i class="fas fa-stop"></i>';
                 chatInput.placeholder = "Mendengarkan... (Bicara sekarang)";
             };
 
             recognition.onresult = function(event) {
-                // PERBAIKAN 2: Logika perakitan teks yang lebih kuat
                 let interim_transcript = '';
-                let final_transcript = '';
 
-                for (let i = 0; i < event.results.length; ++i) {
+                // Looping standar wajib Google Chrome
+                for (let i = event.resultIndex; i < event.results.length; ++i) {
                     if (event.results[i].isFinal) {
                         final_transcript += event.results[i][0].transcript;
                     } else {
@@ -1413,22 +1412,21 @@
                     }
                 }
 
+                // Gabungkan teks lama (sebelum rekam) + teks fix + teks sementara
                 const prefix = window.preRecordInput ? window.preRecordInput + ' ' : '';
                 chatInput.value = prefix + final_transcript + interim_transcript;
 
-                // Trigger event input agar tinggi textarea otomatis menyesuaikan
-                chatInput.dispatchEvent(new Event('input'));
+                // Auto Expand Textarea
+                chatInput.style.height = 'auto';
+                chatInput.style.height = (chatInput.scrollHeight) + 'px';
             };
 
             recognition.onerror = function(event) {
                 console.error("Voice Error:", event.error);
                 forceStopRecordingUI();
 
-                // Tambahan peringatan agar kita tau kalau error
-                if (event.error === 'not-allowed') {
-                    alert("Akses Mikrofon ditolak! Pastikan Anda mengizinkan mic di browser.");
-                } else if (event.error === 'no-speech') {
-                    alert("Tidak ada suara yang terdengar. Coba bicara lebih keras.");
+                if(event.error === 'not-allowed') {
+                    alert("Akses Mikrofon ditolak oleh Chrome! Pastikan URL menggunakan HTTPS dan izin mic nyala.");
                 }
             };
 
@@ -1441,21 +1439,18 @@
 
         function toggleRecording() {
             if (!recognition) {
-                alert("Browser Anda tidak mendukung Voice Input. Wajib gunakan Google Chrome.");
+                alert("Browser Anda tidak mendukung Voice Input. Coba gunakan Google Chrome.");
                 return;
             }
             if (isRecording) {
-                recognition.stop(); // Matikan mic
+                recognition.stop();
                 forceStopRecordingUI();
             } else {
                 window.preRecordInput = chatInput.value.trim();
-                try {
-                    recognition.start();
-                } catch (e) {}
+                try { recognition.start(); } catch(e) {}
             }
         }
 
-        // Fungsi wajib untuk mematikan animasi mic & teks placeholder
         function forceStopRecordingUI() {
             isRecording = false;
             voiceBtn.classList.remove('recording');
@@ -1463,7 +1458,7 @@
             chatInput.placeholder = "Ketik pesan Anda di sini...";
         }
 
-        // Pasang Event ke tombol Voice
+        // Event Tombol Voice
         voiceBtn.addEventListener('click', toggleRecording);
 
         // ==========================================
