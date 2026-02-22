@@ -39,13 +39,20 @@
         .user-avatar-msg { background: var(--message-user-bg); color: white; }
         .ai-avatar-msg { background: var(--accent-gradient); color: white; }
         .message-content { max-width: 85%; }
-        .message-bubble { padding: 15px 20px; border-radius: 16px; line-height: 1.6; font-size: 0.95rem; }
+
+        .message-bubble { padding: 15px 20px; border-radius: 16px; line-height: 1.6; font-size: 0.95rem; white-space: pre-wrap; }
         .user .message-bubble { background: var(--message-user-bg); color: white; border-bottom-right-radius: 4px; }
 
         /* Markdown Styles */
-        .markdown-body { width: 100%; display: block; overflow-x: auto; }
+        .markdown-body { width: 100%; display: block; overflow-x: auto; white-space: normal; line-height: 1.7; }
+        .markdown-body > * { margin-bottom: 16px; }
         .markdown-body p { margin-bottom: 15px; white-space: pre-wrap; }
-        .markdown-body pre { background: #282c34 !important; border-radius: 8px; padding: 15px; margin: 15px 0; overflow-x: auto; border: 1px solid var(--glass-border); }
+        .markdown-body h1, .markdown-body h2, .markdown-body h3 { font-weight: 600; margin-top: 24px; margin-bottom: 12px; color: var(--text-primary); }
+
+        .markdown-body ul, .markdown-body ol { margin-bottom: 16px; padding-left: 24px; }
+        .markdown-body li { margin-bottom: 6px; }
+
+        .markdown-body pre { background: #282c34 !important; border-radius: 8px; padding: 15px; margin: 15px 0; overflow-x: auto; border: 1px solid var(--glass-border); display: block; max-width: 100%; }
         .markdown-body code { font-family: 'Roboto Mono', monospace; font-size: 0.9em; color: #e3e3e3; }
 
         .footer { padding: 20px; text-align: center; border-top: 1px solid var(--glass-border); font-size: 0.85rem; color: var(--text-secondary); }
@@ -68,16 +75,30 @@
                     <div class="message-avatar user-avatar-msg"><i class="fas fa-user"></i></div>
                     <div class="message-content">
                         @php
-                            $displayMsg = $chat->user_message;
-                            if (strpos($displayMsg, '[Lampiran Dokumen: ') === 0) {
-                                preg_match('/\[Lampiran Dokumen: (.*?)\]/', $displayMsg, $match);
-                                $fName = $match[1] ?? 'Dokumen';
-                                $pos = strrpos($displayMsg, 'Instruksi User: ');
-                                $inst = $pos !== false ? trim(substr($displayMsg, $pos + 16)) : '';
-                                $displayMsg = "📎 [" . $fName . "]\n" . $inst;
+                            $rawMsg = trim($chat->user_message);
+
+                            // Gunakan Regex (tambah flag /i untuk case-insensitive dan /s untuk multiline)
+                            // Pola ini akan mendeteksi bracket meski ada spasi/enter di dalamnya
+                            if (preg_match('/\[\s*Lampiran Dokumen\s*:\s*(.*?)\s*\]/is', $rawMsg, $match)) {
+                                $fName = !empty($match[1]) ? trim($match[1]) : 'Dokumen';
+
+                                // Ambil semua teks SETELAH kurung siku penutup ']'
+                                $parts = explode(']', $rawMsg, 2);
+                                $inst = isset($parts[1]) ? trim($parts[1]) : '';
+
+                                // Bersihkan kata "Instruksi User:" jika ada di awal teks (case-insensitive)
+                                $inst = preg_replace('/^Instruksi User\s*:\s*/is', '', $inst);
+
+                                $displayMsg = "📎 [" . $fName . "]\n\n" . $inst;
+                            } else {
+                                // Jika tidak ada lampiran, tampilkan pesan apa adanya
+                                $displayMsg = $rawMsg;
                             }
                         @endphp
-                        <div class="message-bubble">{{ $chat->user_message }}</div>
+
+                        {{-- Gunakan nl2br(e()) untuk menjamin \n berubah menjadi <br> di HTML dengan aman --}}
+                        <div class="message-bubble">{!! nl2br(e($displayMsg)) !!}</div>
+                        <div class="message-bubble">{{ $displayMsg }}</div>
                     </div>
                 </div>
                 <div class="message ai">
