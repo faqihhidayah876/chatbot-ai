@@ -2050,36 +2050,59 @@
         });
 
         // Fungsi baru untuk merender Markdown + Matematika
+        // ==========================================
+        // FUNGSI BARU: RENDER MARKDOWN + MATEMATIKA (ANTI-BUG)
+        // ==========================================
         function renderAIContent(text, containerElement) {
-            // 1. Akali marked.js dengan mengubah \[ \] jadi $$ dan \( \) jadi $
-            let safeText = text
-                .replace(/\\\[/g, '$$$$') // Ubah \[ menjadi $$ (display math)
+            // 1. Seragamkan format LaTeX AI menjadi standar $$ dan $
+            let rawText = text
+                .replace(/\\\[/g, '$$$$')
                 .replace(/\\\]/g, '$$$$')
-                .replace(/\\\(/g, '$$') // Ubah \( menjadi $ (inline math)
+                .replace(/\\\(/g, '$$')
                 .replace(/\\\)/g, '$$');
 
-            // 2. Render Markdown seperti biasa
-            containerElement.innerHTML = marked.parse(safeText);
+            // 2. EKSTRAK RUMUS MATEMATIKA (Sembunyikan sementara dari Markdown)
+            const mathBlocks = {};
+            let mathIndex = 0;
 
-            // 3. Panggil KaTeX untuk menyulap $$ dan $ menjadi rumus matematika asli
+            // A. Amankan Block Math ($$ ... $$) walau ada Enter/Newline
+            rawText = rawText.replace(/\$\$([\s\S]*?)\$\$/g, function(match) {
+                const placeholder = `__MATH_BLOCK_${mathIndex}__`;
+                mathBlocks[placeholder] = match;
+                mathIndex++;
+                return placeholder;
+            });
+
+            // B. Amankan Inline Math ($ ... $)
+            rawText = rawText.replace(/\$([^$\n]*?)\$/g, function(match) {
+                const placeholder = `__MATH_INLINE_${mathIndex}__`;
+                mathBlocks[placeholder] = match;
+                mathIndex++;
+                return placeholder;
+            });
+
+            // 3. Render Markdown dengan aman (tanpa merusak rumus)
+            let htmlContent = marked.parse(rawText);
+
+            // 4. KEMBALIKAN RUMUS ke posisi aslinya di dalam HTML
+            for (const [placeholder, mathText] of Object.entries(mathBlocks)) {
+                htmlContent = htmlContent.replace(placeholder, mathText);
+            }
+
+            containerElement.innerHTML = htmlContent;
+
+            // 5. Panggil KaTeX untuk menyulap teks menjadi rumus visual
             if (window.renderMathInElement) {
                 renderMathInElement(containerElement, {
-                    delimiters: [{
-                            left: '$$',
-                            right: '$$',
-                            display: true
-                        },
-                        {
-                            left: '$',
-                            right: '$',
-                            display: false
-                        }
+                    delimiters: [
+                        {left: '$$', right: '$$', display: true},
+                        {left: '$', right: '$', display: false}
                     ],
                     throwOnError: false
                 });
             }
 
-            // 4. Highlight kodingan jika ada
+            // 6. Warnai blok kodingan (Syntax Highlighting) jika ada
             containerElement.querySelectorAll('pre code').forEach((block) => {
                 hljs.highlightElement(block);
             });
