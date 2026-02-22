@@ -1255,7 +1255,11 @@
             opacity: 1;
             transform: translateY(0);
         }
+
     </style>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
 </head>
 
 <body>
@@ -1473,6 +1477,37 @@
                 }).value;
             }
         });
+
+        // ==========================================
+        // FUNGSI BARU: RENDER MARKDOWN + MATEMATIKA
+        // ==========================================
+        function renderAIContent(text, containerElement) {
+            // 1. Akali marked.js agar tidak merusak rumus LaTeX
+            let safeText = text
+                .replace(/\\\[/g, '$$$$')
+                .replace(/\\\]/g, '$$$$')
+                .replace(/\\\(/g, '$$')
+                .replace(/\\\)/g, '$$');
+
+            // 2. Render teks Markdown
+            containerElement.innerHTML = marked.parse(safeText);
+
+            // 3. Render rumus matematika menggunakan KaTeX
+            if (window.renderMathInElement) {
+                renderMathInElement(containerElement, {
+                    delimiters: [
+                        {left: '$$', right: '$$', display: true},
+                        {left: '$', right: '$', display: false}
+                    ],
+                    throwOnError: false
+                });
+            }
+
+            // 4. Beri warna pada kodingan (Syntax Highlighting)
+            containerElement.querySelectorAll('pre code').forEach((block) => {
+                hljs.highlightElement(block);
+            });
+        }
 
         // ==========================================
         // 1. FITUR BACA FILE (PDF & DOCX) 📄
@@ -1861,12 +1896,7 @@
             parts.forEach((part, index) => {
                 const block = document.createElement('div');
                 block.className = 'gemini-block';
-                block.innerHTML = marked.parse(part);
-
-                // Highlight kodingan jika ada
-                block.querySelectorAll('pre code').forEach((codeBlock) => {
-                    hljs.highlightElement(codeBlock);
-                });
+                renderAIContent(part, block);
 
                 element.appendChild(block);
 
@@ -2011,16 +2041,49 @@
                 const renderDiv = el.querySelector('.ai-rendered-data');
 
                 if (rawDiv && renderDiv) {
-                    renderDiv.innerHTML = marked.parse(rawDiv.textContent.trim());
-                    renderDiv.querySelectorAll('pre code').forEach((block) => {
-                        hljs.highlightElement(block);
-                    });
+                    renderAIContent(rawDiv.textContent.trim(), renderDiv);
                 }
             });
 
             // Pasang tombol copy di pesan lama
             setTimeout(addCopyButtonsToCodeBlocks, 500);
         });
+
+        // Fungsi baru untuk merender Markdown + Matematika
+        function renderAIContent(text, containerElement) {
+            // 1. Akali marked.js dengan mengubah \[ \] jadi $$ dan \( \) jadi $
+            let safeText = text
+                .replace(/\\\[/g, '$$$$') // Ubah \[ menjadi $$ (display math)
+                .replace(/\\\]/g, '$$$$')
+                .replace(/\\\(/g, '$$') // Ubah \( menjadi $ (inline math)
+                .replace(/\\\)/g, '$$');
+
+            // 2. Render Markdown seperti biasa
+            containerElement.innerHTML = marked.parse(safeText);
+
+            // 3. Panggil KaTeX untuk menyulap $$ dan $ menjadi rumus matematika asli
+            if (window.renderMathInElement) {
+                renderMathInElement(containerElement, {
+                    delimiters: [{
+                            left: '$$',
+                            right: '$$',
+                            display: true
+                        },
+                        {
+                            left: '$',
+                            right: '$',
+                            display: false
+                        }
+                    ],
+                    throwOnError: false
+                });
+            }
+
+            // 4. Highlight kodingan jika ada
+            containerElement.querySelectorAll('pre code').forEach((block) => {
+                hljs.highlightElement(block);
+            });
+        }
     </script>
 </body>
 
