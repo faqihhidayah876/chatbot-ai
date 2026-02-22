@@ -244,4 +244,32 @@ class ChatController extends Controller
     {
         return redirect()->route('chat.index');
     }
+
+    // Fungsi untuk membuat / mengambil link share
+    public function shareSession($id)
+    {
+        $session = Session::where('id', $id)->where('user_id', Auth::id())->firstOrFail();
+
+        // Cek apakah chat ini sudah punya token
+        if (!$session->share_token) {
+            $session->share_token = Str::random(16); // Bikin kode unik acak
+            $session->save();
+        }
+
+        // Buat URL lengkapnya
+        $shareUrl = route('chat.public', ['token' => $session->share_token]);
+
+        return response()->json(['success' => true, 'url' => $shareUrl]);
+    }
+
+    // Fungsi untuk menampilkan halaman Chat Publik
+    public function showPublicSession($token)
+    {
+        // Cari sesi berdasarkan token, abaikan user_id (karena ini untuk publik)
+        $session = Session::where('share_token', $token)->firstOrFail();
+        $chats = $session->chats()->orderBy('created_at', 'asc')->get();
+
+        // Tampilkan view khusus publik
+        return view('public-chat', compact('session', 'chats'));
+    }
 }

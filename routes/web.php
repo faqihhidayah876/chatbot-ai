@@ -40,3 +40,9 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/dashboard', [AdminController::class, 'index'])->name('dashboard');
     Route::delete('/user/{id}', [AdminController::class, 'deleteUser'])->name('deleteUser');
 });
+
+// Route untuk membuat link share (Harus login)
+Route::post('/session/{id}/share', [App\Http\Controllers\ChatController::class, 'shareSession'])->name('chat.share')->middleware('auth');
+
+// Route untuk melihat chat publik (TIDAK PERLU LOGIN, biar temenmu bisa buka)
+Route::get('/share/{token}', [App\Http\Controllers\ChatController::class, 'showPublicSession'])->name('chat.public');

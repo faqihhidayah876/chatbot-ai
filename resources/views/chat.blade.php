@@ -131,42 +131,18 @@
             gap: 15px;
         }
 
-        .sidebar.collapsed .brand-logo-container {
+        .sidebar.collapsed .brand-logo-container,
+        .sidebar.collapsed .toggle-btn-sidebar,
+        .sidebar.collapsed .history-icon {
             margin-right: 0;
-        }
-
-        .sidebar.collapsed .toggle-btn-sidebar {
             margin-left: 0;
         }
 
-        .sidebar.collapsed .new-chat-btn {
-            padding: 12px;
-            justify-content: center;
-        }
-
-        .sidebar.collapsed .history-item-wrapper {
-            justify-content: center;
-            padding: 0 10px;
-        }
-
-        .sidebar.collapsed .history-item {
-            justify-content: center;
-            padding: 12px;
-        }
-
-        .sidebar.collapsed .history-link {
-            justify-content: center;
-            width: 100%;
-        }
-
-        .sidebar.collapsed .history-icon {
-            margin-right: 0;
-        }
-
-        .sidebar.collapsed .sidebar-footer {
-            justify-content: center;
-        }
-
+        .sidebar.collapsed .new-chat-btn,
+        .sidebar.collapsed .history-item-wrapper,
+        .sidebar.collapsed .history-item,
+        .sidebar.collapsed .history-link,
+        .sidebar.collapsed .sidebar-footer,
         .sidebar.collapsed .user-profile {
             justify-content: center;
         }
@@ -285,7 +261,6 @@
             display: flex;
             align-items: center;
             color: var(--text-secondary);
-            text-decoration: none;
             font-size: 0.9rem;
             flex-grow: 1;
             min-width: 0;
@@ -607,7 +582,6 @@
             flex-direction: column;
             max-width: 85%;
             min-width: 0;
-            /* Penting: memungkinkan konten menyusut */
         }
 
         .message-bubble {
@@ -631,7 +605,6 @@
             padding: 0 5px;
             color: var(--text-primary);
             box-shadow: none;
-            backdrop-filter: none;
         }
 
         /* MARKDOWN + CODE HIGHLIGHTING */
@@ -641,7 +614,6 @@
             line-height: 1.7;
             font-size: 0.95rem;
             overflow-x: auto;
-            /* Scroll horizontal jika ada konten lebar */
         }
 
         .markdown-body>* {
@@ -662,26 +634,13 @@
             color: var(--text-primary);
         }
 
-        .markdown-body h1 {
-            font-size: 1.4rem;
-        }
-
-        .markdown-body h2 {
-            font-size: 1.2rem;
-        }
-
         .markdown-body ul,
         .markdown-body ol {
             margin-bottom: 16px;
             padding-left: 24px;
         }
 
-        .markdown-body li {
-            margin-bottom: 6px;
-        }
-
         .markdown-body pre {
-            position: relative;
             background: #282c34 !important;
             border-radius: 8px;
             padding: 16px;
@@ -698,7 +657,7 @@
             font-size: 0.9em;
         }
 
-        /* ===== NEW: TYPING INDICATOR ===== */
+        /* ===== TYPING INDICATOR ===== */
         .typing-indicator {
             display: flex;
             align-items: center;
@@ -725,7 +684,7 @@
             animation-delay: -0.16s;
         }
 
-        /* ===== BADGE & SWITCH BTN (NEW) ===== */
+        /* ===== BADGE & SWITCH BTN ===== */
         .mode-badge {
             font-size: 0.75rem;
             padding: 4px 8px;
@@ -747,7 +706,6 @@
             border: 1px solid rgba(78, 205, 196, 0.3);
         }
 
-        /* Tombol Switch */
         .switch-btn {
             background: none;
             border: none;
@@ -789,7 +747,7 @@
             border-color: rgba(37, 99, 235, 0.15);
         }
 
-        /* ===== NEW: CODE HEADER ===== */
+        /* ===== CODE HEADER ===== */
         .code-header {
             display: flex;
             justify-content: space-between;
@@ -806,11 +764,9 @@
             color: #9ca3af;
             text-transform: uppercase;
             font-weight: 600;
-            letter-spacing: 0.5px;
         }
 
         .code-header .code-copy-btn {
-            position: static;
             background: rgba(255, 255, 255, 0.1);
             border: 1px solid rgba(255, 255, 255, 0.2);
             border-radius: 6px;
@@ -820,10 +776,6 @@
             display: flex;
             align-items: center;
             gap: 6px;
-            backdrop-filter: blur(4px);
-            font-weight: 500;
-            transform: none;
-            box-shadow: none;
         }
 
         .code-header .code-copy-btn:hover {
@@ -844,7 +796,6 @@
         body.light-mode .code-header .code-copy-btn {
             background: rgba(30, 41, 59, 0.9);
             color: #f1f5f9;
-            border-color: rgba(255, 255, 255, 0.2);
         }
 
         body.light-mode .code-header .code-copy-btn:hover {
@@ -852,7 +803,6 @@
             color: white;
         }
 
-        /* Memastikan header dan pre menyatu tanpa gap */
         .code-header+pre {
             margin-top: 0 !important;
             border-top: none !important;
@@ -877,7 +827,6 @@
             border-radius: 8px;
             font-size: 0.85rem;
             color: var(--text-secondary);
-            background: transparent;
             border: 1px solid transparent;
             transition: 0.2s;
             display: flex;
@@ -891,7 +840,9 @@
             border-color: var(--glass-border);
         }
 
-        /* INPUT AREA */
+        /* ========================================================
+           INPUT AREA BARU (GEMINI STYLE)
+           ======================================================== */
         .input-container {
             padding: 12px 16px;
             background: rgba(10, 14, 23, 0.85);
@@ -901,9 +852,6 @@
             flex-direction: column;
             align-items: center;
             gap: 6px;
-            position: relative;
-            z-index: 20;
-            box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.2);
         }
 
         body.light-mode .input-container {
@@ -913,15 +861,14 @@
         .input-wrapper {
             width: 100%;
             max-width: 800px;
-            position: relative;
             display: flex;
-            align-items: center;
+            flex-direction: column;
+            /* Atas Bawah */
             background: rgba(30, 41, 59, 0.6);
             border: 1px solid var(--glass-border);
             border-radius: 24px;
-            padding: 0 6px 0 12px;
+            padding: 12px 16px 8px 16px;
             transition: 0.3s;
-            min-height: 48px;
         }
 
         body.light-mode .input-wrapper {
@@ -935,21 +882,28 @@
         }
 
         .chat-input {
-            flex: 1;
+            width: 100%;
             background: transparent;
             border: none;
             color: var(--text-primary);
             font-size: 0.95rem;
-            padding: 10px 8px 10px 4px;
+            padding: 4px 4px 10px 4px;
             resize: none;
-            max-height: 120px;
+            max-height: 150px;
             outline: none;
             line-height: 1.5;
-            align-self: center;
         }
 
         body.light-mode .chat-input {
             color: #1e293b;
+        }
+
+        .input-actions {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
         }
 
         .send-btn {
@@ -962,14 +916,60 @@
             justify-content: center;
             color: white;
             transition: 0.3s;
-            flex-shrink: 0;
-            margin-left: 8px;
             box-shadow: 0 2px 10px rgba(37, 99, 235, 0.3);
         }
 
         .send-btn:hover {
             transform: scale(1.05);
             box-shadow: 0 4px 15px rgba(37, 99, 235, 0.5);
+        }
+
+        /* Tombol Voice Baru */
+        .voice-btn {
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-secondary);
+            transition: 0.3s;
+        }
+
+        .voice-btn:hover {
+            background: var(--glass-highlight);
+            color: var(--text-primary);
+        }
+
+        body.light-mode .voice-btn {
+            color: #64748b;
+        }
+
+        body.light-mode .voice-btn:hover {
+            background: #e2e8f0;
+            color: #1e293b;
+        }
+
+        /* Animasi Rekam Suara */
+        .voice-btn.recording {
+            background: #ef4444 !important;
+            color: white !important;
+            animation: pulseRecord 1.5s infinite;
+        }
+
+        @keyframes pulseRecord {
+            0% {
+                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.6);
+            }
+
+            70% {
+                box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+            }
         }
 
         .input-footer {
@@ -1041,7 +1041,6 @@
             position: relative;
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
             color: var(--text-primary);
-            backdrop-filter: blur(16px);
         }
 
         body.light-mode .modal-content {
@@ -1054,7 +1053,6 @@
             top: 16px;
             right: 16px;
             background: rgba(255, 255, 255, 0.1);
-            border: none;
             border-radius: 50%;
             width: 36px;
             height: 36px;
@@ -1062,7 +1060,6 @@
             align-items: center;
             justify-content: center;
             color: var(--text-secondary);
-            font-size: 1.2rem;
             cursor: pointer;
             transition: 0.2s;
         }
@@ -1084,10 +1081,6 @@
             margin-bottom: 1rem;
             line-height: 1.6;
             font-size: 0.95rem;
-        }
-
-        .modal-content strong {
-            color: var(--accent-color);
         }
 
         /* RESPONSIVE */
@@ -1124,43 +1117,23 @@
                 padding: 4px 12px !important;
                 position: sticky !important;
                 bottom: 0 !important;
-                background: rgba(10, 14, 23, 0.98) !important;
-                backdrop-filter: blur(16px) !important;
-            }
-
-            body.light-mode .input-container {
-                background: rgba(255, 255, 255, 0.98) !important;
             }
 
             .input-wrapper {
-                padding: 0 2px 0 8px !important;
-                border-radius: 30px !important;
-                background: rgba(30, 41, 59, 0.9) !important;
-                min-height: 44px !important;
-                align-items: center !important;
-            }
-
-            body.light-mode .input-wrapper {
-                background: #ffffff !important;
-                border: 1px solid #e2e8f0 !important;
-                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03) !important;
+                padding: 8px 12px 6px 12px !important;
+                border-radius: 20px !important;
+                min-height: auto !important;
             }
 
             .chat-input {
-                padding: 8px 6px 8px 2px !important;
+                padding: 2px 2px 6px 2px !important;
                 font-size: 0.9rem !important;
-                min-height: 38px !important;
-                line-height: 1.4 !important;
             }
 
-            body.light-mode .chat-input {
-                color: #1e293b !important;
-            }
-
+            .voice-btn,
             .send-btn {
                 width: 36px !important;
                 height: 36px !important;
-                margin-left: 4px !important;
             }
 
             .input-footer {
@@ -1173,27 +1146,9 @@
                 gap: 20px !important;
             }
 
-            .message-bubble {
-                padding: 12px 16px !important;
-                font-size: 0.9rem !important;
-            }
-
-            .message-avatar {
-                width: 34px !important;
-                height: 34px !important;
-            }
-
-            .message:last-child .ai-actions {
-                margin-bottom: 10px;
-            }
-
             .modal-content {
                 padding: 1.5rem;
                 width: 95%;
-            }
-
-            .modal-content h2 {
-                font-size: 1.3rem;
             }
         }
 
@@ -1203,16 +1158,14 @@
             }
 
             .input-wrapper {
-                padding: 0 2px 0 6px !important;
-                min-height: 40px !important;
+                padding: 8px 10px 6px 10px !important;
             }
 
             .chat-input {
-                padding: 6px 4px 6px 2px !important;
                 font-size: 0.85rem !important;
-                min-height: 34px !important;
             }
 
+            .voice-btn,
             .send-btn {
                 width: 34px !important;
                 height: 34px !important;
@@ -1244,17 +1197,15 @@
                 <center>PEMBARUAN SAHAJA AI</center>
             </h2>
             <div class="modal-body">
-                <p><strong>1. Fitur Fleksibel Switching Model</strong><br>
-                    Sekarang anda bisa mengubah mode jawaban respon AI dari cepat ke cerdas dan juga sebaliknya ketika AI masih
-                    loading untuk menjawab pertanyaan Anda.
+                <p><strong>1. Fitur Voice Input (Baru!) 🎙️</strong><br>
+                    Kini kamu bisa ngobrol langsung dengan SAHAJA AI tanpa ngetik. Cukup tekan tombol ikon Mikrofon di
+                    kanan bawah, lalu berbicaralah.
                 </p>
-                {{-- <p><strong>2. Penyesuaian Kepribadian SAHAJA AI 2.0</strong><br>
-                    Sekarang, SAHAJA AI lebih friendly, dan menjawab chat anda berdasarkan gaya bahasa yang anda
-                    berikan juga memiliki identitas yang sangat kuat.
-                </p> --}}
-                <p><strong>2. Peningkatan User Experience & Fixing Bug</strong><br>
-                    User Experience telah ditingkatkan, seperti menambahkan Animasi saat AI sedang berfikir dan juga
-                    memperbaiki beberapa bug yang masih ada.
+                <p><strong>2. Fitur Fleksibel Switching Model ⚡</strong><br>
+                    Sekarang anda bisa mengubah mode jawaban respon AI dari cepat ke cerdas secara langsung.
+                </p>
+                <p><strong>3. Redesain Chatbox ala Gemini 🎨</strong><br>
+                    Tampilan input chat kini lebih luas dan nyaman untuk menulis prompt yang panjang.
                 </p>
             </div>
         </div>
@@ -1292,10 +1243,15 @@
                         <i class="fas fa-ellipsis-v"></i>
                     </button>
                     <div class="options-menu" id="menu-{{ $session->id }}">
-                        <div class="option-item" onclick="renameSession({{ $session->id }})"><i class="fas fa-pen"></i>
-                            Ganti Nama</div>
-                        <div class="option-item delete" onclick="deleteSession({{ $session->id }})"><i
-                                class="fas fa-trash"></i> Hapus</div>
+                        <div class="option-item" onclick="shareSession({{ $session->id }})">
+                            <i class="fas fa-share-alt"></i> Bagikan
+                        </div>
+                        <div class="option-item" onclick="renameSession({{ $session->id }})">
+                            <i class="fas fa-pen"></i> Ganti Nama
+                        </div>
+                        <div class="option-item delete" onclick="deleteSession({{ $session->id }})">
+                            <i class="fas fa-trash"></i> Hapus
+                        </div>
                     </div>
                 </div>
             @endforeach
@@ -1378,7 +1334,15 @@
         <div class="input-container">
             <div class="input-wrapper">
                 <textarea class="chat-input" id="chatInput" placeholder="Ketik pesan Anda di sini..." rows="1"></textarea>
-                <button class="send-btn" id="sendButton"><i class="fas fa-paper-plane"></i></button>
+
+                <div class="input-actions">
+                    <button type="button" class="voice-btn" id="voiceButton" title="Bicara dengan SAHAJA">
+                        <i class="fas fa-microphone"></i>
+                    </button>
+                    <button type="button" class="send-btn" id="sendButton" title="Kirim Pesan">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
             </div>
             <div class="input-footer">SAHAJA AI dapat membuat kesalahan, periksa lebih lanjut</div>
         </div>
@@ -1393,7 +1357,13 @@
         const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
         let currentController = null;
         let lastUserMessage = "";
-        let forceMode = null;
+
+        // Perbaikan Naming Variable agar tak bentrok
+        window.activeForceMode = null;
+
+        // TANGKAP ELEMENT INPUT
+        const chatInput = document.getElementById('chatInput');
+        const voiceBtn = document.getElementById('voiceButton');
 
         // MARKED SETUP
         marked.setOptions({
@@ -1408,42 +1378,125 @@
             }
         });
 
-        // ========== FUNGSI GLOBAL SWITCH MODE (FIXED BUG) ==========
-        // Fungsi ini HARUS ada di luar scope lain agar tombol HTML bisa mengaksesnya
+        // ==========================================
+        // FITUR VOICE INPUT (WEB SPEECH API) 🎙️ (VERSI STABIL)
+        // ==========================================
+        let recognition = null;
+        let isRecording = false;
+
+        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            recognition = new SpeechRecognition();
+            recognition.lang = 'id-ID';
+            recognition.interimResults = true;
+
+            // PERBAIKAN 1: Jadikan false agar tidak bentrok di browser HP
+            recognition.continuous = false;
+
+            recognition.onstart = function() {
+                isRecording = true;
+                voiceBtn.classList.add('recording');
+                voiceBtn.innerHTML = '<i class="fas fa-stop"></i>';
+                chatInput.placeholder = "Mendengarkan... (Bicara sekarang)";
+            };
+
+            recognition.onresult = function(event) {
+                // PERBAIKAN 2: Logika perakitan teks yang lebih kuat
+                let interim_transcript = '';
+                let final_transcript = '';
+
+                for (let i = 0; i < event.results.length; ++i) {
+                    if (event.results[i].isFinal) {
+                        final_transcript += event.results[i][0].transcript;
+                    } else {
+                        interim_transcript += event.results[i][0].transcript;
+                    }
+                }
+
+                const prefix = window.preRecordInput ? window.preRecordInput + ' ' : '';
+                chatInput.value = prefix + final_transcript + interim_transcript;
+
+                // Trigger event input agar tinggi textarea otomatis menyesuaikan
+                chatInput.dispatchEvent(new Event('input'));
+            };
+
+            recognition.onerror = function(event) {
+                console.error("Voice Error:", event.error);
+                forceStopRecordingUI();
+
+                // Tambahan peringatan agar kita tau kalau error
+                if (event.error === 'not-allowed') {
+                    alert("Akses Mikrofon ditolak! Pastikan Anda mengizinkan mic di browser.");
+                } else if (event.error === 'no-speech') {
+                    alert("Tidak ada suara yang terdengar. Coba bicara lebih keras.");
+                }
+            };
+
+            recognition.onend = function() {
+                forceStopRecordingUI();
+            };
+        } else {
+            voiceBtn.style.display = 'none'; // Sembunyikan jika browser tidak support
+        }
+
+        function toggleRecording() {
+            if (!recognition) {
+                alert("Browser Anda tidak mendukung Voice Input. Wajib gunakan Google Chrome.");
+                return;
+            }
+            if (isRecording) {
+                recognition.stop(); // Matikan mic
+                forceStopRecordingUI();
+            } else {
+                window.preRecordInput = chatInput.value.trim();
+                try {
+                    recognition.start();
+                } catch (e) {}
+            }
+        }
+
+        // Fungsi wajib untuk mematikan animasi mic & teks placeholder
+        function forceStopRecordingUI() {
+            isRecording = false;
+            voiceBtn.classList.remove('recording');
+            voiceBtn.innerHTML = '<i class="fas fa-microphone"></i>';
+            chatInput.placeholder = "Ketik pesan Anda di sini...";
+        }
+
+        // Pasang Event ke tombol Voice
+        voiceBtn.addEventListener('click', toggleRecording);
+
+        // ==========================================
+        // FUNGSI SWITCH MODE & KIRIM PESAN
+        // ==========================================
         function switchToMode(targetMode) {
             console.log("Switching to " + targetMode + " mode...");
+            window.activeForceMode = targetMode;
 
-            forceMode = targetMode;
-
-            // 1. Cancel request yang sedang berjalan
             if (currentController) {
                 currentController.abort();
                 currentController = null;
             }
 
-            // 2. Hapus loading bubble yang lama
             const oldLoading = document.querySelector('.message.ai:last-child');
             if (oldLoading && oldLoading.querySelector('.typing-indicator')) {
                 oldLoading.remove();
             }
-
-            // 3. Kirim ulang dengan mode paksaan
-            sendMessage(targetMode);
+            sendMessage();
         }
 
-        // Alias untuk kompatibilitas (jika ada kode lama yang pakai nama ini)
-        function switchToFastMode() {
-            switchToMode('fast');
-        }
-
-        // ========== FUNGSI KIRIM PESAN ==========
         async function sendMessage() {
-            const messageInput = chatInput.value.trim();
+            // JIKA MIC MASIH NYALA SAAT TEKAN KIRIM, MATIKAN PAKSA!
+            if (isRecording && recognition) {
+                recognition.stop();
+                forceStopRecordingUI();
+            }
 
-            // Logika Retry Message
+            const messageInput = chatInput.value.trim();
             let message;
-            if (forceMode !== null) {
-                if (!lastUserMessage) return; // Safety check
+
+            if (window.activeForceMode !== null) {
+                if (!lastUserMessage) return;
                 message = lastUserMessage;
             } else {
                 if (!messageInput) return;
@@ -1451,8 +1504,7 @@
                 lastUserMessage = message;
             }
 
-            // UI Setup
-            if (forceMode === null) {
+            if (window.activeForceMode === null) {
                 document.getElementById('welcomeScreen').style.display = 'none';
                 document.getElementById('messagesContainer').style.display = 'flex';
                 chatInput.value = '';
@@ -1460,15 +1512,12 @@
                 appendMessage('user', message);
             }
 
-            // 1. DETEKSI MODE
             const isComplex = detectComplexity(message);
-            const mode = (forceMode !== null) ? 'fast' : (isComplex ? 'smart' : 'fast');
+            const mode = (window.activeForceMode !== null) ? window.activeForceMode : (isComplex ? 'smart' : 'fast');
 
-            // 2. TAMPILKAN LOADING
             const loadingId = appendLoadingWithMode(mode);
             scrollToBottom();
 
-            // 3. SETUP ABORT CONTROLLER
             if (currentController) currentController.abort();
             currentController = new AbortController();
 
@@ -1477,37 +1526,26 @@
                     message: message,
                     session_id: currentSessionId
                 };
-                // Masukkan flag paksaan ke request
-                if (forceMode !== null) {
-                    payload.force_mode = forceMode;
-                }
+                if (window.activeForceMode !== null) payload.force_mode = window.activeForceMode;
 
                 const response = await fetch("{{ route('chat.send') }}", {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
                         "X-CSRF-TOKEN": csrfToken,
-                        "Accept": "application/json" // Penting biar Laravel tau kita minta JSON
+                        "Accept": "application/json"
                     },
                     body: JSON.stringify(payload),
                     signal: currentController.signal
                 });
 
-                // Cek status HTTP dulu
-                if (!response.ok) {
-                    throw new Error(`Server Error: ${response.status}`);
-                }
+                if (!response.ok) throw new Error(`Server Error: ${response.status}`);
 
                 const data = await response.json();
-
-                // Cek error dari backend (Logic Global Catch)
-                if (data.error) {
-                    throw new Error(data.message);
-                }
+                if (data.error) throw new Error(data.message);
 
                 const loadingBubble = document.getElementById(loadingId);
                 if (loadingBubble) {
-                    // Update tampilan AI Response
                     const aiMessageDiv = document.createElement('div');
                     aiMessageDiv.className = 'message ai';
                     let finalModelLabel = '';
@@ -1545,24 +1583,18 @@
                     currentSessionId = data.session_id;
                 }
 
-                forceMode = null;
+                window.activeForceMode = null;
 
             } catch (error) {
-                // Hapus loading bubble jika error
                 document.getElementById(loadingId)?.remove();
-
-                if (error.name === 'AbortError') {
-                    console.log("Request dibatalkan oleh user (Switch Mode)");
-                } else {
+                if (error.name !== 'AbortError') {
                     console.error("Detail Error:", error);
-                    // Tampilkan pesan error yang lebih detail ke user
                     alert("Gagal: " + error.message);
                 }
-                forceMode = null;
+                window.activeForceMode = null;
             }
         }
 
-        // FUNGSI LOADING BARU
         function appendLoadingWithMode(mode) {
             const id = 'loading-' + Date.now();
             const div = document.createElement('div');
@@ -1573,11 +1605,10 @@
 
             if (mode === 'smart') {
                 badgeHtml = `<div class="mode-badge mode-smart"><i class="fas fa-brain"></i> Mode Cerdas (K2.5)</div>`;
-                // Perhatikan: onclick="switchToFastMode()" sekarang akan berhasil memanggil fungsi global
                 textHtml = `
                     <span class="typing-text">
                         Menganalisis logika kompleks (1-3 menit)...
-                        <button class="switch-btn" onclick="switchToFastMode()">[Beralih ke Cepat]</button>
+                        <button class="switch-btn" onclick="switchToMode('fast')">[Beralih ke Cepat]</button>
                     </span>`;
             } else {
                 badgeHtml = `<div class="mode-badge mode-fast"><i class="fas fa-bolt"></i> Mode Cepat (K2)</div>`;
@@ -1616,24 +1647,25 @@
             return t.split(' ').length > 15;
         }
 
-        // -- FUNGSI UI LAINNYA --
-        function copyCode(button, codeElement) {
-            const textToCopy = codeElement.textContent || codeElement.innerText;
+        // ==========================================
+        // FUNGSI UI LAINNYA
+        // ==========================================
+        function copyText(btn) {
+            const messageContent = btn.closest('.message-content');
+            const textElement = messageContent.querySelector('.markdown-body');
+            if (!textElement) return;
+            const textToCopy = textElement.innerText;
             const showSuccess = () => {
-                const originalHTML = button.innerHTML;
-                button.innerHTML = '<i class="fas fa-check"></i> Disalin';
-                button.style.background = 'rgba(74, 222, 128, 0.9)';
-                button.style.color = 'white';
+                const originalHTML = btn.innerHTML;
+                btn.innerHTML = '<i class="fas fa-check"></i> Disalin';
+                btn.style.color = '#4ade80';
                 setTimeout(() => {
-                    button.innerHTML = '<i class="far fa-copy"></i> Salin';
-                    button.style.background = '';
-                    button.style.color = '';
+                    btn.innerHTML = originalHTML;
+                    btn.style.color = '';
                 }, 2000);
             };
             if (navigator.clipboard && window.isSecureContext) {
-                navigator.clipboard.writeText(textToCopy)
-                    .then(showSuccess)
-                    .catch(() => fallbackCopyText(textToCopy));
+                navigator.clipboard.writeText(textToCopy).then(showSuccess).catch(() => fallbackCopyText(textToCopy));
             } else {
                 fallbackCopyText(textToCopy);
             }
@@ -1643,7 +1675,6 @@
                 textArea.value = text;
                 textArea.style.position = "fixed";
                 textArea.style.left = "-9999px";
-                textArea.style.top = "0";
                 document.body.appendChild(textArea);
                 textArea.focus();
                 textArea.select();
@@ -1674,10 +1705,9 @@
                 pre.parentNode.insertBefore(header, pre);
                 pre.style.borderRadius = '0 0 8px 8px';
                 pre.style.marginTop = '0';
-                const copyBtn = header.querySelector('.code-copy-btn');
-                copyBtn.addEventListener('click', (e) => {
+                header.querySelector('.code-copy-btn').addEventListener('click', (e) => {
                     e.preventDefault();
-                    copyCode(copyBtn, code);
+                    copyCode(e.currentTarget, code);
                 });
             });
         }
@@ -1747,6 +1777,45 @@
                 } catch (e) {}
             }
         }
+
+        // ===== FUNGSI SHARE SESSION =====
+        async function shareSession(id) {
+            try {
+                // Tampilkan loading kecil
+                const btn = event.currentTarget;
+                const originalHtml = btn.innerHTML;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memproses...';
+
+                const response = await fetch(`/session/${id}/share`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken
+                    }
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // Copy URL ke Clipboard otomatis
+                    navigator.clipboard.writeText(data.url).then(() => {
+                        alert("Berhasil! Link chat publik telah disalin ke Clipboard.\n\nLink: " + data.url);
+                    }).catch(err => {
+                        // Fallback kalau browser ngeblokir clipboard
+                        prompt("Gagal menyalin otomatis. Silakan copy link ini manual:", data.url);
+                    });
+                }
+
+                // Kembalikan tombol
+                btn.innerHTML = originalHtml;
+                // Tutup menu
+                document.getElementById(`menu-${id}`).classList.remove('show');
+
+            } catch (e) {
+                alert("Terjadi kesalahan saat membuat link share.");
+            }
+        }
+
         async function deleteSession(id) {
             if (confirm("Hapus chat ini?")) {
                 try {
@@ -1762,48 +1831,7 @@
             }
         }
 
-        function copyText(btn) {
-            const messageContent = btn.closest('.message-content');
-            const textElement = messageContent.querySelector('.markdown-body');
-            if (!textElement) return;
-            const textToCopy = textElement.innerText;
-            const showSuccess = () => {
-                const originalHTML = btn.innerHTML;
-                btn.innerHTML = '<i class="fas fa-check"></i> Disalin';
-                btn.style.color = '#4ade80';
-                setTimeout(() => {
-                    btn.innerHTML = originalHTML;
-                    btn.style.color = '';
-                }, 2000);
-            };
-            if (navigator.clipboard && window.isSecureContext) {
-                navigator.clipboard.writeText(textToCopy)
-                    .then(showSuccess)
-                    .catch(() => fallbackCopyText(textToCopy));
-            } else {
-                fallbackCopyText(textToCopy);
-            }
-
-            function fallbackCopyText(text) {
-                const textArea = document.createElement("textarea");
-                textArea.value = text;
-                textArea.style.position = "fixed";
-                textArea.style.left = "-9999px";
-                textArea.style.top = "0";
-                document.body.appendChild(textArea);
-                textArea.focus();
-                textArea.select();
-                try {
-                    document.execCommand('copy');
-                    showSuccess();
-                } catch (err) {
-                    alert('Gagal menyalin teks. Browser Anda membatasi akses clipboard.');
-                }
-                document.body.removeChild(textArea);
-            }
-        }
-
-        // ===== EVENT LISTENERS =====
+        // ===== EVENT LISTENERS UMUM =====
         const sidebar = document.getElementById('sidebar');
         const sidebarToggleBtn = document.getElementById('sidebarToggleBtn');
         const mobileToggleBtn = document.getElementById('mobileToggleBtn');
@@ -1856,8 +1884,8 @@
                 .classList.remove('show'));
         });
 
+        // Event Listener Kirim (SUDAH AMAN DARI PARAMETER EVENT)
         document.getElementById('sendButton').addEventListener('click', () => sendMessage());
-        const chatInput = document.getElementById('chatInput');
         chatInput.addEventListener('input', function() {
             this.style.height = 'auto';
             this.style.height = (this.scrollHeight) + 'px';
@@ -1869,20 +1897,19 @@
             }
         });
 
-        // Initial Render
-        document.querySelectorAll('.markdown-body').forEach(el => {
-            const raw = el.textContent.trim();
-            if (raw) {
-                el.innerHTML = marked.parse(raw);
-                el.querySelectorAll('pre code').forEach((block) => {
-                    hljs.highlightElement(block);
-                });
-            }
-        });
-        addCopyButtonsToCodeBlocks();
-
-        // Modal Logic
+        // Initial Render & Modal Logic
         document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('.markdown-body').forEach(el => {
+                const raw = el.textContent.trim();
+                if (raw) {
+                    el.innerHTML = marked.parse(raw);
+                    el.querySelectorAll('pre code').forEach((block) => {
+                        hljs.highlightElement(block);
+                    });
+                }
+            });
+            addCopyButtonsToCodeBlocks();
+
             const modal = document.getElementById('updateModal');
             const closeBtn = document.getElementById('closeModalBtn');
             if (!sessionStorage.getItem('sahajaModalShown')) {
@@ -1893,9 +1920,7 @@
                 modal.classList.remove('show');
             });
             modal.addEventListener('click', (e) => {
-                if (e.target === modal) {
-                    modal.classList.remove('show');
-                }
+                if (e.target === modal) modal.classList.remove('show');
             });
         });
     </script>
