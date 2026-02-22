@@ -58,6 +58,9 @@
         .footer { padding: 20px; text-align: center; border-top: 1px solid var(--glass-border); font-size: 0.85rem; color: var(--text-secondary); }
         .footer a { color: var(--accent-color); text-decoration: none; font-weight: bold; }
     </style>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
 </head>
 <body>
     <div class="public-container">
@@ -122,14 +125,70 @@
                 const rawDiv = el.querySelector('.raw-content');
                 const renderDiv = el.querySelector('.rendered-content');
                 if (rawDiv && renderDiv) {
-                    const rawText = rawDiv.textContent.trim();
-                    renderDiv.innerHTML = marked.parse(rawText);
-                    renderDiv.querySelectorAll('pre code').forEach((block) => {
-                        hljs.highlightElement(block);
-                    });
-                }
+                const rawText = rawDiv.textContent.trim();
+                // Gunakan fungsi pintar yang baru kita buat
+                renderAIContent(rawText, renderDiv);
+            }
             });
         });
+
+        // ==========================================
+        // FUNGSI BARU: RENDER MARKDOWN + MATEMATIKA (FINAL FIX)
+        // ==========================================
+        function renderAIContent(text, containerElement) {
+            // 1. Seragamkan format LaTeX AI menjadi standar KaTeX ($$ dan $)
+            let rawText = text
+                .replace(/\\\[/g, '$$$$')
+                .replace(/\\\]/g, '$$$$')
+                .replace(/\\\(/g, '$$')
+                .replace(/\\\)/g, '$$');
+
+            // 2. EKSTRAK RUMUS MATEMATIKA (Gunakan @@ agar kebal dari Markdown)
+            const mathBlocks = {};
+            let mathIndex = 0;
+
+            // A. Amankan Block Math ($$ ... $$)
+            rawText = rawText.replace(/\$\$([\s\S]*?)\$\$/g, function(match) {
+                const placeholder = `@@MATH_BLOCK_${mathIndex}@@`;
+                mathBlocks[placeholder] = match;
+                mathIndex++;
+                return placeholder;
+            });
+
+            // B. Amankan Inline Math ($ ... $)
+            rawText = rawText.replace(/\$([^$\n]*?)\$/g, function(match) {
+                const placeholder = `@@MATH_INLINE_${mathIndex}@@`;
+                mathBlocks[placeholder] = match;
+                mathIndex++;
+                return placeholder;
+            });
+
+            // 3. Render Markdown
+            let htmlContent = marked.parse(rawText);
+
+            // 4. KEMBALIKAN RUMUS ke posisinya menggunakan split.join (lebih aman dari replace)
+            for (const [placeholder, mathText] of Object.entries(mathBlocks)) {
+                htmlContent = htmlContent.split(placeholder).join(mathText);
+            }
+
+            containerElement.innerHTML = htmlContent;
+
+            // 5. Panggil KaTeX untuk menyulap teks menjadi rumus visual
+            if (window.renderMathInElement) {
+                renderMathInElement(containerElement, {
+                    delimiters: [
+                        {left: '$$', right: '$$', display: true},
+                        {left: '$', right: '$', display: false}
+                    ],
+                    throwOnError: false
+                });
+            }
+
+            // 6. Warnai blok kodingan (Syntax Highlighting) jika ada
+            containerElement.querySelectorAll('pre code').forEach((block) => {
+                if (window.hljs) hljs.highlightElement(block);
+            });
+        }
     </script>
 </body>
 </html>

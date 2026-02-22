@@ -2049,25 +2049,24 @@
             setTimeout(addCopyButtonsToCodeBlocks, 500);
         });
 
-        // Fungsi baru untuk merender Markdown + Matematika
         // ==========================================
-        // FUNGSI BARU: RENDER MARKDOWN + MATEMATIKA (ANTI-BUG)
+        // FUNGSI BARU: RENDER MARKDOWN + MATEMATIKA (FINAL FIX)
         // ==========================================
         function renderAIContent(text, containerElement) {
-            // 1. Seragamkan format LaTeX AI menjadi standar $$ dan $
+            // 1. Seragamkan format LaTeX AI menjadi standar KaTeX ($$ dan $)
             let rawText = text
                 .replace(/\\\[/g, '$$$$')
                 .replace(/\\\]/g, '$$$$')
                 .replace(/\\\(/g, '$$')
                 .replace(/\\\)/g, '$$');
 
-            // 2. EKSTRAK RUMUS MATEMATIKA (Sembunyikan sementara dari Markdown)
+            // 2. EKSTRAK RUMUS MATEMATIKA (Gunakan @@ agar kebal dari Markdown)
             const mathBlocks = {};
             let mathIndex = 0;
 
-            // A. Amankan Block Math ($$ ... $$) walau ada Enter/Newline
+            // A. Amankan Block Math ($$ ... $$)
             rawText = rawText.replace(/\$\$([\s\S]*?)\$\$/g, function(match) {
-                const placeholder = `__MATH_BLOCK_${mathIndex}__`;
+                const placeholder = `@@MATH_BLOCK_${mathIndex}@@`;
                 mathBlocks[placeholder] = match;
                 mathIndex++;
                 return placeholder;
@@ -2075,18 +2074,18 @@
 
             // B. Amankan Inline Math ($ ... $)
             rawText = rawText.replace(/\$([^$\n]*?)\$/g, function(match) {
-                const placeholder = `__MATH_INLINE_${mathIndex}__`;
+                const placeholder = `@@MATH_INLINE_${mathIndex}@@`;
                 mathBlocks[placeholder] = match;
                 mathIndex++;
                 return placeholder;
             });
 
-            // 3. Render Markdown dengan aman (tanpa merusak rumus)
+            // 3. Render Markdown
             let htmlContent = marked.parse(rawText);
 
-            // 4. KEMBALIKAN RUMUS ke posisi aslinya di dalam HTML
+            // 4. KEMBALIKAN RUMUS ke posisinya menggunakan split.join (lebih aman dari replace)
             for (const [placeholder, mathText] of Object.entries(mathBlocks)) {
-                htmlContent = htmlContent.replace(placeholder, mathText);
+                htmlContent = htmlContent.split(placeholder).join(mathText);
             }
 
             containerElement.innerHTML = htmlContent;
@@ -2104,7 +2103,7 @@
 
             // 6. Warnai blok kodingan (Syntax Highlighting) jika ada
             containerElement.querySelectorAll('pre code').forEach((block) => {
-                hljs.highlightElement(block);
+                if (window.hljs) hljs.highlightElement(block);
             });
         }
     </script>
