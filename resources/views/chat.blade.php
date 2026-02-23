@@ -1379,10 +1379,7 @@
                 <p><strong>3. Voice Input</strong><br>
                     Anda bisa langsung ngobrol dengan AI tanpa mengetik dengan menggunakan mikrofon.
                 </p>
-                <p><strong>4. Fixing Bug</strong><br>
-                    Memperbaiki sejumlah bug yang ditemukan dan meningkatkan User Experience.
-                </p>
-                <p><strong>5. Fitur Upload Link Repo Github</strong><br>
+                <p><strong>4. Fitur Upload Link Repo Github</strong><br>
                     Sekarang Anda bisa upload link repo github anda, SAHAJA AI akan membaca codingan Anda.
                 </p>
             </div>
