@@ -2218,9 +2218,83 @@
             c.scrollTop = c.scrollHeight;
         }
 
-        // ===== FUNGSI SESSION (SEMENTARA) =====
+        // ==========================================
+        // FUNGSI MANAJEMEN SESSION (SHARE, RENAME, DELETE)
+        // ==========================================
         async function shareSession(id) {
-            alert("Fitur bagikan chat sedang dalam pengembangan.");
+            try {
+                // Ambil elemen tombol yang diklik
+                const btn = event.currentTarget || event.target.closest('.option-item');
+                const originalHtml = btn.innerHTML;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memproses...';
+
+                const response = await fetch(`/session/${id}/share`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken
+                    }
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    navigator.clipboard.writeText(data.url)
+                        .then(() => alert("✅ Berhasil! Link public chat disalin:\n" + data.url))
+                        .catch(() => prompt("Copy link ini untuk membagikan chat:", data.url));
+                }
+
+                // Kembalikan tombol seperti semula dan tutup menu
+                btn.innerHTML = originalHtml;
+                document.getElementById(`menu-${id}`).classList.remove('show');
+            } catch (e) {
+                alert("Gagal membuat link share.");
+            }
+        }
+
+        async function renameSession(id) {
+            const newName = prompt("Masukkan nama baru untuk percakapan ini:");
+            if (newName && newName.trim() !== "") {
+                try {
+                    await fetch(`/session/${id}/rename`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': csrfToken
+                        },
+                        body: JSON.stringify({
+                            title: newName
+                        })
+                    });
+                    // Langsung ubah teks di sidebar tanpa perlu refresh
+                    document.getElementById(`title-${id}`).innerText = newName;
+                    document.getElementById(`menu-${id}`).classList.remove('show');
+                } catch (e) {
+                    alert("Gagal mengganti nama.");
+                }
+            }
+        }
+
+        async function deleteSession(id) {
+            if (confirm("Apakah Anda yakin ingin menghapus obrolan ini secara permanen?")) {
+                try {
+                    await fetch(`/session/${id}/delete`, {
+                        method: 'DELETE',
+                        headers: {
+                            'X-CSRF-TOKEN': csrfToken
+                        }
+                    });
+
+                    // Hilangkan elemen dari UI
+                    document.getElementById(`session-${id}`).remove();
+
+                    // Jika yang dihapus adalah sesi yang sedang dibuka, lempar ke halaman utama
+                    if (currentSessionId == id) {
+                        window.location.href = "/chat";
+                    }
+                } catch (e) {
+                    alert("Gagal menghapus obrolan.");
+                }
+            }
         }
         async function renameSession(id) {
             const newName = prompt("Nama baru:");
