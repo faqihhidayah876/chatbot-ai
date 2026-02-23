@@ -125,12 +125,13 @@ class ChatController extends Controller
                     ]
                 ];
             } else if ($hasGithub) {
-                // JIKA ADA GITHUB: Suapi Kimi dengan kodingan hasil curian kita PLUS Aturan Format Kode!
-                $messages[] = ["role" => "system", "content" => "Kamu adalah SAHAJA AI, seorang Senior Software Engineer.
-                Analisis kodingan dari repository GitHub yang diberikan dan jawab pertanyaan pengguna dengan akurat." . $aturanKode];
+                // ANCAMAN KERAS KE KIMI AGAR TIDAK NGELES MINTA LINK
+                $messages[] = ["role" => "system", "content" => "Kamu adalah SAHAJA AI, Senior Software Engineer. Sistem backend telah
+                mengunduh file dari GitHub. BACA DATA HASIL EKSTRAKSI DI BAWAH INI. Jika sistem mengirimkan pesan ERROR (seperti limit API),
+                jelaskan error tersebut ke user. DILARANG KERAS meminta link GitHub ulang, karena sistem sudah menanganinya!" . $aturanKode];
                 $messages[] = [
                     "role" => "user",
-                    "content" => "[Struktur & Isi File dari GitHub Repo]\n" . $githubContent . "\n\nPertanyaan User: " . $userMessage
+                    "content" => "[INFO REPOSITORY]: " . $request->github_repo . "\n\n[HASIL EKSTRAKSI SISTEM]:\n" . $githubContent . "\n\n[PERTANYAAN USER]: " . $userMessage
                 ];
             } else {
                 // JIKA CHAT BIASA: Bawa system prompt dan history chat sebelumnya
@@ -226,7 +227,7 @@ class ChatController extends Controller
             "model" => $model,
             "messages" => $messages,
             "temperature" => 0.6,
-            "max_tokens" => 4096,
+            "max_tokens" => 2048,
         ]);
 
         if (!$response->successful()) {
@@ -337,111 +338,104 @@ class ChatController extends Controller
     }
 
     // ==========================================
-    // SATPAM GITHUB V3: ARCHITECT MAP & SMART CORE FETCHING
+    // SATPAM GITHUB V5: ANTI LIMIT API (JALUR BELAKANG) & SMART FETCH
     // ==========================================
     private function fetchGithubRepoContent($repoUrl, $userPrompt = "")
     {
         try {
             $repoUrl = str_replace('.git', '', trim($repoUrl));
             $parts = explode('github.com/', $repoUrl);
-            if (count($parts) < 2) return "Gagal memproses link.";
+            if (count($parts) < 2) return "SISTEM ERROR: Link GitHub tidak valid.";
 
             $repoPath = explode('/', $parts[1]);
-            if (count($repoPath) < 2) return "Link repository tidak valid.";
+            if (count($repoPath) < 2) return "SISTEM ERROR: Format salah.";
 
             $owner = $repoPath[0];
             $repo = $repoPath[1];
+            $defaultBranch = 'main';
 
+            // 1. Cek Pintu Depan (API Github)
             $repoInfo = Http::withOptions(['verify' => false, 'timeout' => 10])
                 ->withHeaders(['User-Agent' => 'SAHAJA-AI'])
                 ->get("https://api.github.com/repos/{$owner}/{$repo}");
 
-            if (!$repoInfo->successful()) return "Gagal mengakses repository.";
-            $defaultBranch = $repoInfo->json()['default_branch'] ?? 'main';
+            $filesToFetch = [];
+            $treeMap = "";
 
-            // Minta Struktur Repo dari GitHub API
-            $treeUrl = "https://api.github.com/repos/{$owner}/{$repo}/git/trees/{$defaultBranch}?recursive=1";
-            $treeResponse = Http::withOptions(['verify' => false, 'timeout' => 15])
-                ->withHeaders(['User-Agent' => 'SAHAJA-AI'])
-                ->get($treeUrl);
+            // 2. JIKA PINTU DEPAN DIBLOKIR KARENA LIMIT 60/JAM -> PAKAI JALUR BELAKANG
+            if (!$repoInfo->successful()) {
+                $treeMap = "⚠️ [INFO SISTEM]: API GitHub sedang membatasi request. SAHAJA menggunakan Jalur Belakang untuk menebak file.\n";
+                $userPromptLower = strtolower($userPrompt);
 
-            if (!$treeResponse->successful()) return "Gagal membaca struktur folder.";
-            $files = $treeResponse->json()['tree'] ?? [];
+                // Tebak file secara instan berdasarkan pertanyaan user
+                if (str_contains($userPromptLower, 'web') || str_contains($userPromptLower, 'route')) $filesToFetch[] = 'routes/web.php';
+                if (str_contains($userPromptLower, 'controller')) $filesToFetch[] = 'app/Http/Controllers/ChatController.php';
+                if (str_contains($userPromptLower, 'blade')) $filesToFetch[] = 'resources/views/chat.blade.php';
 
-            $blockedFolders = ['vendor/', 'node_modules/', 'public/build/', '.git/', 'tests/'];
-
-            // 1. BUAT PETA POHON (PROJECT SKELETON)
-            $treeMap = "📂 STRUKTUR FOLDER PENTING (Sebagai konteks arsitektur):\n";
-            $coreFiles = []; // File Jantung (wajib baca isinya)
-            $priorityFiles = []; // File yang diminta user
-
-            $userWords = str_word_count(strtolower($userPrompt), 1);
-
-            foreach ($files as $file) {
-                $path = $file['path'];
-
-                $isBlocked = false;
-                foreach ($blockedFolders as $blocked) {
-                    if (\Illuminate\Support\Str::startsWith($path, $blocked)) {
-                        $isBlocked = true; break;
-                    }
+                // Jika tidak ada kata kunci yang pas, ambil file krusial ini
+                if (empty($filesToFetch)) {
+                    $filesToFetch = ['README.md', 'routes/web.php', 'composer.json'];
                 }
-                if ($isBlocked) continue;
+            }
+            // 3. JIKA PINTU DEPAN AMAN -> BIKIN PETA POHON SEPERTI BIASA
+            else {
+                $defaultBranch = $repoInfo->json()['default_branch'] ?? 'main';
+                $treeUrl = "https://api.github.com/repos/{$owner}/{$repo}/git/trees/{$defaultBranch}?recursive=1";
+                $treeResponse = Http::withOptions(['verify' => false, 'timeout' => 15])->withHeaders(['User-Agent' => 'SAHAJA-AI'])->get($treeUrl);
 
-                $ext = pathinfo($path, PATHINFO_EXTENSION);
-                if (\Illuminate\Support\Str::endsWith($path, '.blade.php')) $ext = 'blade.php';
+                if ($treeResponse->successful()) {
+                    $files = $treeResponse->json()['tree'] ?? [];
+                    $blockedFolders = ['vendor/', 'node_modules/', 'public/build/', '.git/'];
+                    $coreFiles = [];
+                    $priorityFiles = [];
+                    $treeMap = "📂 STRUKTUR FOLDER:\n";
 
-                // Masukkan nama file ke Peta Pohon (hanya file codingan)
-                if (in_array(strtolower($ext), ['php', 'blade.php', 'json', 'md', 'js'])) {
-                    if ($file['type'] === 'blob') {
-                        $treeMap .= "- {$path}\n";
+                    $cleanPrompt = preg_replace('/[^a-zA-Z0-9]/', ' ', strtolower($userPrompt));
+                    $userWords = array_filter(explode(' ', $cleanPrompt));
+
+                    foreach ($files as $file) {
+                        $path = $file['path'];
+                        $isBlocked = false;
+                        foreach ($blockedFolders as $blocked) {
+                            if (\Illuminate\Support\Str::startsWith($path, $blocked)) { $isBlocked = true; break; }
+                        }
+                        if ($isBlocked || $file['type'] !== 'blob') continue;
+
+                        $ext = pathinfo($path, PATHINFO_EXTENSION);
+                        if (\Illuminate\Support\Str::endsWith($path, '.blade.php')) $ext = 'blade.php';
+
+                        if (in_array(strtolower($ext), ['php', 'blade.php', 'json', 'md', 'js'])) {
+                            $treeMap .= "- {$path}\n";
+                            $pathLower = strtolower($path);
+
+                            if (in_array($pathLower, ['routes/web.php', 'composer.json'])) $coreFiles[] = $path;
+
+                            foreach ($userWords as $word) {
+                                if (strlen($word) >= 3 && strpos($pathLower, $word) !== false) {
+                                    $priorityFiles[] = $path; break;
+                                }
+                            }
+                        }
                     }
-                }
+                    if (strlen($treeMap) > 1500) $treeMap = substr($treeMap, 0, 1500) . "\n... [DISINGKAT]";
 
-                // Lewati jika bukan file
-                if ($file['type'] !== 'blob') continue;
-
-                $pathLower = strtolower($path);
-
-                // 2. TANGKAP FILE JANTUNG LARAVEL
-                if (in_array($pathLower, ['routes/web.php', 'composer.json', 'readme.md', 'routes/api.php'])) {
-                    $coreFiles[] = $path;
-                }
-
-                // 3. TANGKAP FILE YANG DISEBUT USER DI PROMPT
-                foreach ($userWords as $word) {
-                    if (strlen($word) > 3 && strpos($pathLower, $word) !== false) {
-                        $priorityFiles[] = $path;
-                        break;
-                    }
+                    $filesToFetch = array_merge($priorityFiles, $coreFiles);
+                    $filesToFetch = array_unique($filesToFetch);
+                    $filesToFetch = array_slice($filesToFetch, 0, 4);
                 }
             }
 
-            // Batasi panjang Peta Pohon agar tidak boros memory (Max 2000 huruf)
-            if (strlen($treeMap) > 2000) {
-                $treeMap = substr($treeMap, 0, 2000) . "\n... [STRUKTUR LAINNYA DISINGKAT]";
-            }
-
-            // Gabungkan antrean download: File User + File Jantung
-            $filesToFetch = array_merge($priorityFiles, $coreFiles);
-            $filesToFetch = array_unique($filesToFetch);
-
-            // DIET RAM: Kita hanya download maksimal 4 file saja! (Karena kita sudah punya Peta Pohon)
-            $filesToFetch = array_slice($filesToFetch, 0, 4);
-
-            // 4. SUSUN PESAN FINAL (Peta Pohon + Isi Kodingan)
-            $megaContent = $treeMap . "\n\n📄 KODE DARI FILE UTAMA & TERKAIT:\n\n";
-
+            // 4. PROSES DOWNLOAD RAW DATA (DIJAMIN LOLOS LIMIT)
+            $megaContent = $treeMap . "\n\n📄 KODE DARI FILE:\n\n";
             foreach ($filesToFetch as $filePath) {
+                // raw.githubusercontent TIDAK punya limit seketat API resmi
                 $rawUrl = "https://raw.githubusercontent.com/{$owner}/{$repo}/{$defaultBranch}/{$filePath}";
                 $fileContent = Http::withOptions(['verify' => false, 'timeout' => 5])->get($rawUrl);
 
                 if ($fileContent->successful()) {
                     $content = $fileContent->body();
-                    // Potong isinya max 1500 huruf per file
-                    if (strlen($content) > 1500) {
-                        $content = substr($content, 0, 1500) . "\n... [KODE DIPOTONG]";
-                    }
+                    // Potong isinya max 2000 huruf per file
+                    if (strlen($content) > 2000) $content = substr($content, 0, 2000) . "\n... [KODE DIPOTONG]";
                     $megaContent .= "--- FILE: {$filePath} ---\n```\n{$content}\n```\n\n";
                 }
             }
@@ -449,7 +443,7 @@ class ChatController extends Controller
             return $megaContent;
 
         } catch (\Exception $e) {
-            return "Terjadi error saat membaca repo: " . $e->getMessage();
+            return "SISTEM ERROR: " . $e->getMessage();
         }
     }
 }
