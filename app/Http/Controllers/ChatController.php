@@ -59,12 +59,11 @@ class ChatController extends Controller
                 $selectedModel = 'meta/llama-3.2-90b-vision-instruct';
                 $timeout = 180;
             } else if ($hasGithub || !$isSimple) {
-                // JIKA BACA GITHUB atau Prompt Susah, WAJIB MASUK KIMI K2.5
                 $selectedModel = 'moonshotai/kimi-k2.5';
-                $timeout = 300; // 5 menit (karena download dari Github butuh waktu)
+                $timeout = 300;
             } else {
                 $selectedModel = 'moonshotai/kimi-k2-instruct';
-                $timeout = 120; // 2 menit
+                $timeout = 120;
             }
 
             // 2. HANDLE SESSION
@@ -90,32 +89,21 @@ class ChatController extends Controller
                 $systemPrompt = $configSahaja;
             }
 
-            // === TAMBAHAN OBAT DISIPLIN KODE (ANTI BERANTAKAN) ===
-            $systemPrompt .= "\n\nATURAN MUTLAK FORMAT KODE: Jika pengguna meminta Anda menampilkan, memperbaiki,
-            atau membuat kodingan, Anda WAJIB membungkus KESELURUHAN kode tersebut di dalam SATU blok kode Markdown.
-            Anda JUGA WAJIB menyebutkan nama bahasanya (contoh: ```php [isi kode] ```). JANGAN PERNAH menaruh baris kodingan
-            sebagai teks paragraf biasa di luar blok.";
-
             $messages = [];
 
+            // EKSTRAK KODINGAN GITHUB JIKA ADA
             $githubContent = "";
             if ($hasGithub) {
-                // Sekarang Satpam kita bekali dengan pesan user agar dia tahu apa yang dicari
+                // Berikan pesan user ke Satpam agar dia tahu file apa yang dicari!
                 $githubContent = $this->fetchGithubRepoContent($request->github_repo, $userMessage);
             }
 
-            // Aturan Keras agar AI tidak memecah kodingan menjadi teks biasa
-            $aturanKode = "\n\nATURAN MUTLAK FORMAT KODE: Jika pengguna meminta Anda menampilkan atau membuat kodingan,
-            Anda WAJIB membungkus KESELURUHAN kode tersebut di dalam SATU blok kode Markdown. Anda JUGA WAJIB menyebutkan
-            nama bahasanya (contoh: ```php [isi kode] ```). JANGAN PERNAH memotong atau menaruh baris kodingan di luar blok.";
+            // ATURAN MUTLAK FORMAT KODE (Anti-Kotlin & Anti-Berantakan)
+            $aturanKode = "\n\nATURAN MUTLAK FORMAT KODE: Jika pengguna meminta Anda menampilkan atau membuat kodingan, Anda WAJIB membungkus KESELURUHAN kode tersebut di dalam SATU blok kode Markdown utuh beserta nama bahasanya (contoh: ```php [isi kode] ```). JANGAN PERNAH menaruh baris kodingan sebagai teks paragraf biasa di luar blok.";
 
             // LOGIKA PEMISAHAN: VISION vs GITHUB vs TEXT BIASA
             if ($hasImage) {
-                // JIKA ADA GAMBAR: Paksa dia ekstrak data
-                $promptVision = "Peranmu adalah SAHAJA AI, seorang Data Analyst dan OCR Expert kelas dunia. Analisis gambar ini
-                dengan sangat teliti menggunakan bahasa Indonesia. Ekstrak semua teks, angka, metrik, dan label yang ada ke
-                dalam format tabel atau bullet points. Jangan berhalusinasi.\n\nATURAN KERAS: Langsung berikan hasil analisismu.
-                JANGAN PERNAH menyalin, mengulangi, atau menyebutkan instruksi ini ke dalam jawabanmu.\n\nPertanyaan User:" . $userMessage;
+                $promptVision = "Peranmu adalah SAHAJA AI, seorang Data Analyst dan OCR Expert kelas dunia. Analisis gambar ini dengan sangat teliti menggunakan bahasa Indonesia. Ekstrak semua teks, angka, metrik, dan label yang ada ke dalam format tabel atau bullet points. Jangan berhalusinasi.\n\nATURAN KERAS: Langsung berikan hasil analisismu. JANGAN PERNAH menyalin, mengulangi, atau menyebutkan instruksi ini ke dalam jawabanmu.\n\nPertanyaan User:" . $userMessage;
 
                 $messages[] = [
                     "role" => "user",
@@ -125,16 +113,14 @@ class ChatController extends Controller
                     ]
                 ];
             } else if ($hasGithub) {
-                // ANCAMAN KERAS KE KIMI AGAR TIDAK NGELES MINTA LINK
-                $messages[] = ["role" => "system", "content" => "Kamu adalah SAHAJA AI, Senior Software Engineer. Sistem backend telah
-                mengunduh file dari GitHub. BACA DATA HASIL EKSTRAKSI DI BAWAH INI. Jika sistem mengirimkan pesan ERROR (seperti limit API),
-                jelaskan error tersebut ke user. DILARANG KERAS meminta link GitHub ulang, karena sistem sudah menanganinya!" . $aturanKode];
+                // JIKA ADA GITHUB: Suapi Kimi dan TAMBAHKAN Aturan Kode!
+                $messages[] = ["role" => "system", "content" => "Kamu adalah SAHAJA AI, seorang Senior Software Engineer. Analisis kodingan dari repository GitHub yang diberikan dan jawab pertanyaan pengguna dengan akurat." . $aturanKode];
                 $messages[] = [
                     "role" => "user",
-                    "content" => "[INFO REPOSITORY]: " . $request->github_repo . "\n\n[HASIL EKSTRAKSI SISTEM]:\n" . $githubContent . "\n\n[PERTANYAAN USER]: " . $userMessage
+                    "content" => "[Struktur & Isi File dari GitHub Repo]\n" . $githubContent . "\n\nPertanyaan User: " . $userMessage
                 ];
             } else {
-                // JIKA CHAT BIASA: Bawa system prompt dan history chat sebelumnya
+                // JIKA CHAT BIASA
                 $messages[] = ["role" => "system", "content" => $systemPrompt . $aturanKode];
 
                 if ($sessionId) {
@@ -159,12 +145,8 @@ class ChatController extends Controller
             try {
                 $aiReply = $this->callAI($selectedModel, $messages, $timeout);
             } catch (\Exception $e) {
-                // Bungkus Log dengan try-catch agar jika log error, app tidak crash 500
-                try {
-                    Log::error("AI Error: " . $e->getMessage());
-                } catch (\Exception $logErr) {}
+                try { Log::error("AI Error: " . $e->getMessage()); } catch (\Exception $logErr) {}
 
-                // FALLBACK LOGIC
                 if ($selectedModel === 'moonshotai/kimi-k2.5') {
                     try {
                         $fallbackReply = $this->callAI('moonshotai/kimi-k2-instruct', $messages, 30);
@@ -177,7 +159,7 @@ class ChatController extends Controller
                 }
             }
 
-            // 5. SIMPAN CHAT (Jangan simpan base64 ke database teks)
+            // 5. SIMPAN CHAT
             $dbUserMessage = $userMessage;
             if ($hasImage) {
                 $dbUserMessage = "🖼️ [Gambar Terlampir]\n" . $userMessage;
@@ -197,11 +179,11 @@ class ChatController extends Controller
                 'session_id' => $sessionId,
                 'user_message' => $dbUserMessage,
                 'ai_response' => $aiReply,
-                'model_used' => $selectedModel // Kasih tau frontend model apa yang dipakai
+                'model_used' => $selectedModel
             ]);
 
         } catch (\Throwable $globalEx) {
-            // CATCH SEMUA JENIS ERROR (Termasuk Fatal Error)
+            // CATCH THROWABLE: Biar kalau ada Fatal Error, kita nggak kena Error 500 buta!
             return response()->json([
                 'error' => true,
                 'message' => 'Fatal Error: ' . $globalEx->getMessage() . ' (Baris: ' . $globalEx->getLine() . ')'
@@ -212,7 +194,6 @@ class ChatController extends Controller
     private function callAI($model, $messages, $timeout)
     {
         $apiKey = env('NVIDIA_API_KEY');
-        // Pastikan URL benar (NVIDIA)
         $url = "https://integrate.api.nvidia.com/v1/chat/completions";
 
         $response = Http::withOptions([
@@ -243,7 +224,7 @@ class ChatController extends Controller
         $text = strtolower(trim($text));
 
         $instantPatterns = [
-            '/^(halo|hai|hey|hei|hello|hi|p|ping|tes|test)\b/i', // Tambah hey/hei
+            '/^(halo|hai|hey|hei|hello|hi|p|ping|tes|test)\b/i',
             '/^(pagi|siang|sore|malam|makasih|thanks|thx)\b/i',
             '/^(wkwk|haha|hehe|lol|wkwkwk)\b/i',
             '/^(siapa kamu|who are you)\b/i',
@@ -266,7 +247,6 @@ class ChatController extends Controller
         $score = 0;
         $wordCount = str_word_count($text);
 
-        // PERBAIKAN SKOR: Kalimat <= 8 kata langsung dapet skor 2 (Auto Cepat)
         if ($wordCount <= 8) $score += 2;
         elseif ($wordCount < 15) $score += 1;
         elseif ($wordCount > 50) $score -= 3;
@@ -309,36 +289,30 @@ class ChatController extends Controller
         return redirect()->route('chat.index');
     }
 
-    // Fungsi untuk membuat / mengambil link share
     public function shareSession($id)
     {
         $session = Session::where('id', $id)->where('user_id', Auth::id())->firstOrFail();
 
-        // Cek apakah chat ini sudah punya token
         if (!$session->share_token) {
-            $session->share_token = Str::random(16); // Bikin kode unik acak
+            $session->share_token = Str::random(16);
             $session->save();
         }
 
-        // Buat URL lengkapnya
         $shareUrl = route('chat.public', ['token' => $session->share_token]);
 
         return response()->json(['success' => true, 'url' => $shareUrl]);
     }
 
-    // Fungsi untuk menampilkan halaman Chat Publik
     public function showPublicSession($token)
     {
-        // Cari sesi berdasarkan token, abaikan user_id (karena ini untuk publik)
         $session = Session::where('share_token', $token)->firstOrFail();
         $chats = $session->chats()->orderBy('created_at', 'asc')->get();
 
-        // Tampilkan view khusus publik
         return view('public-chat', compact('session', 'chats'));
     }
 
     // ==========================================
-    // SATPAM GITHUB V5: ANTI LIMIT API (JALUR BELAKANG) & SMART FETCH
+    // SATPAM GITHUB V6: HYBRID SMART FETCH (CEPAT & BISA CARI FILE)
     // ==========================================
     private function fetchGithubRepoContent($repoUrl, $userPrompt = "")
     {
@@ -348,94 +322,106 @@ class ChatController extends Controller
             if (count($parts) < 2) return "SISTEM ERROR: Link GitHub tidak valid.";
 
             $repoPath = explode('/', $parts[1]);
-            if (count($repoPath) < 2) return "SISTEM ERROR: Format salah.";
+            if (count($repoPath) < 2) return "SISTEM ERROR: Format repository salah.";
 
             $owner = $repoPath[0];
             $repo = $repoPath[1];
-            $defaultBranch = 'main';
 
-            // 1. Cek Pintu Depan (API Github)
+            // 1. CEK API GITHUB UTAMA
             $repoInfo = Http::withOptions(['verify' => false, 'timeout' => 10])
                 ->withHeaders(['User-Agent' => 'SAHAJA-AI'])
                 ->get("https://api.github.com/repos/{$owner}/{$repo}");
 
-            $filesToFetch = [];
-            $treeMap = "";
-
-            // 2. JIKA PINTU DEPAN DIBLOKIR KARENA LIMIT 60/JAM -> PAKAI JALUR BELAKANG
             if (!$repoInfo->successful()) {
-                $treeMap = "⚠️ [INFO SISTEM]: API GitHub sedang membatasi request. SAHAJA menggunakan Jalur Belakang untuk menebak file.\n";
-                $userPromptLower = strtolower($userPrompt);
-
-                // Tebak file secara instan berdasarkan pertanyaan user
-                if (str_contains($userPromptLower, 'web') || str_contains($userPromptLower, 'route')) $filesToFetch[] = 'routes/web.php';
-                if (str_contains($userPromptLower, 'controller')) $filesToFetch[] = 'app/Http/Controllers/ChatController.php';
-                if (str_contains($userPromptLower, 'blade')) $filesToFetch[] = 'resources/views/chat.blade.php';
-
-                // Jika tidak ada kata kunci yang pas, ambil file krusial ini
-                if (empty($filesToFetch)) {
-                    $filesToFetch = ['README.md', 'routes/web.php', 'composer.json'];
-                }
+                return "SISTEM ERROR: Server GitHub membatasi akses (Limit 60 request/jam). Mohon istirahat sejenak dan coba lagi nanti.";
             }
-            // 3. JIKA PINTU DEPAN AMAN -> BIKIN PETA POHON SEPERTI BIASA
-            else {
-                $defaultBranch = $repoInfo->json()['default_branch'] ?? 'main';
-                $treeUrl = "https://api.github.com/repos/{$owner}/{$repo}/git/trees/{$defaultBranch}?recursive=1";
-                $treeResponse = Http::withOptions(['verify' => false, 'timeout' => 15])->withHeaders(['User-Agent' => 'SAHAJA-AI'])->get($treeUrl);
 
-                if ($treeResponse->successful()) {
-                    $files = $treeResponse->json()['tree'] ?? [];
-                    $blockedFolders = ['vendor/', 'node_modules/', 'public/build/', '.git/'];
-                    $coreFiles = [];
-                    $priorityFiles = [];
-                    $treeMap = "📂 STRUKTUR FOLDER:\n";
+            $defaultBranch = $repoInfo->json()['default_branch'] ?? 'main';
 
-                    $cleanPrompt = preg_replace('/[^a-zA-Z0-9]/', ' ', strtolower($userPrompt));
-                    $userWords = array_filter(explode(' ', $cleanPrompt));
+            // 2. AMBIL STRUKTUR FOLDER
+            $treeUrl = "https://api.github.com/repos/{$owner}/{$repo}/git/trees/{$defaultBranch}?recursive=1";
+            $treeResponse = Http::withOptions(['verify' => false, 'timeout' => 15])
+                ->withHeaders(['User-Agent' => 'SAHAJA-AI'])
+                ->get($treeUrl);
 
-                    foreach ($files as $file) {
-                        $path = $file['path'];
-                        $isBlocked = false;
-                        foreach ($blockedFolders as $blocked) {
-                            if (\Illuminate\Support\Str::startsWith($path, $blocked)) { $isBlocked = true; break; }
-                        }
-                        if ($isBlocked || $file['type'] !== 'blob') continue;
+            if (!$treeResponse->successful()) return "SISTEM ERROR: Gagal membaca struktur folder GitHub.";
 
-                        $ext = pathinfo($path, PATHINFO_EXTENSION);
-                        if (\Illuminate\Support\Str::endsWith($path, '.blade.php')) $ext = 'blade.php';
+            $files = $treeResponse->json()['tree'] ?? [];
+            $blockedFolders = ['vendor/', 'node_modules/', 'storage/', 'public/build/', '.git/', 'tests/'];
 
-                        if (in_array(strtolower($ext), ['php', 'blade.php', 'json', 'md', 'js'])) {
-                            $treeMap .= "- {$path}\n";
-                            $pathLower = strtolower($path);
+            $treeMap = "📂 STRUKTUR FOLDER PROJECT:\n";
+            $coreFiles = [];
+            $priorityFiles = [];
 
-                            if (in_array($pathLower, ['routes/web.php', 'composer.json'])) $coreFiles[] = $path;
+            // 3. RADAR KATA KUNCI (Ambil kata dari prompt user, minimal 3 huruf supaya 'web' / 'api' kena)
+            $cleanPrompt = preg_replace('/[^a-zA-Z0-9]/', ' ', strtolower($userPrompt));
+            $userWords = array_filter(explode(' ', $cleanPrompt), function($word) {
+                return strlen($word) >= 3;
+            });
 
-                            foreach ($userWords as $word) {
-                                if (strlen($word) >= 3 && strpos($pathLower, $word) !== false) {
-                                    $priorityFiles[] = $path; break;
-                                }
-                            }
+            foreach ($files as $file) {
+                if ($file['type'] !== 'blob') continue;
+
+                $path = $file['path'];
+                $isBlocked = false;
+                foreach ($blockedFolders as $blocked) {
+                    if (\Illuminate\Support\Str::startsWith($path, $blocked)) {
+                        $isBlocked = true; break;
+                    }
+                }
+                if ($isBlocked) continue;
+
+                $extension = pathinfo($path, PATHINFO_EXTENSION);
+                if (\Illuminate\Support\Str::endsWith($path, '.blade.php')) $extension = 'blade.php';
+
+                // Hanya proses file kodingan
+                if (in_array(strtolower($extension), ['php', 'blade.php', 'js', 'json', 'md'])) {
+                    $pathLower = strtolower($path);
+
+                    // Bangun Peta Pohon agar AI paham struktur keseluruhan
+                    $treeMap .= "- {$path}\n";
+
+                    // Deteksi file penting (jaga-jaga kalau user gak minta file spesifik)
+                    if (in_array($pathLower, ['readme.md', 'routes/web.php', 'composer.json'])) {
+                        $coreFiles[] = $path;
+                    }
+
+                    // Deteksi File yang Diminta User!
+                    foreach ($userWords as $word) {
+                        if (strpos($pathLower, $word) !== false) {
+                            $priorityFiles[] = $path;
+                            break;
                         }
                     }
-                    if (strlen($treeMap) > 1500) $treeMap = substr($treeMap, 0, 1500) . "\n... [DISINGKAT]";
-
-                    $filesToFetch = array_merge($priorityFiles, $coreFiles);
-                    $filesToFetch = array_unique($filesToFetch);
-                    $filesToFetch = array_slice($filesToFetch, 0, 4);
                 }
             }
 
-            // 4. PROSES DOWNLOAD RAW DATA (DIJAMIN LOLOS LIMIT)
-            $megaContent = $treeMap . "\n\n📄 KODE DARI FILE:\n\n";
+            // Batasi panjang Peta Pohon agar AI tidak pusing baca daftar isi
+            if (strlen($treeMap) > 1500) {
+                $treeMap = substr($treeMap, 0, 1500) . "\n... [STRUKTUR LAINNYA DISINGKAT]";
+            }
+
+            // 4. GABUNGKAN ANTREAN: File pesanan user ditaruh PALING ATAS
+            $filesToFetch = array_merge($priorityFiles, $coreFiles);
+            $filesToFetch = array_unique($filesToFetch);
+
+            // DIET SERVER: Ambil MAKSIMAL 4 FILE saja agar respon di bawah 20 detik!
+            $filesToFetch = array_slice($filesToFetch, 0, 4);
+
+            $megaContent = $treeMap . "\n\n📄 KODE DARI FILE YANG RELEVAN:\n\n";
+
+            // 5. DOWNLOAD KODINGANNYA
             foreach ($filesToFetch as $filePath) {
-                // raw.githubusercontent TIDAK punya limit seketat API resmi
                 $rawUrl = "https://raw.githubusercontent.com/{$owner}/{$repo}/{$defaultBranch}/{$filePath}";
                 $fileContent = Http::withOptions(['verify' => false, 'timeout' => 5])->get($rawUrl);
 
                 if ($fileContent->successful()) {
                     $content = $fileContent->body();
-                    // Potong isinya max 2000 huruf per file
-                    if (strlen($content) > 2000) $content = substr($content, 0, 2000) . "\n... [KODE DIPOTONG]";
+
+                    // BATASI 2000 HURUF PER FILE (Sesuai Permintaan Bosku!)
+                    if (strlen($content) > 2000) {
+                        $content = substr($content, 0, 2000) . "\n... [KODE DIPOTONG UNTUK MENGHEMAT MEMORI]";
+                    }
                     $megaContent .= "--- FILE: {$filePath} ---\n```\n{$content}\n```\n\n";
                 }
             }
