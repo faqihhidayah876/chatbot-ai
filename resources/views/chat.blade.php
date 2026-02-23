@@ -490,6 +490,8 @@
 
         .settings-container {
             position: relative;
+            z-index: 200;
+            /* Tambah z-index tinggi */
         }
 
         .icon-btn {
@@ -516,7 +518,10 @@
             width: 200px;
             display: none;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
-            z-index: 101;
+            z-index: 1000;
+            /* Naikkan z-index */
+            pointer-events: auto;
+            /* Pastikan bisa diklik */
         }
 
         body.light-mode .settings-menu-dropdown {
@@ -525,7 +530,57 @@
         }
 
         .settings-menu-dropdown.show {
+            display: block !important;
+            /* Pakai !important untuk override */
+            animation: fadeIn 0.2s ease;
+        }
+
+        /* Animasi fadeIn jika belum ada */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* PERBAIKAN TOMBOL SETTINGS */
+        #settingsBtn {
+            position: relative;
+            z-index: 201;
+            cursor: pointer;
+            pointer-events: auto;
+        }
+
+        /* ===== ATTACH MENU DROPDOWN ===== */
+        .attach-menu {
+            position: absolute;
+            bottom: 50px;
+            left: 0;
+            background: #1e293b;
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 8px;
+            width: 220px;
+            display: none;
+            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.4);
+            z-index: 101;
+            backdrop-filter: blur(16px);
+        }
+
+        body.light-mode .attach-menu {
+            background: #ffffff;
+            border-color: #e2e8f0;
+            color: #333;
+        }
+
+        .attach-menu.show {
             display: block;
+            animation: fadeIn 0.2s ease;
         }
 
         /* MESSAGES - Padding bottom ditambahkan agar tidak tertutup input box */
@@ -1243,19 +1298,16 @@
         .gemini-block {
             opacity: 0;
             transform: translateY(15px);
-            /* Saya naikkan jadi 15px supaya gerakan "naik"-nya lebih kelihatan */
             transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1),
                 transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
             margin-bottom: 12px;
             display: block;
-            /* Penting! */
         }
 
         .gemini-block.show {
             opacity: 1;
             transform: translateY(0);
         }
-
     </style>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
     <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
@@ -1271,8 +1323,9 @@
                 <center>PEMBARUAN SAHAJA AI</center>
             </h2>
             <div class="modal-body">
-                <p><strong>1. Analisis Dokumen</strong><br>
-                    Sekarang Anda bisa mengupload file PDF atau Word (DOCX)! SAHAJA AI akan menganalisis isinya untukmu.
+                <p><strong>1. Analisis Dokumen & Gambar OCR</strong><br>
+                    Sekarang Anda bisa mengupload file PDF atau Word (DOCX) & Gambar! SAHAJA AI akan menganalisis isinya
+                    untukmu.
                 </p>
                 <p><strong>2. Fitur Share Chat</strong><br>
                     Bagikan obrolan SAHAJA AI kamu ke teman-teman dengan menggunakan link.
@@ -1415,18 +1468,28 @@
                     <i class="fas fa-times" onclick="removeFile()" title="Hapus File"></i>
                 </div>
 
-                <input type="file" id="fileInput"
+                <input type="file" id="docInput"
                     accept=".pdf, .docx, application/pdf, application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                    style="display: none;">
+                <input type="file" id="imageInput" accept="image/png, image/jpeg, image/jpg, image/webp"
                     style="display: none;">
 
                 <textarea class="chat-input" id="chatInput" placeholder="Ketik pesan Anda di sini..." rows="1"></textarea>
 
                 <div class="input-actions-wrapper">
-                    <div class="action-left">
-                        <button type="button" class="icon-action-btn" id="attachButton"
-                            title="Lampirkan Dokumen (PDF/DOCX)">
+                    <div class="action-left" style="position: relative;">
+                        <button type="button" class="icon-action-btn" id="attachButton" title="Lampirkan File">
                             <i class="fas fa-paperclip"></i>
                         </button>
+
+                        <div class="attach-menu" id="attachMenu">
+                            <div class="option-item" id="btnUploadImage">
+                                <i class="fas fa-image" style="color: #4ade80;"></i> Analisis Gambar (OCR)
+                            </div>
+                            <div class="option-item" id="btnUploadDoc">
+                                <i class="fas fa-file-pdf" style="color: #f87171;"></i> File (PDF/DOCS)
+                            </div>
+                        </div>
                     </div>
 
                     <div class="action-right">
@@ -1460,9 +1523,13 @@
 
         // VARIABEL UNTUK FILE UPLOAD
         let extractedFileText = "";
+        let base64Image = null;
         let currentFileName = "";
+
         const attachBtn = document.getElementById('attachButton');
-        const fileInput = document.getElementById('fileInput');
+        const attachMenu = document.getElementById('attachMenu');
+        const docInput = document.getElementById('docInput');
+        const imageInput = document.getElementById('imageInput');
         const filePreviewContainer = document.getElementById('filePreviewContainer');
         const fileNameDisplay = document.getElementById('fileNameDisplay');
 
@@ -1479,51 +1546,208 @@
         });
 
         // ==========================================
-        // FUNGSI BARU: RENDER MARKDOWN + MATEMATIKA
+        // EVENT LISTENERS UMUM & TEMA
         // ==========================================
-        function renderAIContent(text, containerElement) {
-            // 1. Akali marked.js agar tidak merusak rumus LaTeX
-            let safeText = text
-                .replace(/\\\[/g, '$$$$')
-                .replace(/\\\]/g, '$$$$')
-                .replace(/\\\(/g, '$$')
-                .replace(/\\\)/g, '$$');
+        // ==========================================
+        // EVENT LISTENERS UMUM & TEMA - PERBAIKAN TOTAL
+        // ==========================================
 
-            // 2. Render teks Markdown
-            containerElement.innerHTML = marked.parse(safeText);
+        // 1. Sidebar toggles
+        document.getElementById('sidebarToggleBtn').addEventListener('click', function(e) {
+            e.stopPropagation();
+            document.getElementById('sidebar').classList.toggle('collapsed');
+        });
 
-            // 3. Render rumus matematika menggunakan KaTeX
-            if (window.renderMathInElement) {
-                renderMathInElement(containerElement, {
-                    delimiters: [
-                        {left: '$$', right: '$$', display: true},
-                        {left: '$', right: '$', display: false}
-                    ],
-                    throwOnError: false
+        document.getElementById('mobileToggleBtn').addEventListener('click', function(e) {
+            e.stopPropagation();
+            document.getElementById('sidebar').classList.toggle('mobile-open');
+        });
+
+        // 2. SETTINGS BUTTON - PERBAIKAN UTAMA
+        const settingsBtn = document.getElementById('settingsBtn');
+        const settingsMenu = document.getElementById('settingsMenu');
+
+        if (settingsBtn && settingsMenu) {
+            // Hapus event listener lama jika ada (prevent duplikat)
+            const newSettingsBtn = settingsBtn.cloneNode(true);
+            settingsBtn.parentNode.replaceChild(newSettingsBtn, settingsBtn);
+
+            // Tambah event listener fresh
+            newSettingsBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('Settings clicked!');
+
+                // Toggle dengan force reflow untuk memastikan render
+                const isShown = settingsMenu.classList.contains('show');
+
+                // Tutup menu lain dulu
+                document.querySelectorAll('.options-menu, .logout-menu, .attach-menu').forEach(el => {
+                    el.classList.remove('show');
                 });
-            }
 
-            // 4. Beri warna pada kodingan (Syntax Highlighting)
-            containerElement.querySelectorAll('pre code').forEach((block) => {
-                hljs.highlightElement(block);
+                if (isShown) {
+                    settingsMenu.classList.remove('show');
+                } else {
+                    settingsMenu.classList.add('show');
+                    // Force browser render
+                    void settingsMenu.offsetWidth;
+                }
+            });
+
+            // Update reference untuk penggunaan lain
+            window.settingsBtnRef = newSettingsBtn;
+        }
+
+        // 3. THEME TOGGLE
+        const themeToggleItem = document.getElementById('themeToggleItem');
+        if (themeToggleItem) {
+            themeToggleItem.addEventListener('click', function(e) {
+                e.stopPropagation();
+                document.body.classList.toggle('light-mode');
+                const isLight = document.body.classList.contains('light-mode');
+                localStorage.setItem('theme', isLight ? 'light' : 'dark');
+
+                const themeText = document.getElementById('themeText');
+                if (themeText) themeText.innerText = isLight ? 'Mode Gelap' : 'Mode Terang';
+
+                // Tutup settings menu
+                if (settingsMenu) settingsMenu.classList.remove('show');
             });
         }
 
-        // ==========================================
-        // 1. FITUR BACA FILE (PDF & DOCX) 📄
-        // ==========================================
-        attachBtn.addEventListener('click', () => {
-            fileInput.click();
+        // 4. Inisialisasi tema
+        if (localStorage.getItem('theme') === 'light') {
+            document.body.classList.add('light-mode');
+            const themeText = document.getElementById('themeText');
+            if (themeText) themeText.innerText = 'Mode Gelap';
+        }
+
+        // 5. WINDOW CLICK HANDLER - PERBAIKAN
+        window.addEventListener('click', function(e) {
+            // Debug: console.log('Window clicked', e.target);
+
+            // Cek apakah klik di dalam settings container
+            const settingsContainer = document.querySelector('.settings-container');
+            const clickedInsideSettings = settingsContainer && settingsContainer.contains(e.target);
+
+            // Tutup sidebar mobile
+            if (window.innerWidth <= 768) {
+                const sidebar = document.getElementById('sidebar');
+                if (sidebar && !sidebar.contains(e.target) && !e.target.closest('.mobile-toggle-btn')) {
+                    sidebar.classList.remove('mobile-open');
+                }
+            }
+
+            // Tutup SEMUA menu kecuali jika klik di settings (karena settings handle sendiri)
+            if (!clickedInsideSettings) {
+                document.querySelectorAll('.options-menu, .settings-menu-dropdown, .logout-menu, .attach-menu')
+                    .forEach(el => {
+                        el.classList.remove('show');
+                    });
+            }
         });
 
-        fileInput.addEventListener('change', async (e) => {
+        // 6. Toggle menu function untuk history items
+        function toggleMenu(e, id) {
+            if (e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            const targetMenu = document.getElementById(id);
+            if (!targetMenu) return;
+
+            const isShown = targetMenu.classList.contains('show');
+
+            // Tutup semua menu lain
+            document.querySelectorAll('.options-menu, .settings-menu-dropdown, .logout-menu, .attach-menu').forEach(el => {
+                if (el.id !== id) el.classList.remove('show');
+            });
+
+            // Toggle target
+            if (isShown) {
+                targetMenu.classList.remove('show');
+            } else {
+                targetMenu.classList.add('show');
+            }
+        }
+
+        // ==========================================
+        // FUNGSI MENU ATTACH & BACA FILE
+        // ==========================================
+        attachBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            attachMenu.classList.toggle('show');
+        });
+
+        document.getElementById('btnUploadDoc').addEventListener('click', () => {
+            docInput.click();
+            attachMenu.classList.remove('show');
+        });
+
+        document.getElementById('btnUploadImage').addEventListener('click', () => {
+            imageInput.click();
+            attachMenu.classList.remove('show');
+        });
+
+        imageInput.addEventListener('change', (e) => {
             const file = e.target.files[0];
             if (!file) return;
+            removeFile();
 
             currentFileName = file.name;
-            fileNameDisplay.textContent = "Mengekstrak teks...";
             filePreviewContainer.style.display = 'flex';
-            attachBtn.style.display = 'none'; // Sembunyikan tombol attach sementara proses
+            filePreviewContainer.querySelector('i').className = 'fas fa-image';
+            filePreviewContainer.querySelector('i').style.color = '#4ade80';
+            fileNameDisplay.textContent = "Mengompresi gambar...";
+            attachBtn.style.display = 'none';
+
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = event => {
+                const img = new Image();
+                img.src = event.target.result;
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    // ini kompres gambar nya jadi 800 x 800 pixel
+                    const MAX_WIDTH = 1600;
+                    const MAX_HEIGHT = 1600;
+                    let width = img.width;
+                    let height = img.height;
+
+                    if (width > height && width > MAX_WIDTH) {
+                        height *= MAX_WIDTH / width;
+                        width = MAX_WIDTH;
+                    } else if (height > MAX_HEIGHT) {
+                        width *= MAX_HEIGHT / height;
+                        height = MAX_HEIGHT;
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    base64Image = canvas.toDataURL('image/jpeg', 0.9);
+                    fileNameDisplay.textContent = currentFileName + " (Siap dikirim)";
+                    attachBtn.style.display = 'flex';
+                    imageInput.value = '';
+                }
+            };
+        });
+
+        docInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            removeFile();
+
+            currentFileName = file.name;
+            filePreviewContainer.style.display = 'flex';
+            filePreviewContainer.querySelector('i').className = 'fas fa-file-alt';
+            filePreviewContainer.querySelector('i').style.color = 'var(--accent-color)';
+            fileNameDisplay.textContent = "Mengekstrak teks...";
+            attachBtn.style.display = 'none';
 
             try {
                 if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
@@ -1532,33 +1756,30 @@
                         'wordprocessingml')) {
                     extractedFileText = await extractDocxText(file);
                 } else {
-                    alert("Format tidak didukung! Mohon upload file PDF atau DOCX.");
+                    alert("Format tidak didukung!");
                     removeFile();
                     return;
                 }
-
-                // Pangkas teks kalau terlalu panjang (Mencegah Database Error) Max ~25.000 Karakter
                 if (extractedFileText.length > 25000) {
-                    extractedFileText = extractedFileText.substring(0, 25000) +
-                        "\n\n[INFO: TEKS DOKUMEN DIPOTONG KARENA TERLALU PANJANG]";
+                    extractedFileText = extractedFileText.substring(0, 25000) + "\n\n[INFO: TEKS DIPOTONG]";
                 }
-
                 fileNameDisplay.textContent = currentFileName;
             } catch (err) {
-                console.error(err);
-                alert("Gagal membaca dokumen. Pastikan file tidak rusak atau dikunci password.");
+                alert("Gagal membaca dokumen.");
                 removeFile();
             } finally {
                 attachBtn.style.display = 'flex';
-                fileInput.value = ''; // Reset supaya bisa pilih file yang sama lagi
+                docInput.value = '';
             }
         });
 
         function removeFile() {
             extractedFileText = "";
+            base64Image = null;
             currentFileName = "";
             filePreviewContainer.style.display = 'none';
-            fileInput.value = ''; // Tambahan: Pastikan memory input file benar-benar kosong
+            docInput.value = '';
+            imageInput.value = '';
         }
 
         async function extractPdfText(file) {
@@ -1567,7 +1788,6 @@
                 data: arrayBuffer
             }).promise;
             let text = "";
-            // Batasi baca 25 halaman awal aja biar HP kentang gak nge-hang
             const maxPages = Math.min(pdf.numPages, 25);
             for (let i = 1; i <= maxPages; i++) {
                 const page = await pdf.getPage(i);
@@ -1586,9 +1806,8 @@
             return result.value;
         }
 
-
         // ==========================================
-        // 2. FITUR VOICE INPUT 🎙️
+        // FUNGSI VOICE INPUT & KIRIM PESAN
         // ==========================================
         let recognition = null;
         let isRecording = false;
@@ -1622,8 +1841,6 @@
 
             recognition.onerror = function(event) {
                 forceStopRecordingUI();
-                if (event.error === 'not-allowed') alert(
-                    "Akses Mikrofon ditolak! Pastikan pakai HTTPS dan izinkan mic.");
             };
             recognition.onend = function() {
                 forceStopRecordingUI();
@@ -1633,7 +1850,7 @@
         }
 
         function toggleRecording() {
-            if (!recognition) return alert("Browser tidak support Voice Input. Pakai Google Chrome terbaru.");
+            if (!recognition) return alert("Browser tidak support.");
             if (isRecording) {
                 recognition.stop();
                 forceStopRecordingUI();
@@ -1653,17 +1870,9 @@
         }
         voiceBtn.addEventListener('click', toggleRecording);
 
-
-        // ==========================================
-        // 3. FUNGSI KIRIM & SWITCH MODE
-        // ==========================================
         function switchToMode(targetMode) {
-            console.log("Switching to " + targetMode + " mode...");
             window.activeForceMode = targetMode;
-            if (currentController) {
-                currentController.abort();
-                currentController = null;
-            }
+            if (currentController) currentController.abort();
             const oldLoading = document.querySelector('.message.ai:last-child');
             if (oldLoading && oldLoading.querySelector('.typing-indicator')) oldLoading.remove();
             sendMessage();
@@ -1674,7 +1883,6 @@
         }
 
         async function sendMessage() {
-            // Matiin mic kalau user klik kirim saat ngomong
             if (isRecording && recognition) {
                 recognition.stop();
                 forceStopRecordingUI();
@@ -1682,22 +1890,23 @@
 
             const messageInput = chatInput.value.trim();
             let finalMessageToSend;
-            let displayMessage = messageInput; // Teks yang muncul di layar User
+            let displayMessage = messageInput;
 
-            // LOGIKA PENYUSUNAN PESAN (TERMASUK FILE PDF)
             if (window.activeForceMode !== null) {
                 if (!lastUserMessage) return;
                 finalMessageToSend = lastUserMessage;
             } else {
-                if (!messageInput && !extractedFileText) return;
+                if (!messageInput && !extractedFileText && !base64Image) return;
 
-                // Format prompt kalau ada file PDF/Word
                 if (extractedFileText) {
                     const promptQuestion = messageInput || "Tolong analisis isi dokumen ini.";
                     finalMessageToSend =
                         `[Lampiran Dokumen: ${currentFileName}]\n"""\n${extractedFileText}\n"""\n\nInstruksi User: ${promptQuestion}`;
-                    displayMessage =
-                        `📎 [${currentFileName}]\n${promptQuestion}`; // Jangan tampilkan ribuan kata PDF di layar
+                    displayMessage = `📎 [${currentFileName}]\n${promptQuestion}`;
+                } else if (base64Image) {
+                    const promptQuestion = messageInput || "Tolong jelaskan gambar ini secara detail.";
+                    finalMessageToSend = promptQuestion;
+                    displayMessage = `🖼️ [Gambar: ${currentFileName}]\n${promptQuestion}`;
                 } else {
                     finalMessageToSend = messageInput;
                 }
@@ -1709,35 +1918,30 @@
                 document.getElementById('messagesContainer').style.display = 'flex';
                 chatInput.value = '';
                 chatInput.style.height = 'auto';
-                appendMessage('user', displayMessage); // Tampilkan teks rapi di layar
+                appendMessage('user', displayMessage);
             }
 
-            // Kalau ada file, PASTI MASUK MODE CERDAS
+            const payload = {
+                message: finalMessageToSend,
+                session_id: currentSessionId
+            };
+            if (base64Image) payload.image_data = base64Image;
+            if (window.activeForceMode !== null) payload.force_mode = window.activeForceMode;
+
             let isComplex = detectComplexity(finalMessageToSend);
             if (extractedFileText) isComplex = true;
-
-            const mode = (window.activeForceMode !== null) ? window.activeForceMode : (isComplex ? 'smart' : 'fast');
+            let mode = (window.activeForceMode !== null) ? window.activeForceMode : (isComplex ? 'smart' : 'fast');
+            if (base64Image) mode = 'vision';
 
             const loadingId = appendLoadingWithMode(mode);
             scrollToBottom();
 
-            // ====== PERBAIKAN UX DI SINI ======
-            // Langsung hapus file dari UI chatbox sesaat setelah loading bubble muncul!
-            if (window.activeForceMode === null) {
-                removeFile();
-            }
-            // ==================================
+            if (window.activeForceMode === null) removeFile();
 
             if (currentController) currentController.abort();
             currentController = new AbortController();
 
             try {
-                const payload = {
-                    message: finalMessageToSend,
-                    session_id: currentSessionId
-                };
-                if (window.activeForceMode !== null) payload.force_mode = window.activeForceMode;
-
                 const response = await fetch("{{ route('chat.send') }}", {
                     method: "POST",
                     headers: {
@@ -1757,15 +1961,24 @@
                 if (loadingBubble) {
                     const aiMessageDiv = document.createElement('div');
                     aiMessageDiv.className = 'message ai';
-                    let finalModelLabel = (data.model_used && data.model_used.includes('k2.5')) ? 'Mode Cerdas' :
-                        'Mode Cepat';
-                    let finalBadgeClass = (data.model_used && data.model_used.includes('k2.5')) ? 'mode-smart' :
-                        'mode-fast';
+
+                    let finalModelLabel = 'Mode Cepat';
+                    let finalBadgeClass = 'mode-fast';
+                    let extraStyle = '';
+
+                    if (data.model_used && data.model_used.includes('llama')) {
+                        finalModelLabel = 'Mode Vision (Llama 3.2)';
+                        extraStyle =
+                            'background: rgba(74, 222, 128, 0.15); color: #22c55e; border: 1px solid rgba(74, 222, 128, 0.3);';
+                    } else if (data.model_used && data.model_used.includes('k2.5')) {
+                        finalModelLabel = 'Mode Cerdas';
+                        finalBadgeClass = 'mode-smart';
+                    }
 
                     aiMessageDiv.innerHTML = `
                         <div class="message-avatar ai-avatar-msg"><i class="fas fa-robot"></i></div>
                         <div class="message-content">
-                            <div class="mode-badge ${finalBadgeClass}">${finalModelLabel}</div>
+                            <div class="mode-badge ${finalBadgeClass}" style="${extraStyle}">${finalModelLabel}</div>
                             <div class="message-bubble markdown-body"></div>
                             <div class="ai-actions">
                                 <button class="action-btn" onclick="copyText(this)"><i class="far fa-copy"></i> Salin</button>
@@ -1781,7 +1994,6 @@
                     window.history.pushState({}, '', `/chat/${data.session_id}`);
                     currentSessionId = data.session_id;
                 }
-
                 window.activeForceMode = null;
 
             } catch (error) {
@@ -1792,19 +2004,31 @@
         }
 
         // ==========================================
-        // FUNGSI UI & LAIN-LAIN
+        // FUNGSI UI & RENDER MATEMATIKA
         // ==========================================
         function appendLoadingWithMode(mode) {
             const id = 'loading-' + Date.now();
             const div = document.createElement('div');
             div.id = id;
             div.className = 'message ai';
-            let badgeHtml = mode === 'smart' ?
-                `<div class="mode-badge mode-smart"><i class="fas fa-brain"></i> Mode Cerdas (K2.5)</div>` :
-                `<div class="mode-badge mode-fast"><i class="fas fa-bolt"></i> Mode Cepat (K2)</div>`;
-            let textHtml = mode === 'smart' ?
-                `<span class="typing-text">Menganalisis logika kompleks... <button class="switch-btn" onclick="switchToFastMode()">[Beralih ke Cepat]</button></span>` :
-                `<span class="typing-text">SAHAJA AI sedang berpikir... <button class="switch-btn" style="color:#d4a017;" onclick="switchToMode('smart')">[Beralih ke Cerdas]</button></span>`;
+
+            let badgeHtml = '';
+            let textHtml = '';
+
+            if (mode === 'vision') {
+                badgeHtml =
+                    `<div class="mode-badge" style="background: rgba(74, 222, 128, 0.15); color: #22c55e; border: 1px solid rgba(74, 222, 128, 0.3);"><i class="fas fa-eye"></i> Mode Vision (Llama 3.2)</div>`;
+                textHtml = `<span class="typing-text">Menganalisis gambar...</span>`;
+            } else if (mode === 'smart') {
+                badgeHtml = `<div class="mode-badge mode-smart"><i class="fas fa-brain"></i> Mode Cerdas (K2.5)</div>`;
+                textHtml =
+                    `<span class="typing-text">Menganalisis logika kompleks... <button class="switch-btn" onclick="switchToFastMode()">[Beralih ke Cepat]</button></span>`;
+            } else {
+                badgeHtml = `<div class="mode-badge mode-fast"><i class="fas fa-bolt"></i> Mode Cepat (K2)</div>`;
+                textHtml =
+                    `<span class="typing-text">SAHAJA AI sedang berpikir... <button class="switch-btn" style="color:#d4a017;" onclick="switchToMode('smart')">[Beralih ke Cerdas]</button></span>`;
+            }
+
             div.innerHTML =
                 `<div class="message-avatar ai-avatar-msg"><i class="fas fa-robot"></i></div><div class="message-content">${badgeHtml}<div class="message-bubble"><div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>${textHtml}</div></div></div>`;
             document.getElementById('messagesContainer').appendChild(div);
@@ -1820,99 +2044,162 @@
             return t.split(' ').length > 15;
         }
 
+        // ========== FUNGSI COPY UNTUK PESAN (ROBUST) ==========
+
+        // ========== FUNGSI COPY UNTUK PESAN (ROBUST) ==========
         function copyText(btn) {
-            const textToCopy = btn.closest('.message-content').querySelector('.markdown-body').innerText;
-            const originalHTML = btn.innerHTML;
+            console.log('copyText dipanggil', btn);
+            try {
+                // Cari elemen teks yang akan disalin
+                const messageContent = btn.closest('.message-content');
+                if (!messageContent) {
+                    console.error('Tidak ditemukan .message-content');
+                    return;
+                }
+
+                // Coba cari .markdown-body di dalam message-content
+                let textElement = messageContent.querySelector('.markdown-body');
+                if (!textElement) {
+                    // Fallback: cari .message-bubble biasa
+                    textElement = messageContent.querySelector('.message-bubble');
+                }
+                if (!textElement) {
+                    alert('Tidak dapat menemukan teks untuk disalin.');
+                    return;
+                }
+
+                const textToCopy = textElement.innerText || textElement.textContent;
+                if (!textToCopy) {
+                    alert('Tidak ada teks untuk disalin.');
+                    return;
+                }
+
+                const originalHTML = btn.innerHTML;
+                const showSuccess = () => {
+                    btn.innerHTML = '<i class="fas fa-check"></i> Disalin';
+                    btn.style.color = '#4ade80';
+                    setTimeout(() => {
+                        btn.innerHTML = originalHTML;
+                        btn.style.color = '';
+                    }, 2000);
+                };
+
+                if (navigator.clipboard && window.isSecureContext) {
+                    navigator.clipboard.writeText(textToCopy).then(showSuccess).catch(() => {
+                        fallbackCopyText(textToCopy, showSuccess);
+                    });
+                } else {
+                    fallbackCopyText(textToCopy, showSuccess);
+                }
+            } catch (err) {
+                console.error('Error di copyText:', err);
+                alert('Gagal menyalin teks.');
+            }
+        }
+
+        // Fallback copy menggunakan execCommand
+        function fallbackCopyText(text, callback) {
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            textArea.style.position = 'fixed';
+            textArea.style.left = '-9999px';
+            textArea.style.top = '0';
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            try {
+                const successful = document.execCommand('copy');
+                if (successful && callback) callback();
+                else alert('Gagal menyalin teks.');
+            } catch (err) {
+                alert('Gagal menyalin teks. Browser Anda tidak mendukung.');
+            }
+            document.body.removeChild(textArea);
+        }
+
+        // ========== FUNGSI COPY UNTUK CODE BLOCK ==========
+        function copyCode(button, codeElement) {
+            console.log('copyCode dipanggil', button, codeElement);
+            if (!codeElement) return;
+            const textToCopy = codeElement.textContent || codeElement.innerText;
+            const originalHTML = button.innerHTML;
             const showSuccess = () => {
-                btn.innerHTML = '<i class="fas fa-check"></i> Disalin';
-                btn.style.color = '#4ade80';
+                button.innerHTML = '<i class="fas fa-check"></i> Disalin';
+                button.style.background = 'rgba(74, 222, 128, 0.9)';
+                button.style.color = 'white';
                 setTimeout(() => {
-                    btn.innerHTML = originalHTML;
-                    btn.style.color = '';
+                    button.innerHTML = '<i class="far fa-copy"></i> Salin';
+                    button.style.background = '';
+                    button.style.color = '';
                 }, 2000);
             };
+
             if (navigator.clipboard && window.isSecureContext) {
-                navigator.clipboard.writeText(textToCopy).then(showSuccess);
+                navigator.clipboard.writeText(textToCopy).then(showSuccess).catch(() => {
+                    fallbackCopyText(textToCopy, showSuccess);
+                });
             } else {
-                const ta = document.createElement("textarea");
-                ta.value = textToCopy;
-                ta.style.position = "fixed";
-                document.body.appendChild(ta);
-                ta.select();
-                document.execCommand('copy');
-                showSuccess();
-                document.body.removeChild(ta);
+                fallbackCopyText(textToCopy, showSuccess);
             }
         }
 
+        // ========== FUNGSI MENAMBAHKAN HEADER DAN TOMBOL COPY PADA CODE BLOCK ==========
         function addCopyButtonsToCodeBlocks() {
             document.querySelectorAll('.markdown-body pre').forEach((pre) => {
+                // Cek apakah sudah ada header
                 if (pre.previousElementSibling?.classList.contains('code-header')) return;
+
                 const code = pre.querySelector('code');
                 if (!code) return;
+
+                // Deteksi bahasa dari class
+                let language = 'plaintext';
                 const langClass = code.className.match(/language-(\w+)/);
+                if (langClass) language = langClass[1];
+
+                // Buat header
                 const header = document.createElement('div');
                 header.className = 'code-header';
-                header.innerHTML =
-                    `<span class="code-lang">${langClass ? langClass[1] : 'plaintext'}</span><button class="code-copy-btn"><i class="far fa-copy"></i> Salin</button>`;
+                header.innerHTML = `
+            <span class="code-lang">${language}</span>
+            <button class="code-copy-btn" aria-label="Salin kode">
+                <i class="far fa-copy"></i> Salin
+            </button>
+        `;
+
+                // Sisipkan header sebelum pre
                 pre.parentNode.insertBefore(header, pre);
+
+                // Sesuaikan gaya pre
                 pre.style.borderRadius = '0 0 8px 8px';
                 pre.style.marginTop = '0';
-                header.querySelector('.code-copy-btn').addEventListener('click', (e) => {
+
+                // Tambahkan event listener ke tombol copy
+                const copyBtn = header.querySelector('.code-copy-btn');
+                copyBtn.addEventListener('click', (e) => {
                     e.preventDefault();
-                    copyCode(e.currentTarget, code);
+                    e.stopPropagation();
+                    copyCode(copyBtn, code);
                 });
             });
-        }
-
-        function typeWriter(element, markdownText, speed = 12) {
-            const html = marked.parse(markdownText);
-            const dummy = document.createElement('div');
-            dummy.innerHTML = html;
-            const plainText = dummy.textContent || dummy.innerText || '';
-            let i = 0;
-            element.textContent = '';
-
-            function typing() {
-                if (i < plainText.length) {
-                    element.textContent += plainText.charAt(i);
-                    i++;
-                    setTimeout(typing, speed);
-                } else {
-                    element.innerHTML = html;
-                    element.querySelectorAll('pre code').forEach((block) => hljs.highlightElement(block));
-                    addCopyButtonsToCodeBlocks();
-                }
-            }
-            typing();
         }
 
         function animateGeminiStyle(element, markdownText) {
             const parts = markdownText.split(/\n\s*\n/);
             element.innerHTML = '';
-
             let totalDelay = 0;
-
-            parts.forEach((part, index) => {
+            parts.forEach((part) => {
                 const block = document.createElement('div');
                 block.className = 'gemini-block';
                 renderAIContent(part, block);
-
                 element.appendChild(block);
-
-                // Munculkan blok dengan delay berurutan
                 setTimeout(() => {
                     block.classList.add('show');
-                    scrollToBottom(); // Auto-scroll ke bawah setiap paragraf baru muncul
+                    scrollToBottom();
                 }, totalDelay);
-
-                totalDelay += 350; // Jeda 350ms antar paragraf
+                totalDelay += 350;
             });
-
-            // Tambahkan tombol copy setelah semua animasi selesai
-            setTimeout(() => {
-                addCopyButtonsToCodeBlocks();
-            }, totalDelay + 100);
+            setTimeout(addCopyButtonsToCodeBlocks, totalDelay + 100);
         }
 
         function appendMessage(role, text) {
@@ -1924,10 +2211,6 @@
             div.innerHTML =
                 `<div class="message-avatar ${role==='user'?'user-avatar-msg':'ai-avatar-msg'}"><i class="fas fa-${role==='user'?'user':'robot'}"></i></div><div class="message-content"><div class="message-bubble ${role==='user'?'':'markdown-body'}">${bubbleContent}</div>${actions}</div>`;
             document.getElementById('messagesContainer').appendChild(div);
-            if (role !== 'user') {
-                div.querySelectorAll('pre code').forEach((block) => hljs.highlightElement(block));
-                addCopyButtonsToCodeBlocks();
-            }
         }
 
         function scrollToBottom() {
@@ -1935,91 +2218,42 @@
             c.scrollTop = c.scrollHeight;
         }
 
+        // ===== FUNGSI SESSION (SEMENTARA) =====
         async function shareSession(id) {
-            try {
-                const btn = event.currentTarget;
-                const originalHtml = btn.innerHTML;
-                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memproses...';
-                const response = await fetch(`/session/${id}/share`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': csrfToken
-                    }
-                });
-                const data = await response.json();
-                if (data.success) {
-                    navigator.clipboard.writeText(data.url).then(() => alert("Berhasil! Link disalin:\n" + data.url))
-                        .catch(() => prompt("Copy link:", data.url));
-                }
-                btn.innerHTML = originalHtml;
-                document.getElementById(`menu-${id}`).classList.remove('show');
-            } catch (e) {
-                alert("Gagal membuat link.");
-            }
+            alert("Fitur bagikan chat sedang dalam pengembangan.");
         }
-
         async function renameSession(id) {
             const newName = prompt("Nama baru:");
             if (newName) {
-                await fetch(`/session/${id}/rename`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': csrfToken
-                    },
-                    body: JSON.stringify({
-                        title: newName
-                    })
-                });
-                document.getElementById(`title-${id}`).innerText = newName;
+                try {
+                    await fetch(`/session/${id}/rename`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': csrfToken
+                        },
+                        body: JSON.stringify({
+                            title: newName
+                        })
+                    });
+                    document.getElementById(`title-${id}`).innerText = newName;
+                } catch (e) {}
             }
         }
         async function deleteSession(id) {
-            if (confirm("Hapus chat?")) {
-                await fetch(`/session/${id}/delete`, {
-                    method: 'DELETE',
-                    headers: {
-                        'X-CSRF-TOKEN': csrfToken
-                    }
-                });
-                document.getElementById(`session-${id}`).remove();
-                if (currentSessionId == id) window.location.href = "/chat";
+            if (confirm("Hapus chat ini?")) {
+                try {
+                    await fetch(`/session/${id}/delete`, {
+                        method: 'DELETE',
+                        headers: {
+                            'X-CSRF-TOKEN': csrfToken
+                        }
+                    });
+                    document.getElementById(`session-${id}`).remove();
+                    if (currentSessionId == id) window.location.href = "/chat";
+                } catch (e) {}
             }
         }
-
-        // EVENT LISTENERS UMUM
-        document.getElementById('sidebarToggleBtn').addEventListener('click', () => document.getElementById('sidebar')
-            .classList.toggle('collapsed'));
-        document.getElementById('mobileToggleBtn').addEventListener('click', (e) => {
-            e.stopPropagation();
-            document.getElementById('sidebar').classList.toggle('mobile-open');
-        });
-        document.addEventListener('click', (e) => {
-            if (window.innerWidth <= 768 && !document.getElementById('sidebar').contains(e.target)) document
-                .getElementById('sidebar').classList.remove('mobile-open');
-        });
-        document.getElementById('settingsBtn').addEventListener('click', (e) => {
-            e.stopPropagation();
-            document.getElementById('settingsMenu').classList.toggle('show');
-        });
-        document.getElementById('themeToggleItem').addEventListener('click', () => {
-            document.body.classList.toggle('light-mode');
-            localStorage.setItem('theme', document.body.classList.contains('light-mode') ? 'light' : 'dark');
-            document.getElementById('themeText').innerText = document.body.classList.contains('light-mode') ?
-                'Mode Gelap' : 'Mode Terang';
-        });
-
-        function toggleMenu(e, id) {
-            e.preventDefault();
-            e.stopPropagation();
-            document.querySelectorAll('.options-menu, .settings-menu-dropdown, .logout-menu').forEach(el => {
-                if (el.id !== id) el.classList.remove('show');
-            });
-            document.getElementById(id).classList.toggle('show');
-        }
-        window.addEventListener('click', () => document.querySelectorAll(
-            '.options-menu, .settings-menu-dropdown, .logout-menu').forEach(el => el.classList.remove('show')));
 
         document.getElementById('sendButton').addEventListener('click', () => sendMessage());
         chatInput.addEventListener('input', function() {
@@ -2034,45 +2268,41 @@
         });
 
         document.addEventListener('DOMContentLoaded', () => {
-            // Render pesan lama secara instan tanpa animasi (UX yang benar)
-            const aiMessages = document.querySelectorAll('.message.ai');
-            aiMessages.forEach((el) => {
+            document.querySelectorAll('.message.ai').forEach((el) => {
                 const rawDiv = el.querySelector('.ai-raw-data');
                 const renderDiv = el.querySelector('.ai-rendered-data');
+                if (rawDiv && renderDiv) renderAIContent(rawDiv.textContent.trim(), renderDiv);
+            });
+            setTimeout(addCopyButtonsToCodeBlocks, 500);
 
-                if (rawDiv && renderDiv) {
-                    renderAIContent(rawDiv.textContent.trim(), renderDiv);
+            // Modal Logic
+            const modal = document.getElementById('updateModal');
+            const closeBtn = document.getElementById('closeModalBtn');
+            if (!sessionStorage.getItem('sahajaModalShown')) {
+                modal.classList.add('show');
+                sessionStorage.setItem('sahajaModalShown', 'true');
+            }
+            closeBtn.addEventListener('click', () => {
+                modal.classList.remove('show');
+            });
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.classList.remove('show');
                 }
             });
-
-            // Pasang tombol copy di pesan lama
-            setTimeout(addCopyButtonsToCodeBlocks, 500);
         });
 
-        // ==========================================
-        // FUNGSI BARU: RENDER MARKDOWN + MATEMATIKA (FINAL FIX)
-        // ==========================================
         function renderAIContent(text, containerElement) {
-            // 1. Seragamkan format LaTeX AI menjadi standar KaTeX ($$ dan $)
-            let rawText = text
-                .replace(/\\\[/g, '$$$$')
-                .replace(/\\\]/g, '$$$$')
-                .replace(/\\\(/g, '$$')
-                .replace(/\\\)/g, '$$');
-
-            // 2. EKSTRAK RUMUS MATEMATIKA (Gunakan @@ agar kebal dari Markdown)
+            let rawText = text.replace(/\\\[/g, '$$$$').replace(/\\\]/g, '$$$$').replace(/\\\(/g, '$$').replace(/\\\)/g,
+                '$$');
             const mathBlocks = {};
             let mathIndex = 0;
-
-            // A. Amankan Block Math ($$ ... $$)
             rawText = rawText.replace(/\$\$([\s\S]*?)\$\$/g, function(match) {
                 const placeholder = `@@MATH_BLOCK_${mathIndex}@@`;
                 mathBlocks[placeholder] = match;
                 mathIndex++;
                 return placeholder;
             });
-
-            // B. Amankan Inline Math ($ ... $)
             rawText = rawText.replace(/\$([^$\n]*?)\$/g, function(match) {
                 const placeholder = `@@MATH_INLINE_${mathIndex}@@`;
                 mathBlocks[placeholder] = match;
@@ -2080,28 +2310,26 @@
                 return placeholder;
             });
 
-            // 3. Render Markdown
             let htmlContent = marked.parse(rawText);
-
-            // 4. KEMBALIKAN RUMUS ke posisinya menggunakan split.join (lebih aman dari replace)
             for (const [placeholder, mathText] of Object.entries(mathBlocks)) {
                 htmlContent = htmlContent.split(placeholder).join(mathText);
             }
-
             containerElement.innerHTML = htmlContent;
 
-            // 5. Panggil KaTeX untuk menyulap teks menjadi rumus visual
             if (window.renderMathInElement) {
                 renderMathInElement(containerElement, {
-                    delimiters: [
-                        {left: '$$', right: '$$', display: true},
-                        {left: '$', right: '$', display: false}
-                    ],
+                    delimiters: [{
+                        left: '$$',
+                        right: '$$',
+                        display: true
+                    }, {
+                        left: '$',
+                        right: '$',
+                        display: false
+                    }],
                     throwOnError: false
                 });
             }
-
-            // 6. Warnai blok kodingan (Syntax Highlighting) jika ada
             containerElement.querySelectorAll('pre code').forEach((block) => {
                 if (window.hljs) hljs.highlightElement(block);
             });

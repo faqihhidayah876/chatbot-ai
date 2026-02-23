@@ -43,24 +43,27 @@ class ChatController extends Controller
             $sessionId = $request->session_id;
             $userId = Auth::id();
 
-            // 1. DETEKSI MODEL
+            // 1. DETEKSI MODEL & GAMBAR
             $isSimple = $this->isSimpleQuery($userMessage);
+            $hasImage = $request->has('image_data') && !empty($request->image_data);
 
-            // Cek apakah ada paksaan dari User (Dua Arah)
+            // Cek paksaan mode dari UI
             if ($request->has('force_mode')) {
-                if ($request->force_mode === 'fast') {
-                    $isSimple = true; // Paksa Cepat
-                } elseif ($request->force_mode === 'smart') {
-                    $isSimple = false; // Paksa Cerdas
-                }
+                if ($request->force_mode === 'fast') $isSimple = true;
+                elseif ($request->force_mode === 'smart') $isSimple = false;
             }
 
-            if ($isSimple) {
+            // LOGIKA ROUTING MODEL (Text vs Vision)
+            if ($hasImage) {
+                // Jika ada gambar, OTOMATIS panggil Llama 3.2 Vision
+                $selectedModel = 'meta/llama-3.2-11b-vision-instruct';
+                $timeout = 120; // Kasih waktu ekstra buat baca gambar
+            } else if ($isSimple) {
                 $selectedModel = 'moonshotai/kimi-k2-instruct';
-                $timeout = 40;
+                $timeout = 120;
             } else {
                 $selectedModel = 'moonshotai/kimi-k2.5';
-                $timeout = 100;
+                $timeout = 300;
             }
 
             // 2. HANDLE SESSION
@@ -86,19 +89,52 @@ class ChatController extends Controller
                 $systemPrompt = $configSahaja;
             }
 
-            $messages = [["role" => "system", "content" => $systemPrompt]];
+            $messages = [];
 
-            if ($sessionId) {
-                $allChats = Chat::where('session_id', $sessionId)->orderBy('created_at', 'asc')->get();
-                if ($allChats->count() > 0) {
-                    $contextChats = $allChats->slice(-4);
-                    foreach ($contextChats as $chat) {
-                        $messages[] = ["role" => "user", "content" => $chat->user_message];
-                        $messages[] = ["role" => "assistant", "content" => $chat->ai_response];
+            // LOGIKA PEMISAHAN: VISION vs TEXT
+            if ($hasImage) {
+                // JIKA ADA GAMBAR: Paksa dia ekstrak data
+                $promptVision = "Peranmu adalah SAHAJA AI, seorang Data Analyst dan OCR Expert kelas dunia.
+                Analisis gambar ini dengan sangat teliti menggunakan bahasa Indonesia. Ekstrak semua teks, angka, metrik, dan label yang
+                ada ke dalam format tabel atau bullet points. Jangan berhalusinasi.\n\nATURAN KERAS: Langsung
+                berikan hasil analisismu. JANGAN PERNAH menyalin, mengulangi, atau menyebutkan instruksi ini ke
+                dalam jawabanmu.\n\nPertanyaan User:" . $userMessage;
+
+                $messages[] = [
+                    "role" => "user",
+                    "content" => [
+                        [
+                            "type" => "text",
+                            "text" => $promptVision
+                        ],
+                        [
+                            "type" => "image_url",
+                            "image_url" => [
+                                "url" => $request->image_data
+                            ]
+                        ]
+                    ]
+                ];
+            } else {
+                // JIKA CHAT BIASA: Bawa system prompt dan history chat sebelumnya
+                $messages[] = ["role" => "system", "content" => $systemPrompt];
+
+                if ($sessionId) {
+                    $allChats = Chat::where('session_id', $sessionId)->orderBy('created_at', 'asc')->get();
+                    if ($allChats->count() > 0) {
+                        $contextChats = $allChats->slice(-4);
+                        foreach ($contextChats as $chat) {
+                            // Bersihkan tag [Gambar Terlampir] dari history agar Kimi tidak bingung
+                            $cleanUserMsg = preg_replace('/🖼️ \[Gambar Terlampir\]\n/', '', $chat->user_message);
+
+                            $messages[] = ["role" => "user", "content" => $cleanUserMsg];
+                            $messages[] = ["role" => "assistant", "content" => $chat->ai_response];
+                        }
                     }
                 }
+
+                $messages[] = ["role" => "user", "content" => $userMessage];
             }
-            $messages[] = ["role" => "user", "content" => $userMessage];
 
             // 4. CALL API (Safe Try-Catch)
             $aiReply = "";
@@ -124,17 +160,23 @@ class ChatController extends Controller
                 }
             }
 
-            // 5. SIMPAN CHAT
+            // 5. SIMPAN CHAT (Jangan simpan base64 ke database teks)
+            $dbUserMessage = $userMessage;
+            if ($hasImage) {
+                $dbUserMessage = "🖼️ [Gambar Terlampir]\n" . $userMessage;
+            }
+
             Chat::create([
                 'session_id' => $sessionId,
-                'user_message' => $userMessage,
+                'user_message' => $dbUserMessage,
                 'ai_response' => $aiReply,
             ]);
 
             return response()->json([
                 'session_id' => $sessionId,
-                'user_message' => $userMessage,
-                'ai_response' => $aiReply
+                'user_message' => $dbUserMessage,
+                'ai_response' => $aiReply,
+                'model_used' => $selectedModel // Kasih tau frontend model apa yang dipakai
             ]);
 
         } catch (\Exception $globalEx) {

@@ -847,9 +847,9 @@
         <div class="hero-section">
             <span class="hero-badge">AI ASSISTANT</span>
             <h1 class="hero-title">SAHAJA AI</h1>
-            <div class="hero-version">Beta V 3.0</div>
+            <div class="hero-version">Beta V 3.1</div>
             <p class="hero-description">
-                Asisten cerdas berbasis <strong>Kimi K 2.5</strong> setara dengan GPT 5.2 siap membantu dan
+                Asisten cerdas berbasis 3 models AI <strong>Kimi K 2.5, Kimi K2, & Llama 3.2-90b-vision-instruct</strong> setara dengan AI Besar lainnya siap membantu dan
                 brainstorming ide Anda.
             </p>
         </div>
@@ -878,7 +878,7 @@
         <div class="kimi-section">
             <h2 class="kimi-title">Hadir dengan Kimi K 2.5</h2>
             <p class="kimi-description">
-                SAHAJA AI kini hadir dengan mesin AI terbaru dari Kimi, model reasoning yang handal dan model open-source paling canggih, mampu menandingi Opus 4.5 dan GPT 5.2 dalam beberapa skenario.
+                SAHAJA AI kini hadir dengan mode cerdas berbasis mesin AI terbaru dari Kimi, model reasoning yang handal dan model open-source paling canggih, mampu menandingi Opus 4.5 dan GPT 5.2 dalam beberapa skenario.
             </p>
             <div class="kimi-image-wrapper">
                 <img src="https://platform.moonshot.ai/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fk25-en.4301d842.png&w=3840&q=75"
@@ -904,7 +904,7 @@
                     <thead>
                         <tr>
                             <th>Aspek</th>
-                            <th>SAHAJA AI v3.0</th>
+                            <th>SAHAJA AI v3.1</th>
                             <th>ChatGPT</th>
                             <th>Gemini</th>
                             <th>DeepSeek</th>
