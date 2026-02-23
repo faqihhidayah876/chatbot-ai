@@ -716,6 +716,61 @@
             font-size: 0.9em;
         }
 
+        /* ===== TABEL MARKDOWN ===== */
+        .markdown-body table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 16px;
+            margin-bottom: 16px;
+            display: block;
+            overflow-x: auto; /* Biar tabel bisa di-scroll ke kanan di HP */
+            border-radius: 8px;
+            border: 1px solid var(--glass-border);
+        }
+
+        .markdown-body table th,
+        .markdown-body table td {
+            padding: 10px 16px;
+            border: 1px solid var(--glass-border);
+            text-align: left;
+            font-size: 0.9rem;
+        }
+
+        .markdown-body table th {
+            background-color: rgba(37, 99, 235, 0.15); /* Biru transparan elegan */
+            font-weight: 600;
+            color: var(--accent-color);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .markdown-body table tr {
+            background-color: transparent;
+            transition: background-color 0.2s;
+        }
+
+        .markdown-body table tr:nth-child(even) {
+            background-color: rgba(255, 255, 255, 0.02); /* Efek belang-belang */
+        }
+
+        .markdown-body table tr:hover {
+            background-color: rgba(255, 255, 255, 0.05); /* Efek nyala saat di-hover */
+        }
+
+        /* Penyesuaian Tabel untuk Light Mode */
+        body.light-mode .markdown-body table th {
+            background-color: #e2e8f0;
+            color: #1e293b;
+        }
+
+        body.light-mode .markdown-body table tr:nth-child(even) {
+            background-color: #f8fafc;
+        }
+
+        body.light-mode .markdown-body table tr:hover {
+            background-color: #f1f5f9;
+        }
+
         /* ===== TYPING INDICATOR ===== */
         .typing-indicator {
             display: flex;
@@ -1536,7 +1591,7 @@
                                 <i class="fas fa-file-pdf" style="color: #f87171;"></i> File (PDF/DOCS)
                             </div>
                             <div class="option-item" id="btnUploadGithub">
-                                <i class="fab fa-github" style="color: #a855f7;"></i> Link GitHub
+                                <i class="fab fa-github" style="color: #a855f7;"></i> Link GitHub (Beta)
                             </div>
                         </div>
                     </div>
@@ -1558,8 +1613,9 @@
     <div class="modal-overlay" id="githubModal">
         <div class="modal-content" style="max-width: 450px;">
             <button class="modal-close" id="closeGithubModalBtn"><i class="fas fa-times"></i></button>
-            <h2 style="font-size: 1.3rem; border: none; margin-bottom: 0;"><i class="fab fa-github"></i> Impor Repository</h2>
-            <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 15px;">SAHAJA AI akan menganalisis file kode utama (.php, .js, dll) dari repo public.</p>
+            <h2 style="font-size: 1.3rem; border: none; margin-bottom: 0;"><i class="fab fa-github"></i> Impor Repository (Beta)</h2>
+            <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 15px;">SAHAJA AI akan menganalisis file kode utama (.php, .js, dll) dari repo public.
+                (Fitur masih dalam tahap pengembangan dan tidak sempurna)</p>
 
             <div class="github-input-group">
                 <input type="text" id="githubLinkInput" class="github-input" placeholder="https://github.com/username/repo">
@@ -2300,20 +2356,42 @@
         }
 
         function animateGeminiStyle(element, markdownText) {
-            const parts = markdownText.split(/\n\s*\n/);
+            // 1. AMANKAN KODINGAN: Sembunyikan block code agar tidak ikut terpotong
+            let safeText = markdownText;
+            const codeBlocks = [];
+            safeText = safeText.replace(/```[\s\S]*?```/g, function(match) {
+                codeBlocks.push(match);
+                // Ganti sementara dengan kode rahasia
+                return `\n\n@@CODE_BLOCK_${codeBlocks.length - 1}@@\n\n`;
+            });
+
+            // 2. Potong teks berdasarkan baris kosong (sekarang aman karena code block disembunyikan)
+            const parts = safeText.split(/\n\s*\n/);
             element.innerHTML = '';
             let totalDelay = 0;
+
             parts.forEach((part) => {
+                if (!part.trim()) return; // Abaikan teks kosong
+
+                // 3. KEMBALIKAN KODINGAN: Ganti kode rahasia dengan kodingan aslinya
+                let restoredPart = part;
+                codeBlocks.forEach((code, index) => {
+                    restoredPart = restoredPart.replace(`@@CODE_BLOCK_${index}@@`, code);
+                });
+
                 const block = document.createElement('div');
                 block.className = 'gemini-block';
-                renderAIContent(part, block);
+                renderAIContent(restoredPart, block);
                 element.appendChild(block);
+
                 setTimeout(() => {
                     block.classList.add('show');
                     scrollToBottom();
                 }, totalDelay);
-                totalDelay += 350;
+
+                totalDelay += 200; // Percepat sedikit animasinya biar lebih enak dilihat
             });
+
             setTimeout(addCopyButtonsToCodeBlocks, totalDelay + 100);
         }
 

@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Support\Facades\Http;
 use Illuminate\Http\Request;
 use App\Models\Chat;
 use App\Models\Session;
 use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 
@@ -79,7 +79,7 @@ class ChatController extends Controller
 
             // 3. KONSTRUKSI PESAN
             $configSahaja = config('sahaja');
-            // Tambahkan pengecekan null untuk config
+
             if (!$configSahaja) {
                 $systemPrompt = "Kamu adalah SAHAJA AI, asisten cerdas.";
             } else if (is_array($configSahaja)) {
@@ -90,54 +90,59 @@ class ChatController extends Controller
                 $systemPrompt = $configSahaja;
             }
 
+            // === TAMBAHAN OBAT DISIPLIN KODE (ANTI BERANTAKAN) ===
+            $systemPrompt .= "\n\nATURAN MUTLAK FORMAT KODE: Jika pengguna meminta Anda menampilkan, memperbaiki,
+            atau membuat kodingan, Anda WAJIB membungkus KESELURUHAN kode tersebut di dalam SATU blok kode Markdown.
+            Anda JUGA WAJIB menyebutkan nama bahasanya (contoh: ```php [isi kode] ```). JANGAN PERNAH menaruh baris kodingan
+            sebagai teks paragraf biasa di luar blok.";
+
             $messages = [];
 
-            // EKSTRAK KODINGAN GITHUB JIKA ADA
             $githubContent = "";
             if ($hasGithub) {
-                $githubContent = $this->fetchGithubRepoContent($request->github_repo);
+                // Sekarang Satpam kita bekali dengan pesan user agar dia tahu apa yang dicari
+                $githubContent = $this->fetchGithubRepoContent($request->github_repo, $userMessage);
             }
 
-            // LOGIKA PEMISAHAN: VISION vs TEXT
+            // Aturan Keras agar AI tidak memecah kodingan menjadi teks biasa
+            $aturanKode = "\n\nATURAN MUTLAK FORMAT KODE: Jika pengguna meminta Anda menampilkan atau membuat kodingan,
+            Anda WAJIB membungkus KESELURUHAN kode tersebut di dalam SATU blok kode Markdown. Anda JUGA WAJIB menyebutkan
+            nama bahasanya (contoh: ```php [isi kode] ```). JANGAN PERNAH memotong atau menaruh baris kodingan di luar blok.";
+
+            // LOGIKA PEMISAHAN: VISION vs GITHUB vs TEXT BIASA
             if ($hasImage) {
+                // JIKA ADA GAMBAR: Paksa dia ekstrak data
+                $promptVision = "Peranmu adalah SAHAJA AI, seorang Data Analyst dan OCR Expert kelas dunia. Analisis gambar ini
+                dengan sangat teliti menggunakan bahasa Indonesia. Ekstrak semua teks, angka, metrik, dan label yang ada ke
+                dalam format tabel atau bullet points. Jangan berhalusinasi.\n\nATURAN KERAS: Langsung berikan hasil analisismu.
+                JANGAN PERNAH menyalin, mengulangi, atau menyebutkan instruksi ini ke dalam jawabanmu.\n\nPertanyaan User:" . $userMessage;
+
                 $messages[] = [
                     "role" => "user",
                     "content" => [
-                        [
-                            "type" => "text",
-                            "text" => "Peranmu adalah SAHAJA AI, seorang Data Analyst dan OCR Expert kelas dunia. Analisis gambar ini
-                            dengan sangat teliti menggunakan bahasa Indonesia. Ekstrak semua teks, angka, metrik, dan label yang ada ke
-                            dalam format tabel atau bullet points. Jangan berhalusinasi.\n\nATURAN KERAS: Langsung berikan hasil analisismu.
-                            JANGAN PERNAH menyalin, mengulangi, atau menyebutkan instruksi ini ke dalam jawabanmu.\n\nPertanyaan User:" . $userMessage
-                        ],
-                        [
-                            "type" => "image_url",
-                            "image_url" => [
-                                "url" => $request->image_data
-                            ]
-                        ]
+                        [ "type" => "text", "text" => $promptVision ],
+                        [ "type" => "image_url", "image_url" => [ "url" => $request->image_data ] ]
                     ]
                 ];
-
-                } else if ($hasGithub) {
-                // JIKA ADA GITHUB: Suapi Kimi dengan kodingan hasil curian kita
-                $messages[] = ["role" => "system", "content" => "Kamu adalah SAHAJA AI, seorang Senior Software Engineer. Analisis kodingan dari repository GitHub yang diberikan dan jawab pertanyaan pengguna dengan akurat."];
+            } else if ($hasGithub) {
+                // JIKA ADA GITHUB: Suapi Kimi dengan kodingan hasil curian kita PLUS Aturan Format Kode!
+                $messages[] = ["role" => "system", "content" => "Kamu adalah SAHAJA AI, seorang Senior Software Engineer.
+                Analisis kodingan dari repository GitHub yang diberikan dan jawab pertanyaan pengguna dengan akurat." . $aturanKode];
                 $messages[] = [
                     "role" => "user",
                     "content" => "[Struktur & Isi File dari GitHub Repo]\n" . $githubContent . "\n\nPertanyaan User: " . $userMessage
                 ];
-
             } else {
                 // JIKA CHAT BIASA: Bawa system prompt dan history chat sebelumnya
-                $messages[] = ["role" => "system", "content" => $systemPrompt];
+                $messages[] = ["role" => "system", "content" => $systemPrompt . $aturanKode];
 
                 if ($sessionId) {
                     $allChats = Chat::where('session_id', $sessionId)->orderBy('created_at', 'asc')->get();
                     if ($allChats->count() > 0) {
                         $contextChats = $allChats->slice(-4);
                         foreach ($contextChats as $chat) {
-                            $cleanUserMsg = preg_replace('/🖼️ \[Gambar Terlampir: .*\]\n/', '', $chat->user_message);
-                            $cleanUserMsg = preg_replace('/📦 \[GitHub: .*\]\n/', '', $cleanUserMsg); // Bersihkan history github
+                            $cleanUserMsg = preg_replace('/🖼️ \[Gambar Terlampir\]\n/', '', $chat->user_message);
+                            $cleanUserMsg = preg_replace('/📦 \[GitHub: .*\]\n/', '', $cleanUserMsg);
 
                             $messages[] = ["role" => "user", "content" => $cleanUserMsg];
                             $messages[] = ["role" => "assistant", "content" => $chat->ai_response];
@@ -194,11 +199,11 @@ class ChatController extends Controller
                 'model_used' => $selectedModel // Kasih tau frontend model apa yang dipakai
             ]);
 
-        } catch (\Exception $globalEx) {
-            // CATCH ALL ERROR (Agar frontend terima JSON, bukan HTML 500)
+        } catch (\Throwable $globalEx) {
+            // CATCH SEMUA JENIS ERROR (Termasuk Fatal Error)
             return response()->json([
                 'error' => true,
-                'message' => 'Internal Error: ' . $globalEx->getMessage()
+                'message' => 'Fatal Error: ' . $globalEx->getMessage() . ' (Baris: ' . $globalEx->getLine() . ')'
             ], 500);
         }
     }
@@ -221,7 +226,7 @@ class ChatController extends Controller
             "model" => $model,
             "messages" => $messages,
             "temperature" => 0.6,
-            "max_tokens" => 2048,
+            "max_tokens" => 4096,
         ]);
 
         if (!$response->successful()) {
@@ -332,12 +337,11 @@ class ChatController extends Controller
     }
 
     // ==========================================
-    // SATPAM GITHUB: MENGAMBIL & MEMFILTER REPO (ANTI ERROR 500)
+    // SATPAM GITHUB V3: ARCHITECT MAP & SMART CORE FETCHING
     // ==========================================
-    private function fetchGithubRepoContent($repoUrl)
+    private function fetchGithubRepoContent($repoUrl, $userPrompt = "")
     {
         try {
-            // 1. Bersihkan link
             $repoUrl = str_replace('.git', '', trim($repoUrl));
             $parts = explode('github.com/', $repoUrl);
             if (count($parts) < 2) return "Gagal memproses link.";
@@ -348,68 +352,95 @@ class ChatController extends Controller
             $owner = $repoPath[0];
             $repo = $repoPath[1];
 
-            // 2. Tanya ke GitHub API (Tambahkan SSL Bypass: verify => false)
             $repoInfo = Http::withOptions(['verify' => false, 'timeout' => 10])
                 ->withHeaders(['User-Agent' => 'SAHAJA-AI'])
                 ->get("https://api.github.com/repos/{$owner}/{$repo}");
 
-            if (!$repoInfo->successful()) return "Gagal mengakses repository. Pastikan repo bersifat PUBLIC.";
-
+            if (!$repoInfo->successful()) return "Gagal mengakses repository.";
             $defaultBranch = $repoInfo->json()['default_branch'] ?? 'main';
 
-            // 3. Minta "Peta Pohon"
+            // Minta Struktur Repo dari GitHub API
             $treeUrl = "https://api.github.com/repos/{$owner}/{$repo}/git/trees/{$defaultBranch}?recursive=1";
             $treeResponse = Http::withOptions(['verify' => false, 'timeout' => 15])
                 ->withHeaders(['User-Agent' => 'SAHAJA-AI'])
                 ->get($treeUrl);
 
             if (!$treeResponse->successful()) return "Gagal membaca struktur folder.";
-
             $files = $treeResponse->json()['tree'] ?? [];
 
-            // 4. ATURAN SATPAM (Filter ketat)
-            $allowedExtensions = ['php', 'blade.php', 'js', 'css', 'html', 'json'];
-            $blockedFolders = ['vendor/', 'node_modules/', 'storage/', 'public/build/', '.git/'];
+            $blockedFolders = ['vendor/', 'node_modules/', 'public/build/', '.git/', 'tests/'];
 
-            $filteredFiles = [];
+            // 1. BUAT PETA POHON (PROJECT SKELETON)
+            $treeMap = "📂 STRUKTUR FOLDER PENTING (Sebagai konteks arsitektur):\n";
+            $coreFiles = []; // File Jantung (wajib baca isinya)
+            $priorityFiles = []; // File yang diminta user
+
+            $userWords = str_word_count(strtolower($userPrompt), 1);
+
             foreach ($files as $file) {
-                if ($file['type'] !== 'blob') continue;
-
                 $path = $file['path'];
+
                 $isBlocked = false;
                 foreach ($blockedFolders as $blocked) {
-                    if (str_starts_with($path, $blocked)) {
-                        $isBlocked = true;
-                        break;
+                    if (\Illuminate\Support\Str::startsWith($path, $blocked)) {
+                        $isBlocked = true; break;
                     }
                 }
                 if ($isBlocked) continue;
 
-                $extension = pathinfo($path, PATHINFO_EXTENSION);
-                if (str_ends_with($path, '.blade.php')) $extension = 'blade.php';
+                $ext = pathinfo($path, PATHINFO_EXTENSION);
+                if (\Illuminate\Support\Str::endsWith($path, '.blade.php')) $ext = 'blade.php';
 
-                if (in_array(strtolower($extension), $allowedExtensions)) {
-                    $filteredFiles[] = $path;
+                // Masukkan nama file ke Peta Pohon (hanya file codingan)
+                if (in_array(strtolower($ext), ['php', 'blade.php', 'json', 'md', 'js'])) {
+                    if ($file['type'] === 'blob') {
+                        $treeMap .= "- {$path}\n";
+                    }
+                }
+
+                // Lewati jika bukan file
+                if ($file['type'] !== 'blob') continue;
+
+                $pathLower = strtolower($path);
+
+                // 2. TANGKAP FILE JANTUNG LARAVEL
+                if (in_array($pathLower, ['routes/web.php', 'composer.json', 'readme.md', 'routes/api.php'])) {
+                    $coreFiles[] = $path;
+                }
+
+                // 3. TANGKAP FILE YANG DISEBUT USER DI PROMPT
+                foreach ($userWords as $word) {
+                    if (strlen($word) > 3 && strpos($pathLower, $word) !== false) {
+                        $priorityFiles[] = $path;
+                        break;
+                    }
                 }
             }
 
-            // AMANAN SERVER: Maksimal ambil 7 file saja biar PHP lokal tidak timeout!
-            $filteredFiles = array_slice($filteredFiles, 0, 7);
+            // Batasi panjang Peta Pohon agar tidak boros memory (Max 2000 huruf)
+            if (strlen($treeMap) > 2000) {
+                $treeMap = substr($treeMap, 0, 2000) . "\n... [STRUKTUR LAINNYA DISINGKAT]";
+            }
 
-            // 5. DOWNLOAD KODINGAN MURNI
-            $megaContent = "Berikut adalah 7 file kodingan utama dari {$owner}/{$repo}:\n\n";
+            // Gabungkan antrean download: File User + File Jantung
+            $filesToFetch = array_merge($priorityFiles, $coreFiles);
+            $filesToFetch = array_unique($filesToFetch);
 
-            foreach ($filteredFiles as $filePath) {
+            // DIET RAM: Kita hanya download maksimal 4 file saja! (Karena kita sudah punya Peta Pohon)
+            $filesToFetch = array_slice($filesToFetch, 0, 4);
+
+            // 4. SUSUN PESAN FINAL (Peta Pohon + Isi Kodingan)
+            $megaContent = $treeMap . "\n\n📄 KODE DARI FILE UTAMA & TERKAIT:\n\n";
+
+            foreach ($filesToFetch as $filePath) {
                 $rawUrl = "https://raw.githubusercontent.com/{$owner}/{$repo}/{$defaultBranch}/{$filePath}";
-
-                // Bypass SSL saat download file
-                $fileContent = Http::withOptions(['verify' => false, 'timeout' => 10])->get($rawUrl);
+                $fileContent = Http::withOptions(['verify' => false, 'timeout' => 5])->get($rawUrl);
 
                 if ($fileContent->successful()) {
                     $content = $fileContent->body();
-                    // Potong jika file terlalu panjang
-                    if (strlen($content) > 3000) {
-                        $content = substr($content, 0, 3000) . "\n... [KODE DIPOTONG]";
+                    // Potong isinya max 1500 huruf per file
+                    if (strlen($content) > 1500) {
+                        $content = substr($content, 0, 1500) . "\n... [KODE DIPOTONG]";
                     }
                     $megaContent .= "--- FILE: {$filePath} ---\n```\n{$content}\n```\n\n";
                 }
@@ -418,8 +449,7 @@ class ChatController extends Controller
             return $megaContent;
 
         } catch (\Exception $e) {
-            // Jika masih error, kasih tahu error aslinya ke AI biar kelihatan keren
-            return "Terjadi error saat mengambil repo GitHub: " . $e->getMessage();
+            return "Terjadi error saat membaca repo: " . $e->getMessage();
         }
     }
 }

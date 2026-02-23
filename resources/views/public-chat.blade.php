@@ -55,6 +55,61 @@
         .markdown-body pre { background: #282c34 !important; border-radius: 8px; padding: 15px; margin: 15px 0; overflow-x: auto; border: 1px solid var(--glass-border); display: block; max-width: 100%; }
         .markdown-body code { font-family: 'Roboto Mono', monospace; font-size: 0.9em; color: #e3e3e3; }
 
+        /* ===== TABEL MARKDOWN ===== */
+        .markdown-body table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 16px;
+            margin-bottom: 16px;
+            display: block;
+            overflow-x: auto; /* Biar tabel bisa di-scroll ke kanan di HP */
+            border-radius: 8px;
+            border: 1px solid var(--glass-border);
+        }
+
+        .markdown-body table th,
+        .markdown-body table td {
+            padding: 10px 16px;
+            border: 1px solid var(--glass-border);
+            text-align: left;
+            font-size: 0.9rem;
+        }
+
+        .markdown-body table th {
+            background-color: rgba(37, 99, 235, 0.15); /* Biru transparan elegan */
+            font-weight: 600;
+            color: var(--accent-color);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .markdown-body table tr {
+            background-color: transparent;
+            transition: background-color 0.2s;
+        }
+
+        .markdown-body table tr:nth-child(even) {
+            background-color: rgba(255, 255, 255, 0.02); /* Efek belang-belang */
+        }
+
+        .markdown-body table tr:hover {
+            background-color: rgba(255, 255, 255, 0.05); /* Efek nyala saat di-hover */
+        }
+
+        /* Penyesuaian Tabel untuk Light Mode */
+        body.light-mode .markdown-body table th {
+            background-color: #e2e8f0;
+            color: #1e293b;
+        }
+
+        body.light-mode .markdown-body table tr:nth-child(even) {
+            background-color: #f8fafc;
+        }
+
+        body.light-mode .markdown-body table tr:hover {
+            background-color: #f1f5f9;
+        }
+
         .footer { padding: 20px; text-align: center; border-top: 1px solid var(--glass-border); font-size: 0.85rem; color: var(--text-secondary); }
         .footer a { color: var(--accent-color); text-decoration: none; font-weight: bold; }
     </style>
