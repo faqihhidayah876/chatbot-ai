@@ -1146,6 +1146,52 @@
             transition: opacity 0.3s ease, visibility 0.3s;
         }
 
+        /* ===== MODAL GITHUB ===== */
+        .github-input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .github-input {
+            width: 100%;
+            padding: 12px 16px;
+            border-radius: 12px;
+            border: 1px solid var(--glass-border);
+            background: rgba(10, 14, 23, 0.5);
+            color: var(--text-primary);
+            font-size: 0.95rem;
+            outline: none;
+            transition: 0.3s;
+        }
+
+        body.light-mode .github-input {
+            background: #f1f5f9;
+            color: #1e293b;
+        }
+
+        .github-input:focus {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+        }
+
+        .github-submit-btn {
+            background: var(--accent-gradient);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .github-submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+        }
+
         .modal-overlay.show {
             opacity: 1;
             visibility: visible;
@@ -1336,6 +1382,9 @@
                 <p><strong>4. Fixing Bug</strong><br>
                     Memperbaiki sejumlah bug yang ditemukan dan meningkatkan User Experience.
                 </p>
+                <p><strong>5. Fitur Upload Link Repo Github</strong><br>
+                    Sekarang Anda bisa upload link repo github anda, SAHAJA AI akan membaca codingan Anda.
+                </p>
             </div>
         </div>
     </div>
@@ -1489,6 +1538,9 @@
                             <div class="option-item" id="btnUploadDoc">
                                 <i class="fas fa-file-pdf" style="color: #f87171;"></i> File (PDF/DOCS)
                             </div>
+                            <div class="option-item" id="btnUploadGithub">
+                                <i class="fab fa-github" style="color: #a855f7;"></i> Link GitHub
+                            </div>
                         </div>
                     </div>
 
@@ -1504,6 +1556,18 @@
                 </div>
             </div>
             <div class="input-footer">SAHAJA AI dapat membuat kesalahan, periksa lebih lanjut</div>
+        </div>
+    </div>
+    <div class="modal-overlay" id="githubModal">
+        <div class="modal-content" style="max-width: 450px;">
+            <button class="modal-close" id="closeGithubModalBtn"><i class="fas fa-times"></i></button>
+            <h2 style="font-size: 1.3rem; border: none; margin-bottom: 0;"><i class="fab fa-github"></i> Impor Repository</h2>
+            <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 15px;">SAHAJA AI akan menganalisis file kode utama (.php, .js, dll) dari repo public.</p>
+
+            <div class="github-input-group">
+                <input type="text" id="githubLinkInput" class="github-input" placeholder="https://github.com/username/repo">
+                <button id="submitGithubBtn" class="github-submit-btn">Muat Repository</button>
+            </div>
         </div>
     </div>
 
@@ -1523,8 +1587,9 @@
 
         // VARIABEL UNTUK FILE UPLOAD
         let extractedFileText = "";
-        let base64Image = null;
+        let base64Image = null; // untuk gambar
         let currentFileName = "";
+        let currentGithubRepo = ""; //untuk github
 
         const attachBtn = document.getElementById('attachButton');
         const attachMenu = document.getElementById('attachMenu');
@@ -1691,6 +1756,52 @@
             attachMenu.classList.remove('show');
         });
 
+        // --- LOGIKA GITHUB BARU ---
+        const githubModal = document.getElementById('githubModal');
+        const closeGithubModalBtn = document.getElementById('closeGithubModalBtn');
+        const submitGithubBtn = document.getElementById('submitGithubBtn');
+        const githubLinkInput = document.getElementById('githubLinkInput');
+
+        // Buka Modal GitHub
+        document.getElementById('btnUploadGithub').addEventListener('click', () => {
+            attachMenu.classList.remove('show');
+            githubModal.classList.add('show');
+            githubLinkInput.focus();
+        });
+
+        // Tutup Modal GitHub
+        closeGithubModalBtn.addEventListener('click', () => {
+            githubModal.classList.remove('show');
+            githubLinkInput.value = '';
+        });
+
+        // Simpan Link & Munculkan Preview
+        submitGithubBtn.addEventListener('click', () => {
+            const link = githubLinkInput.value.trim();
+            if (link.includes('github.com')) {
+                removeFile(); // Bersihkan file lain jika ada
+
+                // Ambil nama repo dari link (contoh: username/repo)
+                const urlParts = link.split('github.com/');
+                if (urlParts.length > 1) {
+                    let repoName = urlParts[1].replace('.git', '').split('/').slice(0, 2).join('/');
+                    currentGithubRepo = link;
+                    currentFileName = repoName;
+
+                    // Munculkan di Preview Box
+                    filePreviewContainer.style.display = 'flex';
+                    filePreviewContainer.querySelector('i').className = 'fab fa-github';
+                    filePreviewContainer.querySelector('i').style.color = '#a855f7';
+                    fileNameDisplay.textContent = "Repo: " + repoName;
+
+                    githubModal.classList.remove('show');
+                    githubLinkInput.value = '';
+                }
+            } else {
+                alert('Tolong masukkan link GitHub yang valid!');
+            }
+        });
+
         imageInput.addEventListener('change', (e) => {
             const file = e.target.files[0];
             if (!file) return;
@@ -1777,6 +1888,7 @@
             extractedFileText = "";
             base64Image = null;
             currentFileName = "";
+            currentGithubRepo = ""; // RESET DATA GITHUB
             filePreviewContainer.style.display = 'none';
             docInput.value = '';
             imageInput.value = '';
@@ -1907,6 +2019,11 @@
                     const promptQuestion = messageInput || "Tolong jelaskan gambar ini secara detail.";
                     finalMessageToSend = promptQuestion;
                     displayMessage = `🖼️ [Gambar: ${currentFileName}]\n${promptQuestion}`;
+                } else if (currentGithubRepo) { // KONDISI BARU: JIKA ADA GITHUB REPO
+                    const promptQuestion = messageInput || "Tolong analisis kode di repository ini.";
+                    // Yang dikirim ke backend tetap teks prompt-nya saja
+                    finalMessageToSend = promptQuestion;
+                    displayMessage = `📦 [GitHub: ${currentFileName}]\n${promptQuestion}`;
                 } else {
                     finalMessageToSend = messageInput;
                 }
@@ -1926,6 +2043,7 @@
                 session_id: currentSessionId
             };
             if (base64Image) payload.image_data = base64Image;
+            if (currentGithubRepo) payload.github_repo = currentGithubRepo; // Untuk Github
             if (window.activeForceMode !== null) payload.force_mode = window.activeForceMode;
 
             let isComplex = detectComplexity(finalMessageToSend);
@@ -2275,8 +2393,10 @@
         }
 
         async function deleteSession(id) {
+            // Konfirmasi penghapusan
             if (confirm("Apakah Anda yakin ingin menghapus obrolan ini secara permanen?")) {
                 try {
+                    // Tembak API untuk hapus data di database
                     await fetch(`/session/${id}/delete`, {
                         method: 'DELETE',
                         headers: {
@@ -2284,15 +2404,20 @@
                         }
                     });
 
-                    // Hilangkan elemen dari UI
-                    document.getElementById(`session-${id}`).remove();
+                    // 1. Hapus dari sidebar (Dengan pengecekan aman agar tidak crash)
+                    const sessionDiv = document.getElementById(`session-${id}`);
+                    if (sessionDiv) {
+                        sessionDiv.remove();
+                    }
 
-                    // Jika yang dihapus adalah sesi yang sedang dibuka, lempar ke halaman utama
-                    if (currentSessionId == id) {
-                        window.location.href = "/chat";
+                    // 2. Redirect jika yang dihapus adalah obrolan yang sedang dibuka
+                    // Kita paksa konversi ke String agar tipe datanya 100% cocok
+                    if (String(currentSessionId).trim() === String(id).trim()) {
+                        // Gunakan Route Laravel langsung agar URL-nya dijamin akurat!
+                        window.location.href = "{{ route('chat.new') }}";
                     }
                 } catch (e) {
-                    alert("Gagal menghapus obrolan.");
+                    alert("Gagal menghapus obrolan. Coba muat ulang halaman.");
                 }
             }
         }

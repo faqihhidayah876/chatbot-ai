@@ -847,9 +847,9 @@
         <div class="hero-section">
             <span class="hero-badge">AI ASSISTANT</span>
             <h1 class="hero-title">SAHAJA AI</h1>
-            <div class="hero-version">Beta V 3.1</div>
+            <div class="hero-version">Beta V 3.2</div>
             <p class="hero-description">
-                Asisten cerdas berbasis 3 models AI <strong>Kimi K 2.5, Kimi K2, & Llama 3.2-90b-vision-instruct</strong> setara dengan AI Besar lainnya siap membantu dan
+                Asisten cerdas berbasis 3 models AI <strong>Kimi K 2.5, Kimi K2, & Llama 3.2-11b-vision-instruct</strong> setara dengan AI Besar lainnya siap membantu dan
                 brainstorming ide Anda.
             </p>
         </div>
@@ -904,7 +904,7 @@
                     <thead>
                         <tr>
                             <th>Aspek</th>
-                            <th>SAHAJA AI v3.1</th>
+                            <th>SAHAJA AI v3.2</th>
                             <th>ChatGPT</th>
                             <th>Gemini</th>
                             <th>DeepSeek</th>
@@ -913,45 +913,45 @@
                     <tbody>
                         <tr>
                             <td>Reasoning</td>
-                            <td><span class="check">✅ CoT eksplisit</span></td>
-                            <td><span class="warning">⚠️ Tersirat</span></td>
-                            <td><span class="check">✅ Multi-perspective</span></td>
-                            <td><span class="check">✅ Chain-of-thought</span></td>
+                            <td><span class="check">CoT eksplisit</span></td>
+                            <td><span class="warning">Tersirat</span></td>
+                            <td><span class="check">Multi-perspective</span></td>
+                            <td><span class="check">Chain-of-thought</span></td>
                         </tr>
                         <tr>
                             <td>Local Context</td>
-                            <td><span class="check">✅ Indonesia banget</span></td>
-                            <td><span class="cross">❌ Global generik</span></td>
-                            <td><span class="warning">⚠️ Regional terbatas</span></td>
-                            <td><span class="cross">❌ Global generik</span></td>
+                            <td><span class="check">Indonesia banget</span></td>
+                            <td><span class="cross">Global generik</span></td>
+                            <td><span class="warning">Regional terbatas</span></td>
+                            <td><span class="cross">Global generik</span></td>
                         </tr>
                         <tr>
                             <td>Technical Depth</td>
-                            <td><span class="check">✅ Fullstack + AI + Cloud</span></td>
-                            <td><span class="warning">⚠️ Luas tapi generik</span></td>
-                            <td><span class="check">✅ Teknis kuat</span></td>
-                            <td><span class="check">✅ Coding kuat</span></td>
+                            <td><span class="check">Fullstack + AI + Cloud</span></td>
+                            <td><span class="warning">Luas tapi generik</span></td>
+                            <td><span class="check">Teknis kuat</span></td>
+                            <td><span class="check">Coding kuat</span></td>
                         </tr>
                         <tr>
                             <td>Output Control</td>
-                            <td><span class="check">✅ Strict formatting</span></td>
-                            <td><span class="warning">⚠️ Variatif</span></td>
-                            <td><span class="check">✅ Konsisten</span></td>
-                            <td><span class="warning">⚠️ Variatif</span></td>
+                            <td><span class="check">Strict formatting</span></td>
+                            <td><span class="warning">Variatif</span></td>
+                            <td><span class="check">Konsisten</span></td>
+                            <td><span class="warning">Variatif</span></td>
                         </tr>
                         <tr>
                             <td>Safety Protocol</td>
-                            <td><span class="check">✅ Detail + lokal</span></td>
-                            <td><span class="check">✅ Global</span></td>
-                            <td><span class="check">✅ Global</span></td>
-                            <td><span class="check">✅ Global</span></td>
+                            <td><span class="check">Detail + lokal</span></td>
+                            <td><span class="check">Global</span></td>
+                            <td><span class="check">Global</span></td>
+                            <td><span class="check">Global</span></td>
                         </tr>
                         <tr>
                             <td>Personality</td>
-                            <td><span class="check">✅ Authentic + lokal</span></td>
-                            <td><span class="warning">⚠️ Netral</span></td>
-                            <td><span class="warning">⚠️ Profesional</span></td>
-                            <td><span class="warning">⚠️ Netral</span></td>
+                            <td><span class="check">Authentic + lokal</span></td>
+                            <td><span class="warning">Netral</span></td>
+                            <td><span class="warning">Profesional</span></td>
+                            <td><span class="warning">Netral</span></td>
                         </tr>
                     </tbody>
                 </table>
