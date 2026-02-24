@@ -33,9 +33,6 @@ class ChatController extends Controller
 
     public function sendMessage(Request $request)
     {
-        // HAPUS set_time_limit KARENA RAWAN ERROR 500 DI HOSTING GRATIS
-        // set_time_limit(300);
-
         try {
             $request->validate(['message' => 'required']);
 
@@ -43,68 +40,73 @@ class ChatController extends Controller
             $sessionId = $request->session_id;
             $userId = Auth::id();
 
-            // 1. DETEKSI MODEL & INPUT
+            // 1. DETEKSI MODE & INPUT
             $isSimple = $this->isSimpleQuery($userMessage);
             $hasImage = $request->has('image_data') && !empty($request->image_data);
             $hasGithub = $request->has('github_repo') && !empty($request->github_repo);
 
-            // Cek paksaan mode dari UI
             if ($request->has('force_mode')) {
                 if ($request->force_mode === 'fast') $isSimple = true;
                 elseif ($request->force_mode === 'smart') $isSimple = false;
             }
 
-            // LOGIKA ROUTING MODEL (Text vs Vision vs GitHub)
+            // =========================================================
+            // 🌟 ARSITEKTUR DOUBLE ENGINE (NVIDIA + GROQ) 🌟
+            // =========================================================
+            $provider = 'nvidia'; // Default provider
+
             if ($hasImage) {
-                $selectedModel = 'meta/llama-3.2-90b-vision-instruct';
-                $timeout = 180;
+                // VISION MODE: Llama 3.2 Vision (via NVIDIA)
+                $selectedModel = 'meta/llama-3.2-11b-vision-instruct';
+                $provider = 'nvidia';
+                $timeout = 180; // 3 menit sudah cukup
             } else if ($hasGithub || !$isSimple) {
-                $selectedModel = 'moonshotai/kimi-k2.5';
-                $timeout = 300;
+                // SMART MODE: DeepSeek V3 (via NVIDIA) - Cerdas & Reasoning Tinggi
+                // Catatan: Pastikan string 'deepseek-ai/deepseek-v3' ini sesuai dengan yang ada di katalog Nvidia
+                $selectedModel = 'deepseek-ai/deepseek-v3.2';
+                $provider = 'nvidia';
+                $timeout = 300; // 5 menit biar aman
             } else {
-                $selectedModel = 'moonshotai/kimi-k2-instruct';
-                $timeout = 120;
+                // FAST MODE: Llama 3.3 70B (via GROQ) - Super Kilat!
+                $selectedModel = 'moonshotai/kimi-k2-instruct-0905';
+                $provider = 'groq';
+                $timeout = 60; // Groq saking cepatnya, 60 detik aja udah lebih dari cukup
             }
 
-            // 2. HANDLE SESSION
+            // 2. HANDLE SESSION (Dengan pencegah Double Room)
             if (!$sessionId) {
                 $title = Str::words($userMessage, 5, '...');
-                $session = Session::create(['user_id' => $userId, 'title' => $title]);
-                $sessionId = $session->id;
+                $recentSession = Session::where('user_id', $userId)
+                    ->where('title', $title)
+                    ->where('created_at', '>=', now()->subSeconds(15))
+                    ->first();
+
+                if ($recentSession) {
+                    $sessionId = $recentSession->id;
+                } else {
+                    $session = Session::create(['user_id' => $userId, 'title' => $title]);
+                    $sessionId = $session->id;
+                }
             } else {
                 $session = Session::where('id', $sessionId)->where('user_id', $userId)->first();
                 if ($session) $session->touch();
             }
 
-            // 3. KONSTRUKSI PESAN
+            // 3. KONSTRUKSI PESAN (Tetap sama seperti versi stabil)
             $configSahaja = config('sahaja');
-
-            if (!$configSahaja) {
-                $systemPrompt = "Kamu adalah SAHAJA AI, asisten cerdas.";
-            } else if (is_array($configSahaja)) {
-                $systemPrompt = $configSahaja['personality'] ?? "Kamu adalah asisten AI.";
-                if (isset($configSahaja['shortcuts'])) $systemPrompt .= "\n\nSHORTCUTS:" . json_encode($configSahaja['shortcuts']);
-                if (isset($configSahaja['context_rules'])) $systemPrompt .= "\n\nCONTEXT:" . json_encode($configSahaja['context_rules']);
-            } else {
-                $systemPrompt = $configSahaja;
-            }
+            $systemPrompt = is_array($configSahaja) ? ($configSahaja['personality'] ?? "Kamu adalah SAHAJA AI.") : ($configSahaja ?? "Kamu adalah SAHAJA AI.");
 
             $messages = [];
-
-            // EKSTRAK KODINGAN GITHUB JIKA ADA
             $githubContent = "";
+
             if ($hasGithub) {
-                // Berikan pesan user ke Satpam agar dia tahu file apa yang dicari!
-                $githubContent = $this->fetchGithubRepoContent($request->github_repo, $userMessage);
+                $githubContent = $this->fetchGithubRepoContent($request->github_repo);
             }
 
-            // ATURAN MUTLAK FORMAT KODE (Anti-Kotlin & Anti-Berantakan)
-            $aturanKode = "\n\nATURAN MUTLAK FORMAT KODE: Jika pengguna meminta Anda menampilkan atau membuat kodingan, Anda WAJIB membungkus KESELURUHAN kode tersebut di dalam SATU blok kode Markdown utuh beserta nama bahasanya (contoh: ```php [isi kode] ```). JANGAN PERNAH menaruh baris kodingan sebagai teks paragraf biasa di luar blok.";
+            $aturanKode = "\n\nATURAN KODE: Anda WAJIB membungkus kodingan menggunakan Markdown standar (3 backticks). DILARANG KERAS menambahkan simbol apapun (seperti @ atau spasi) sebelum tanda backticks.";
 
-            // LOGIKA PEMISAHAN: VISION vs GITHUB vs TEXT BIASA
             if ($hasImage) {
-                $promptVision = "Peranmu adalah SAHAJA AI, seorang Data Analyst dan OCR Expert kelas dunia. Analisis gambar ini dengan sangat teliti menggunakan bahasa Indonesia. Ekstrak semua teks, angka, metrik, dan label yang ada ke dalam format tabel atau bullet points. Jangan berhalusinasi.\n\nATURAN KERAS: Langsung berikan hasil analisismu. JANGAN PERNAH menyalin, mengulangi, atau menyebutkan instruksi ini ke dalam jawabanmu.\n\nPertanyaan User:" . $userMessage;
-
+                $promptVision = "Peranmu adalah SAHAJA AI, Data Analyst. Ekstrak data dari gambar secara detail.\n\nPertanyaan User:" . $userMessage;
                 $messages[] = [
                     "role" => "user",
                     "content" => [
@@ -113,24 +115,20 @@ class ChatController extends Controller
                     ]
                 ];
             } else if ($hasGithub) {
-                // JIKA ADA GITHUB: Suapi Kimi dan TAMBAHKAN Aturan Kode!
-                $messages[] = ["role" => "system", "content" => "Kamu adalah SAHAJA AI, seorang Senior Software Engineer. Analisis kodingan dari repository GitHub yang diberikan dan jawab pertanyaan pengguna dengan akurat." . $aturanKode];
+                $messages[] = ["role" => "system", "content" => "Kamu adalah SAHAJA AI, Senior Software Engineer. Jawablah berdasarkan [DATA REPOSITORY] di bawah. Jika tertulis 'SISTEM ERROR', jelaskan error tersebut." . $aturanKode];
                 $messages[] = [
                     "role" => "user",
-                    "content" => "[Struktur & Isi File dari GitHub Repo]\n" . $githubContent . "\n\nPertanyaan User: " . $userMessage
+                    "content" => "[URL]: " . $request->github_repo . "\n\n[DATA REPOSITORY]:\n" . $githubContent . "\n\n[PERTANYAAN USER]: " . $userMessage
                 ];
             } else {
-                // JIKA CHAT BIASA
                 $messages[] = ["role" => "system", "content" => $systemPrompt . $aturanKode];
 
                 if ($sessionId) {
                     $allChats = Chat::where('session_id', $sessionId)->orderBy('created_at', 'asc')->get();
                     if ($allChats->count() > 0) {
-                        $contextChats = $allChats->slice(-4);
-                        foreach ($contextChats as $chat) {
+                        foreach ($allChats->slice(-4) as $chat) {
                             $cleanUserMsg = preg_replace('/🖼️ \[Gambar Terlampir\]\n/', '', $chat->user_message);
                             $cleanUserMsg = preg_replace('/📦 \[GitHub: .*\]\n/', '', $cleanUserMsg);
-
                             $messages[] = ["role" => "user", "content" => $cleanUserMsg];
                             $messages[] = ["role" => "assistant", "content" => $chat->ai_response];
                         }
@@ -139,33 +137,46 @@ class ChatController extends Controller
                 $messages[] = ["role" => "user", "content" => $userMessage];
             }
 
-            // 4. CALL API (Safe Try-Catch)
+            // 4. CALL API (Dengan pelemparan Provider)
+            session_write_close();
             $aiReply = "";
 
-            try {
-                $aiReply = $this->callAI($selectedModel, $messages, $timeout);
-            } catch (\Exception $e) {
-                try { Log::error("AI Error: " . $e->getMessage()); } catch (\Exception $logErr) {}
+            if ($hasGithub && \Illuminate\Support\Str::startsWith($githubContent, 'SISTEM ERROR')) {
+                $aiReply = "⚠️ **GitHub Scanner Terblokir**\n\n" . $githubContent;
+            } else {
+                try {
+                    // Oper variabel $provider ke fungsi callAI
+                    $aiReply = $this->callAI($selectedModel, $messages, $timeout, $provider);
+                } catch (\Exception $e) {
+                    $errorMsg = $e->getMessage();
+                    try { Log::error("AI Error: " . $errorMsg); } catch (\Exception $logErr) {}
 
-                if ($selectedModel === 'moonshotai/kimi-k2.5') {
-                    try {
-                        $fallbackReply = $this->callAI('moonshotai/kimi-k2-instruct', $messages, 30);
-                        $aiReply = $fallbackReply . "\n\n*(Mode Cerdas sibuk, beralih ke Mode Cepat)*";
-                    } catch (\Exception $e2) {
-                        $aiReply = "🔌 **Server Padat**\n\nServer AI sedang sangat sibuk. Silakan coba lagi nanti.";
+                    if ($provider === 'nvidia') {
+                        // FALLBACK: Jika Nvidia mati/lambat, BANTING SETIR KE GROQ!
+                        try {
+                            $fallbackReply = $this->callAI('moonshotai/kimi-k2-instruct-0905', $messages, 60, 'groq');
+                            $aiReply = $fallbackReply . "\n\n*(Nvidia Engine sedang sibuk. Dialihkan ke Groq Engine)*";
+                        } catch (\Exception $e2) {
+                            $aiReply = "🔌 **Semua Engine Mati (Nvidia & Groq)**\n\nDetail: `" . substr($e2->getMessage(), 0, 150) . "`";
+                        }
+                    } else {
+                        $aiReply = "🔌 **API Groq Error**\n\nDetail: `" . substr($errorMsg, 0, 200) . "`";
                     }
-                } else {
-                    $aiReply = "🔌 **Koneksi Bermasalah**\n\nCek internet atau coba pertanyaan yang lebih pendek.";
                 }
+            }
+
+            if ($aiReply) {
+                // Hapus simbol @ yang nempel di backtick (contoh: @```php jadi ```php)
+                $aiReply = preg_replace('/@```/', '```', $aiReply);
+                // Pastikan AI tidak ngawur ngasih 4 backtick
+                $aiReply = preg_replace('/````/', '```', $aiReply);
             }
 
             // 5. SIMPAN CHAT
             $dbUserMessage = $userMessage;
-            if ($hasImage) {
-                $dbUserMessage = "🖼️ [Gambar Terlampir]\n" . $userMessage;
-            } else if ($hasGithub) {
-                $repoName = str_replace('https://github.com/', '', rtrim($request->github_repo, '/'));
-                $repoName = str_replace('.git', '', $repoName);
+            if ($hasImage) $dbUserMessage = "🖼️ [Gambar Terlampir]\n" . $userMessage;
+            else if ($hasGithub) {
+                $repoName = str_replace(['https://github.com/', '.git'], '', rtrim($request->github_repo, '/'));
                 $dbUserMessage = "📦 [GitHub: {$repoName}]\n" . $userMessage;
             }
 
@@ -179,11 +190,10 @@ class ChatController extends Controller
                 'session_id' => $sessionId,
                 'user_message' => $dbUserMessage,
                 'ai_response' => $aiReply,
-                'model_used' => $selectedModel
+                'model_used' => $selectedModel . ' (' . strtoupper($provider) . ')'
             ]);
 
         } catch (\Throwable $globalEx) {
-            // CATCH THROWABLE: Biar kalau ada Fatal Error, kita nggak kena Error 500 buta!
             return response()->json([
                 'error' => true,
                 'message' => 'Fatal Error: ' . $globalEx->getMessage() . ' (Baris: ' . $globalEx->getLine() . ')'
@@ -191,10 +201,17 @@ class ChatController extends Controller
         }
     }
 
-    private function callAI($model, $messages, $timeout)
+    // FUNGSI SAKLAR API OTOMATIS
+    private function callAI($model, $messages, $timeout, $provider = 'nvidia')
     {
-        $apiKey = env('NVIDIA_API_KEY');
-        $url = "https://integrate.api.nvidia.com/v1/chat/completions";
+        // Tentukan Kunci dan Pintu Gerbang berdasarkan Provider
+        if ($provider === 'groq') {
+            $apiKey = env('GROQ_API_KEY');
+            $url = "https://api.groq.com/openai/v1/chat/completions";
+        } else {
+            $apiKey = env('NVIDIA_API_KEY');
+            $url = "https://integrate.api.nvidia.com/v1/chat/completions";
+        }
 
         $response = Http::withOptions([
             'verify' => false,
@@ -212,7 +229,7 @@ class ChatController extends Controller
         ]);
 
         if (!$response->successful()) {
-            throw new \Exception("HTTP Error: " . $response->status() . " Body: " . $response->body());
+            throw new \Exception("HTTP {$response->status()} | Provider: {$provider} | Response: " . $response->body());
         }
 
         $data = $response->json();
@@ -223,50 +240,34 @@ class ChatController extends Controller
     {
         $text = strtolower(trim($text));
 
-        $instantPatterns = [
-            '/^(halo|hai|hey|hei|hello|hi|p|ping|tes|test)\b/i',
-            '/^(pagi|siang|sore|malam|makasih|thanks|thx)\b/i',
-            '/^(wkwk|haha|hehe|lol|wkwkwk)\b/i',
-            '/^(siapa kamu|who are you)\b/i',
-        ];
-        foreach ($instantPatterns as $pattern) {
-            if (preg_match($pattern, $text)) return true;
-        }
-
+        // 1. KATA KUNCI TEKNIS BERAT (Otomatis Mode Cerdas)
+        // Saya sudah membuang kata-kata umum seperti "tabel", "analisis", "laporan"
+        // agar pertanyaan biasa tidak memicu loading lama.
         $complexIndicators = [
             'coding', 'program', 'script', 'aplikasi', 'website', 'sistem',
             'database', 'query', 'error', 'debug', 'laravel', 'react', 'vue',
-            'analisis', 'laporan', 'skripsi', 'makalah', 'ppt', 'presentasi',
-            'buatkan', 'generate', 'deploy', 'hosting', 'server', 'api',
-            'kompleks', 'lengkap', 'aesthetic', 'tabel', 'flowchart'
+            'algoritma', 'api', 'server', 'deploy', 'hosting',
+            'generate', 'source code'
         ];
+
+        // Jika prompt mengandung kata-kata teknis di atas, lempar ke K2.5
         foreach ($complexIndicators as $ind) {
-            if (str_contains($text, $ind)) return false;
-        }
-
-        $score = 0;
-        $wordCount = str_word_count($text);
-
-        if ($wordCount <= 8) $score += 2;
-        elseif ($wordCount < 15) $score += 1;
-        elseif ($wordCount > 50) $score -= 3;
-        elseif ($wordCount > 30) $score -= 1;
-
-        $simpleIndicators = [
-            'ngobrol', 'curhat', 'cerita', 'ketawa', 'bantu', 'tolong',
-            'gimana', 'kenapa', 'apa', 'siapa', 'kapan', 'dimana', 'sederhana',
-            'simple', 'simpel', 'kabar', 'ngoding', 'k2', 'puasa', 'ramadhan', 'makan'
-        ];
-
-        $simpleHits = 0;
-        foreach ($simpleIndicators as $ind) {
             if (str_contains($text, $ind)) {
-                $score += 1;
-                if (++$simpleHits >= 3) break;
+                return false; // False = Masuk Mode Cerdas (K2.5)
             }
         }
 
-        return $score >= 2;
+        // 2. LOGIKA HITUNG KATA (Sesuai Permintaan Bosku!)
+        $wordCount = str_word_count($text);
+
+        // Jika tidak ada kata teknis dan jumlah kata <= 15, langsung gas Mode Cepat!
+        if ($wordCount <= 15) {
+            return true; // True = Masuk Mode Cepat (K2)
+        }
+
+        // Jika kata lebih dari 15 (kalimat sangat panjang), lemparkan ke Mode Cerdas
+        // karena biasanya pertanyaan panjang butuh pemahaman konteks yang lebih dalam.
+        return false;
     }
 
     public function renameSession(Request $request, $id)

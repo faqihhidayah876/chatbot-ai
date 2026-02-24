@@ -847,9 +847,9 @@
         <div class="hero-section">
             <span class="hero-badge">AI ASSISTANT</span>
             <h1 class="hero-title">SAHAJA AI</h1>
-            <div class="hero-version">Beta V 3.2</div>
+            <div class="hero-version">Beta V 3.3</div>
             <p class="hero-description">
-                Asisten cerdas berbasis 3 models AI <strong>Kimi K 2.5, Kimi K2, & Llama 3.2-11b-vision-instruct</strong> setara dengan AI Besar lainnya siap membantu dan
+                Asisten cerdas berbasis 3 models AI <strong>DeepSeek V3.2, Kimi K2, & Llama 3.2-11b-vision-instruct</strong> setara dengan AI Besar lainnya siap membantu dan
                 brainstorming ide Anda.
             </p>
         </div>
@@ -875,7 +875,7 @@
         </div>
 
         <!-- ===== SECTION KIMI K 2.5 ===== -->
-        <div class="kimi-section">
+        {{-- <div class="kimi-section">
             <h2 class="kimi-title">Hadir dengan Kimi K 2.5</h2>
             <p class="kimi-description">
                 SAHAJA AI kini hadir dengan mode cerdas berbasis mesin AI terbaru dari Kimi, model reasoning yang handal dan model open-source paling canggih, mampu menandingi Opus 4.5 dan GPT 5.2 dalam beberapa skenario.
@@ -890,7 +890,7 @@
             <p style="margin-top: 0.5rem; font-size: 0.8rem; color: var(--text-secondary);">
                 Sumber gambar: <a href="https://platform.moonshot.ai/docs/guide/kimi-k2-5-quickstart#overview-of-kimi-k25-model" target="_blank" style="color: var(--accent-light); text-decoration: underline;">moonshoot.ai</a>
             </p>
-        </div>
+        </div> --}}
 
         <!-- ===== SECTION TABEL PERBANDINGAN ===== -->
         <div class="comparison-section">
@@ -904,7 +904,7 @@
                     <thead>
                         <tr>
                             <th>Aspek</th>
-                            <th>SAHAJA AI v3.2</th>
+                            <th>SAHAJA AI v3.3</th>
                             <th>ChatGPT</th>
                             <th>Gemini</th>
                             <th>DeepSeek</th>

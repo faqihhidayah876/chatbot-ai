@@ -1500,10 +1500,10 @@
         <div class="chat-header">
             <div style="display: flex; align-items: center;">
                 <button class="mobile-toggle-btn" id="mobileToggleBtn"><i class="fas fa-bars"></i></button>
-                <div class="chat-title">
+                {{-- <div class="chat-title">
                     <i class="fas fa-robot" style="color: var(--accent-color);"></i> SAHAJA AI
                     <span class="model-badge">Powered by: Kimi K 2.5</span>
-                </div>
+                </div> --}}
             </div>
             <div class="settings-container">
                 <button class="icon-btn" id="settingsBtn"><i class="fas fa-cog"></i></button>
@@ -1552,8 +1552,6 @@
                         <div class="ai-actions">
                             <button class="action-btn" onclick="copyText(this)"><i class="far fa-copy"></i>
                                 Salin</button>
-                            <button class="action-btn"><i class="far fa-thumbs-up"></i></button>
-                            <button class="action-btn"><i class="far fa-thumbs-down"></i></button>
                         </div>
                     </div>
                 </div>
@@ -1665,9 +1663,6 @@
 
         // ==========================================
         // EVENT LISTENERS UMUM & TEMA
-        // ==========================================
-        // ==========================================
-        // EVENT LISTENERS UMUM & TEMA - PERBAIKAN TOTAL
         // ==========================================
 
         // 1. Sidebar toggles
@@ -2149,7 +2144,6 @@
                     aiMessageDiv.innerHTML = `
                         <div class="message-avatar ai-avatar-msg"><i class="fas fa-robot"></i></div>
                         <div class="message-content">
-                            <div class="mode-badge ${finalBadgeClass}" style="${extraStyle}">${finalModelLabel}</div>
                             <div class="message-bubble markdown-body"></div>
                             <div class="ai-actions">
                                 <button class="action-btn" onclick="copyText(this)"><i class="far fa-copy"></i> Salin</button>
@@ -2191,7 +2185,7 @@
                     `<div class="mode-badge" style="background: rgba(74, 222, 128, 0.15); color: #22c55e; border: 1px solid rgba(74, 222, 128, 0.3);"><i class="fas fa-eye"></i> Mode Vision (Llama 3.2)</div>`;
                 textHtml = `<span class="typing-text">Menganalisis gambar...</span>`;
             } else if (mode === 'smart') {
-                badgeHtml = `<div class="mode-badge mode-smart"><i class="fas fa-brain"></i> Mode Cerdas (K2.5)</div>`;
+                badgeHtml = `<div class="mode-badge mode-smart"><i class="fas fa-brain"></i> Mode Cerdas (DeepSeek V3.2)</div>`;
                 textHtml =
                     `<span class="typing-text">Menganalisis logika kompleks... <button class="switch-btn" onclick="switchToFastMode()">[Beralih ke Cepat]</button></span>`;
             } else {
