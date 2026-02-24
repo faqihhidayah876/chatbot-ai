@@ -1500,10 +1500,10 @@
         <div class="chat-header">
             <div style="display: flex; align-items: center;">
                 <button class="mobile-toggle-btn" id="mobileToggleBtn"><i class="fas fa-bars"></i></button>
-                {{-- <div class="chat-title">
+                <div class="chat-title">
                     <i class="fas fa-robot" style="color: var(--accent-color);"></i> SAHAJA AI
-                    <span class="model-badge">Powered by: Kimi K 2.5</span>
-                </div> --}}
+                    {{-- <span class="model-badge">Powered by: Kimi K 2.5</span> --}}
+                </div>
             </div>
             <div class="settings-container">
                 <button class="icon-btn" id="settingsBtn"><i class="fas fa-cog"></i></button>
