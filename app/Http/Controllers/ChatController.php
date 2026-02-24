@@ -53,24 +53,31 @@ class ChatController extends Controller
             // =========================================================
             // 🌟 ARSITEKTUR DOUBLE ENGINE (NVIDIA + GROQ) 🌟
             // =========================================================
+            // =========================================================
+            // 🌟 ARSITEKTUR TRIPLE ENGINE + GITHUB SPECIALIST 🌟
+            // =========================================================
             $provider = 'nvidia'; // Default provider
 
             if ($hasImage) {
-                // VISION MODE: Llama 3.2 Vision (via NVIDIA)
+                // 1. VISION MODE: Llama 11B Vision (NVIDIA)
                 $selectedModel = 'meta/llama-3.2-11b-vision-instruct';
                 $provider = 'nvidia';
-                $timeout = 180; // 3 menit sudah cukup
-            } else if ($hasGithub || !$isSimple) {
-                // SMART MODE: DeepSeek V3 (via NVIDIA) - Cerdas & Reasoning Tinggi
-                // Catatan: Pastikan string 'deepseek-ai/deepseek-v3' ini sesuai dengan yang ada di katalog Nvidia
-                $selectedModel = 'deepseek-ai/deepseek-v3.2';
+                $timeout = 180;
+            } else if ($hasGithub) {
+                // 2. GITHUB SPECIALIST: Qwen 3 Coder (NVIDIA) - Monster 256k Context!
+                $selectedModel = 'qwen/qwen3-coder-480b-a35b-instruct';
                 $provider = 'nvidia';
-                $timeout = 300; // 5 menit biar aman
+                $timeout = 300; // 4 Menit (Batas aman timeout hosting Alwaysdata)
+            } else if (!$isSimple) {
+                // 3. SMART MODE (Bukan Github): DeepSeek V3 (NVIDIA)
+                $selectedModel = 'deepseek-ai/deepseek-v3.2'; // Sesuaikan dengan API Nvidia-mu
+                $provider = 'nvidia';
+                $timeout = 300;
             } else {
-                // FAST MODE: Llama 3.3 70B (via GROQ) - Super Kilat!
+                // 4. FAST MODE: Kimi K2 (GROQ)
                 $selectedModel = 'moonshotai/kimi-k2-instruct-0905';
                 $provider = 'groq';
-                $timeout = 60; // Groq saking cepatnya, 60 detik aja udah lebih dari cukup
+                $timeout = 60;
             }
 
             // 2. HANDLE SESSION (Dengan pencegah Double Room)
@@ -115,7 +122,8 @@ class ChatController extends Controller
                     ]
                 ];
             } else if ($hasGithub) {
-                $messages[] = ["role" => "system", "content" => "Kamu adalah SAHAJA AI, Senior Software Engineer. Jawablah berdasarkan [DATA REPOSITORY] di bawah. Jika tertulis 'SISTEM ERROR', jelaskan error tersebut." . $aturanKode];
+                $messages[] = ["role" => "system", "content" => "Kamu adalah SAHAJA AI, Senior Software Engineer. Jawablah berdasarkan [DATA REPOSITORY] di bawah. Jika tertulis 'SISTEM ERROR', jelaskan error tersebut. Jika
+                Anda WAJIB membungkus kodingan menggunakan Markdown standar (3 backticks). DILARANG KERAS menambahkan simbol apapun (seperti @ atau spasi) sebelum tanda backticks." . $aturanKode];
                 $messages[] = [
                     "role" => "user",
                     "content" => "[URL]: " . $request->github_repo . "\n\n[DATA REPOSITORY]:\n" . $githubContent . "\n\n[PERTANYAAN USER]: " . $userMessage
@@ -407,7 +415,7 @@ class ChatController extends Controller
             $filesToFetch = array_unique($filesToFetch);
 
             // DIET SERVER: Ambil MAKSIMAL 4 FILE saja agar respon di bawah 20 detik!
-            $filesToFetch = array_slice($filesToFetch, 0, 4);
+            $filesToFetch = array_slice($filesToFetch, 0, 7);
 
             $megaContent = $treeMap . "\n\n📄 KODE DARI FILE YANG RELEVAN:\n\n";
 
@@ -420,8 +428,8 @@ class ChatController extends Controller
                     $content = $fileContent->body();
 
                     // BATASI 2000 HURUF PER FILE (Sesuai Permintaan Bosku!)
-                    if (strlen($content) > 2000) {
-                        $content = substr($content, 0, 2000) . "\n... [KODE DIPOTONG UNTUK MENGHEMAT MEMORI]";
+                    if (strlen($content) > 15000) {
+                        $content = substr($content, 0, 15000) . "\n... [KODE DIPOTONG UNTUK MENGHEMAT MEMORI]";
                     }
                     $megaContent .= "--- FILE: {$filePath} ---\n```\n{$content}\n```\n\n";
                 }

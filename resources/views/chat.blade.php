@@ -1434,7 +1434,7 @@
                 <p><strong>3. Voice Input</strong><br>
                     Anda bisa langsung ngobrol dengan AI tanpa mengetik dengan menggunakan mikrofon.
                 </p>
-                <p><strong>4. Fitur Upload Link Repo Github</strong><br>
+                <p><strong>4. Fitur Upload Link Repo Github (by: Qwen3 Coder)</strong><br>
                     Sekarang Anda bisa upload link repo github anda, SAHAJA AI akan membaca codingan Anda.
                 </p>
             </div>
@@ -2097,7 +2097,8 @@
             let isComplex = detectComplexity(finalMessageToSend);
             if (extractedFileText) isComplex = true;
             let mode = (window.activeForceMode !== null) ? window.activeForceMode : (isComplex ? 'smart' : 'fast');
-            if (base64Image) mode = 'vision';
+            if (base64Image) mode = 'vision'; // mode gambar
+            if (currentGithubRepo) mode = 'github'; // mode github
 
             const loadingId = appendLoadingWithMode(mode);
             scrollToBottom();
@@ -2128,17 +2129,33 @@
                     const aiMessageDiv = document.createElement('div');
                     aiMessageDiv.className = 'message ai';
 
-                    let finalModelLabel = 'Mode Cepat';
+                    let finalModelLabel = '<i class="fas fa-bolt"></i> Mode Cepat (Kimi)';
                     let finalBadgeClass = 'mode-fast';
                     let extraStyle = '';
 
-                    if (data.model_used && data.model_used.includes('llama')) {
-                        finalModelLabel = 'Mode Vision (Llama 3.2)';
-                        extraStyle =
-                            'background: rgba(74, 222, 128, 0.15); color: #22c55e; border: 1px solid rgba(74, 222, 128, 0.3);';
-                    } else if (data.model_used && data.model_used.includes('k2.5')) {
-                        finalModelLabel = 'Mode Cerdas';
+                    const modelUsedStr = (data.model_used || '').toLowerCase();
+
+                    // 1. JIKA VISION (Llama 11B)
+                    if (modelUsedStr.includes('vision') || modelUsedStr.includes('llama-3.2')) {
+                        finalModelLabel = '<i class="fas fa-eye"></i> Mode Vision (Llama-3.2)';
+                        extraStyle = 'background: rgba(74, 222, 128, 0.15); color: #22c55e; border: 1px solid rgba(74, 222, 128, 0.3);';
+                        finalBadgeClass = '';
+                    }
+                    // 2. JIKA GITHUB (Qwen3 Coder)
+                    else if (modelUsedStr.includes('qwen')) {
+                        finalModelLabel = '<i class="fas fa-code"></i> Mode Code Analyst (Qwen3 Coder)';
+                        extraStyle = 'background: rgba(168, 85, 247, 0.15); color: #a855f7; border: 1px solid rgba(168, 85, 247, 0.3);';
+                        finalBadgeClass = '';
+                    }
+                    // 3. JIKA CERDAS (DeepSeek V3)
+                    else if (modelUsedStr.includes('deepseek')) {
+                        finalModelLabel = '<i class="fas fa-brain"></i> Mode Cerdas (DeepSeek v3.2)';
                         finalBadgeClass = 'mode-smart';
+                    }
+                    // 4. JARING PENGAMAN: Apapun selain 3 di atas (yaitu Kimi K2 dari Groq) masuk sini
+                    else {
+                        finalModelLabel = '<i class="fas fa-bolt"></i> Mode Cepat (Kimi K2)';
+                        finalBadgeClass = 'mode-fast';
                     }
 
                     aiMessageDiv.innerHTML = `
@@ -2181,17 +2198,17 @@
             let textHtml = '';
 
             if (mode === 'vision') {
-                badgeHtml =
-                    `<div class="mode-badge" style="background: rgba(74, 222, 128, 0.15); color: #22c55e; border: 1px solid rgba(74, 222, 128, 0.3);"><i class="fas fa-eye"></i> Mode Vision (Llama 3.2)</div>`;
+                badgeHtml = `<div class="mode-badge" style="background: rgba(74, 222, 128, 0.15); color: #22c55e; border: 1px solid rgba(74, 222, 128, 0.3);"><i class="fas fa-eye"></i> Mode Vision (Llama)</div>`;
                 textHtml = `<span class="typing-text">Menganalisis gambar...</span>`;
+            } else if (mode === 'github') {
+                badgeHtml = `<div class="mode-badge" style="background: rgba(168, 85, 247, 0.15); color: #a855f7; border: 1px solid rgba(168, 85, 247, 0.3);"><i class="fas fa-code"></i> Mode Code Analyst (Qwen3)</div>`;
+                textHtml = `<span class="typing-text">Membaca repository GitHub...</span>`;
             } else if (mode === 'smart') {
-                badgeHtml = `<div class="mode-badge mode-smart"><i class="fas fa-brain"></i> Mode Cerdas (DeepSeek V3.2)</div>`;
-                textHtml =
-                    `<span class="typing-text">Menganalisis logika kompleks... <button class="switch-btn" onclick="switchToFastMode()">[Beralih ke Cepat]</button></span>`;
+                badgeHtml = `<div class="mode-badge mode-smart"><i class="fas fa-brain"></i> Mode Cerdas (DeepSeek)</div>`;
+                textHtml = `<span class="typing-text">Menganalisis logika kompleks... <button class="switch-btn" onclick="switchToFastMode()">[Beralih ke Cepat]</button></span>`;
             } else {
-                badgeHtml = `<div class="mode-badge mode-fast"><i class="fas fa-bolt"></i> Mode Cepat (K2)</div>`;
-                textHtml =
-                    `<span class="typing-text">SAHAJA AI sedang berpikir... <button class="switch-btn" style="color:#d4a017;" onclick="switchToMode('smart')">[Beralih ke Cerdas]</button></span>`;
+                badgeHtml = `<div class="mode-badge mode-fast"><i class="fas fa-bolt"></i> Mode Cepat (Kimi)</div>`;
+                textHtml = `<span class="typing-text">SAHAJA AI sedang berpikir... <button class="switch-btn" style="color:#d4a017;" onclick="switchToMode('smart')">[Beralih ke Cerdas]</button></span>`;
             }
 
             div.innerHTML =
@@ -2350,43 +2367,35 @@
         }
 
         function animateGeminiStyle(element, markdownText) {
-            // 1. AMANKAN KODINGAN: Sembunyikan block code agar tidak ikut terpotong
-            let safeText = markdownText;
-            const codeBlocks = [];
-            safeText = safeText.replace(/```[\s\S]*?```/g, function(match) {
-                codeBlocks.push(match);
-                // Ganti sementara dengan kode rahasia
-                return `\n\n@@CODE_BLOCK_${codeBlocks.length - 1}@@\n\n`;
+            // 1. Render UTUH dulu ke dalam wadah sementara agar Markdown tidak pecah
+            const tempDiv = document.createElement('div');
+            renderAIContent(markdownText, tempDiv);
+
+            // 2. Kosongkan elemen chat utama
+            element.innerHTML = '';
+
+            // 3. Pindahkan hasil render (paragraf, code block, dll) ke dalam pembungkus animasi
+            const children = Array.from(tempDiv.children);
+            children.forEach((child) => {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'gemini-block';
+                wrapper.appendChild(child);
+                element.appendChild(wrapper);
             });
 
-            // 2. Potong teks berdasarkan baris kosong (sekarang aman karena code block disembunyikan)
-            const parts = safeText.split(/\n\s*\n/);
-            element.innerHTML = '';
-            let totalDelay = 0;
-
-            parts.forEach((part) => {
-                if (!part.trim()) return; // Abaikan teks kosong
-
-                // 3. KEMBALIKAN KODINGAN: Ganti kode rahasia dengan kodingan aslinya
-                let restoredPart = part;
-                codeBlocks.forEach((code, index) => {
-                    restoredPart = restoredPart.replace(`@@CODE_BLOCK_${index}@@`, code);
-                });
-
-                const block = document.createElement('div');
-                block.className = 'gemini-block';
-                renderAIContent(restoredPart, block);
-                element.appendChild(block);
-
+            // 4. Munculkan blok-blok tersebut secara perlahan satu per satu
+            let delay = 0;
+            const blocks = element.querySelectorAll('.gemini-block');
+            blocks.forEach((block) => {
                 setTimeout(() => {
                     block.classList.add('show');
                     scrollToBottom();
-                }, totalDelay);
-
-                totalDelay += 200; // Percepat sedikit animasinya biar lebih enak dilihat
+                }, delay);
+                delay += 120; // Kecepatan kemunculan per blok (120ms biar smooth ngebut!)
             });
 
-            setTimeout(addCopyButtonsToCodeBlocks, totalDelay + 100);
+            // 5. Tambahkan tombol copy setelah semua blok selesai muncul
+            setTimeout(addCopyButtonsToCodeBlocks, delay + 100);
         }
 
         function appendMessage(role, text) {

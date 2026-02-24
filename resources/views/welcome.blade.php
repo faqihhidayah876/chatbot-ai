@@ -847,9 +847,9 @@
         <div class="hero-section">
             <span class="hero-badge">AI ASSISTANT</span>
             <h1 class="hero-title">SAHAJA AI</h1>
-            <div class="hero-version">Beta V 3.3</div>
+            <div class="hero-version">Beta V 3.4</div>
             <p class="hero-description">
-                Asisten cerdas berbasis 3 models AI <strong>DeepSeek V3.2, Kimi K2, & Llama 3.2-11b-vision-instruct</strong> setara dengan AI Besar lainnya siap membantu dan
+                Asisten cerdas berbasis 4 models AI <strong>DeepSeek V3.2, Kimi K2, Llama 3.2-11b-vision-instruct, & Qwen 3 Coder</strong> setara dengan AI Besar lainnya siap membantu dan
                 brainstorming ide Anda.
             </p>
         </div>
@@ -904,7 +904,7 @@
                     <thead>
                         <tr>
                             <th>Aspek</th>
-                            <th>SAHAJA AI v3.3</th>
+                            <th>SAHAJA AI v3.4</th>
                             <th>ChatGPT</th>
                             <th>Gemini</th>
                             <th>DeepSeek</th>
