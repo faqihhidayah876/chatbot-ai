@@ -7,8 +7,7 @@
         content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>SAHAJA AI</title>
-    <link rel="icon"
-        href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🤖</text></svg>">
+    <link rel="icon" <link rel="icon" type="image/png" href="https://i.ibb.co.com/jZZ0648R/Logo-SAHAJA-AI.png">
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet"
@@ -723,7 +722,8 @@
             margin-top: 16px;
             margin-bottom: 16px;
             display: block;
-            overflow-x: auto; /* Biar tabel bisa di-scroll ke kanan di HP */
+            overflow-x: auto;
+            /* Biar tabel bisa di-scroll ke kanan di HP */
             border-radius: 8px;
             border: 1px solid var(--glass-border);
         }
@@ -737,7 +737,8 @@
         }
 
         .markdown-body table th {
-            background-color: rgba(37, 99, 235, 0.15); /* Biru transparan elegan */
+            background-color: rgba(37, 99, 235, 0.15);
+            /* Biru transparan elegan */
             font-weight: 600;
             color: var(--accent-color);
             text-transform: uppercase;
@@ -750,11 +751,13 @@
         }
 
         .markdown-body table tr:nth-child(even) {
-            background-color: rgba(255, 255, 255, 0.02); /* Efek belang-belang */
+            background-color: rgba(255, 255, 255, 0.02);
+            /* Efek belang-belang */
         }
 
         .markdown-body table tr:hover {
-            background-color: rgba(255, 255, 255, 0.05); /* Efek nyala saat di-hover */
+            background-color: rgba(255, 255, 255, 0.05);
+            /* Efek nyala saat di-hover */
         }
 
         /* Penyesuaian Tabel untuk Light Mode */
@@ -1411,11 +1414,15 @@
         }
 
         #scrollToBottomBtn {
-            position: absolute; /* KUNCI RAHASIA: Mengikuti kotak input, bukan layar monitor */
-            top: -60px; /* Melayang pas di atas kotak input */
-            right: 0; /* Selalu rata dengan sisi kanan kotak input */
+            position: absolute;
+            /* KUNCI RAHASIA: Mengikuti kotak input, bukan layar monitor */
+            top: -60px;
+            /* Melayang pas di atas kotak input */
+            right: 0;
+            /* Selalu rata dengan sisi kanan kotak input */
 
-            background-color: var(--accent-color, #3b82f6); /* BIRU ICONIC SAHAJA AI */
+            background-color: var(--accent-color, #3b82f6);
+            /* BIRU ICONIC SAHAJA AI */
             color: white;
             border: none;
             border-radius: 50%;
@@ -1423,20 +1430,24 @@
             height: 40px;
             font-size: 16px;
             cursor: pointer;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
             z-index: 100;
             display: none;
             transition: all 0.3s ease;
         }
 
         #scrollToBottomBtn:hover {
-            background-color: #2563eb; /* Biru agak gelap saat disentuh mouse */
+            background-color: #2563eb;
+            /* Biru agak gelap saat disentuh mouse */
             transform: translateY(-3px);
         }
+
         /* 1. DEKLARASI WARNA DEFAULT (DARK MODE) */
         :root {
-            --chip-bg: #1e1e2d; /* Hitam elegan */
-            --chip-border: rgba(255, 255, 255, 0.1); /* Garis putih tipis */
+            --chip-bg: #1e1e2d;
+            /* Hitam elegan */
+            --chip-border: rgba(255, 255, 255, 0.1);
+            /* Garis putih tipis */
             --chip-hover: #2a2a3c;
             --chip-text: #ffffff;
             --chip-shadow: rgba(0, 0, 0, 0.3);
@@ -1445,11 +1456,16 @@
         /* 2. DEKLARASI WARNA LIGHT MODE */
         /* Sesuaikan 'body.light-mode' dengan class Light Mode di kodinganmu (kadang namanya .light-theme atau [data-theme="light"]) */
         body.light-mode {
-            --chip-bg: #f3f4f6; /* Abu-abu sangat terang/putih */
-            --chip-border: rgba(0, 0, 0, 0.1); /* Garis hitam tipis */
-            --chip-hover: #e5e7eb; /* Abu-abu sedikit lebih gelap saat disentuh */
-            --chip-text: #1f2937; /* Teks hitam/abu gelap */
-            --chip-shadow: rgba(0, 0, 0, 0.05); /* Bayangan sangat halus */
+            --chip-bg: #f3f4f6;
+            /* Abu-abu sangat terang/putih */
+            --chip-border: rgba(0, 0, 0, 0.1);
+            /* Garis hitam tipis */
+            --chip-hover: #e5e7eb;
+            /* Abu-abu sedikit lebih gelap saat disentuh */
+            --chip-text: #1f2937;
+            /* Teks hitam/abu gelap */
+            --chip-shadow: rgba(0, 0, 0, 0.05);
+            /* Bayangan sangat halus */
         }
 
         /* 3. CSS TOMBOL CHIP YANG SUDAH PINTAR */
@@ -1473,7 +1489,8 @@
             display: flex;
             align-items: center;
             gap: 10px;
-            transition: all 0.3s ease; /* Transisi diperhalus biar pas ganti tema kelihatan smooth */
+            transition: all 0.3s ease;
+            /* Transisi diperhalus biar pas ganti tema kelihatan smooth */
         }
 
         .action-chip i {
@@ -1521,7 +1538,8 @@
     <div class="sidebar" id="sidebar">
         <div class="sidebar-brand">
             <div class="brand-logo-container">
-                <div class="brand-icon-bg"><i class="fas fa-robot"></i></div>
+                <img src="https://i.ibb.co.com/jZZ0648R/Logo-SAHAJA-AI.png" alt="Logo"
+                    style="width: 24px; height: 24px; margin-right: 8px; border-radius: 4px;">
                 <span class="brand-text text-label">SAHAJA AI</span>
             </div>
             <button class="toggle-btn-sidebar" id="sidebarToggleBtn"><i class="fas fa-bars"></i></button>
@@ -1577,9 +1595,9 @@
         <div class="chat-header">
             <div style="display: flex; align-items: center;">
                 <button class="mobile-toggle-btn" id="mobileToggleBtn"><i class="fas fa-bars"></i></button>
-                <div class="chat-title">
-                    <i class="fas fa-robot" style="color: var(--accent-color);"></i> SAHAJA AI
-                    {{-- <span class="model-badge">Powered by: Kimi K 2.5</span> --}}
+                <div class="chat-title" style="display: flex; align-items: center;">
+                    <img src="https://i.ibb.co.com/jZZ0648R/Logo-SAHAJA-AI.png" alt="Logo" style="width: 28px; height: 28px; margin-right: 10px; border-radius: 6px; object-fit: contain;">
+                    SAHAJA AI
                 </div>
             </div>
             <div class="settings-container">
@@ -1592,23 +1610,31 @@
         </div>
 
         <div class="welcome-screen" id="welcomeScreen" style="{{ count($chats) > 0 ? 'display: none;' : '' }}">
-            <div class="welcome-logo"><i class="fas fa-robot"></i></div>
+            <div class="welcome-logo" style="background: transparent; box-shadow: none;">
+                <img src="https://i.ibb.co.com/wrrG06ds/Logo-SAHAJA-AI.png" alt="Logo SAHAJA AI"
+                    style="width: 100px; height: auto; border-radius: 15px;">
+            </div>
             <div class="welcome-text">
                 <h1 class="welcome-title">SAHAJA AI</h1>
-                <p style="color: var(--text-secondary); font-size: 1.1rem;">Halo, {{ Auth::user()->name ?? 'Teman' }}. Apa yang bisa saya bantu?</p>
+                <p style="color: var(--text-secondary); font-size: 1.1rem;">Halo, {{ Auth::user()->name ?? 'Teman' }}.
+                    Apa yang bisa saya bantu?</p>
             </div>
 
             <div class="suggested-actions">
-                <button class="action-chip" onclick="useShortcut('Bantu saya menganalisis dan mencari error dari link GitHub berikut: ')">
+                <button class="action-chip"
+                    onclick="useShortcut('Bantu saya menganalisis dan mencari error dari link GitHub berikut: ')">
                     <i class="fab fa-github" style="color: #a855f7;"></i> <span>Analisis Kode GitHub</span>
                 </button>
-                <button class="action-chip" onclick="useShortcut('Tolong buatkan contoh kodingan Laravel CRUD sederhana.')">
+                <button class="action-chip"
+                    onclick="useShortcut('Tolong buatkan contoh kodingan Laravel CRUD sederhana.')">
                     <i class="fas fa-code" style="color: #3b82f6;"></i> <span>Buat Kode Laravel</span>
                 </button>
-                <button class="action-chip" onclick="useShortcut('Buatkan saya ide judul project akhir website berbasis AI.')">
+                <button class="action-chip"
+                    onclick="useShortcut('Buatkan saya ide judul project akhir website berbasis AI.')">
                     <i class="fas fa-lightbulb" style="color: #eab308;"></i> <span>Ide Project Web</span>
                 </button>
-                <button class="action-chip" onclick="useShortcut('Jelaskan materi kuliah Sistem Informasi tentang basis data relasional.')">
+                <button class="action-chip"
+                    onclick="useShortcut('Jelaskan materi kuliah Sistem Informasi tentang basis data relasional.')">
                     <i class="fas fa-book" style="color: #10b981;"></i> <span>Rangkuman Materi Kuliah</span>
                 </button>
             </div>
@@ -1635,7 +1661,10 @@
                     </div>
                 </div>
                 <div class="message ai">
-                    <div class="message-avatar ai-avatar-msg"><i class="fas fa-robot"></i></div>
+                    <div class="message-avatar ai-avatar-msg" style="background: transparent; padding: 0;">
+                        <img src="https://i.ibb.co.com/jZZ0648R/Logo-SAHAJA-AI.png" alt="AI"
+                            style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover; border: 1px solid var(--border-color);">
+                    </div>
                     <div class="message-content">
                         <div class="message-bubble markdown-body ai-raw-data" style="display: none;">
                             {{ $chat->ai_response }}</div>
@@ -1650,17 +1679,17 @@
         </div>
 
         <div class="input-container">
-                <div class="input-wrapper" style="position: relative;">
+            <div class="input-wrapper" style="position: relative;">
 
-                    <button id="scrollToBottomBtn" onclick="scrollToBottomSmooth()" title="Ke pesan terbaru">
-                        <i class="fas fa-chevron-down"></i>
-                    </button>
+                <button id="scrollToBottomBtn" onclick="scrollToBottomSmooth()" title="Ke pesan terbaru">
+                    <i class="fas fa-chevron-down"></i>
+                </button>
 
-                    <div class="file-preview-container" id="filePreviewContainer">
-                        <i class="fas fa-file-alt" style="color: var(--accent-color);"></i>
-                        <span class="file-name-text" id="fileNameDisplay">document.pdf</span>
-                        <i class="fas fa-times" onclick="removeFile()" title="Hapus File"></i>
-                    </div>
+                <div class="file-preview-container" id="filePreviewContainer">
+                    <i class="fas fa-file-alt" style="color: var(--accent-color);"></i>
+                    <span class="file-name-text" id="fileNameDisplay">document.pdf</span>
+                    <i class="fas fa-times" onclick="removeFile()" title="Hapus File"></i>
+                </div>
 
                 <input type="file" id="docInput"
                     accept=".pdf, .docx, application/pdf, application/vnd.openxmlformats-officedocument.wordprocessingml.document"
@@ -1706,12 +1735,15 @@
     <div class="modal-overlay" id="githubModal">
         <div class="modal-content" style="max-width: 450px;">
             <button class="modal-close" id="closeGithubModalBtn"><i class="fas fa-times"></i></button>
-            <h2 style="font-size: 1.3rem; border: none; margin-bottom: 0;"><i class="fab fa-github"></i> Impor Repository (Beta)</h2>
-            <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 15px;">SAHAJA AI akan menganalisis file kode utama (.php, .js, dll) dari repo public.
+            <h2 style="font-size: 1.3rem; border: none; margin-bottom: 0;"><i class="fab fa-github"></i> Impor
+                Repository (Beta)</h2>
+            <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 15px;">SAHAJA AI akan
+                menganalisis file kode utama (.php, .js, dll) dari repo public.
                 (Fitur masih dalam tahap pengembangan dan tidak sempurna)</p>
 
             <div class="github-input-group">
-                <input type="text" id="githubLinkInput" class="github-input" placeholder="https://github.com/username/repo">
+                <input type="text" id="githubLinkInput" class="github-input"
+                    placeholder="https://github.com/username/repo">
                 <button id="submitGithubBtn" class="github-submit-btn">Muat Repository</button>
             </div>
         </div>
@@ -2159,21 +2191,24 @@
                         `[Lampiran Dokumen: ${currentFileName}]\n"""\n${extractedFileText}\n"""\n\nInstruksi User: ${promptQuestion}`;
 
                     // PERUBAHAN: Ikon PDF/Dokumen warna Biru Elegan
-                    displayMessage = `<i class="fas fa-file-pdf" style="color: #3b82f6; margin-right: 5px;"></i> <b>[Dokumen: ${currentFileName}]</b>\n${promptQuestion}`;
+                    displayMessage =
+                        `<i class="fas fa-file-pdf" style="color: #3b82f6; margin-right: 5px;"></i> <b>[Dokumen: ${currentFileName}]</b>\n${promptQuestion}`;
 
                 } else if (base64Image) {
                     const promptQuestion = messageInput || "Tolong jelaskan gambar ini secara detail.";
                     finalMessageToSend = promptQuestion;
 
                     // PERUBAHAN: Ikon Gambar warna Hijau Segar
-                    displayMessage = `<i class="fas fa-image" style="color: #10b981; margin-right: 5px;"></i> <b>[Gambar: ${currentFileName}]</b>\n${promptQuestion}`;
+                    displayMessage =
+                        `<i class="fas fa-image" style="color: #10b981; margin-right: 5px;"></i> <b>[Gambar: ${currentFileName}]</b>\n${promptQuestion}`;
 
                 } else if (currentGithubRepo) { // KONDISI BARU: JIKA ADA GITHUB REPO
                     const promptQuestion = messageInput || "Tolong analisis kode di repository ini.";
                     finalMessageToSend = promptQuestion;
 
                     // PERUBAHAN: Ikon GitHub warna Ungu Estetik
-                    displayMessage = `<i class="fab fa-github" style="color: #a855f7; margin-right: 5px;"></i> <b>[GitHub: ${currentFileName}]</b>\n${promptQuestion}`;
+                    displayMessage =
+                        `<i class="fab fa-github" style="color: #a855f7; margin-right: 5px;"></i> <b>[GitHub: ${currentFileName}]</b>\n${promptQuestion}`;
 
                 } else {
                     finalMessageToSend = messageInput;
@@ -2241,13 +2276,15 @@
                     // 1. JIKA VISION (Llama 11B)
                     if (modelUsedStr.includes('vision') || modelUsedStr.includes('llama-3.2')) {
                         finalModelLabel = '<i class="fas fa-eye"></i> Mode Vision (Llama-3.2)';
-                        extraStyle = 'background: rgba(74, 222, 128, 0.15); color: #22c55e; border: 1px solid rgba(74, 222, 128, 0.3);';
+                        extraStyle =
+                            'background: rgba(74, 222, 128, 0.15); color: #22c55e; border: 1px solid rgba(74, 222, 128, 0.3);';
                         finalBadgeClass = '';
                     }
                     // 2. JIKA GITHUB (Qwen3 Coder)
                     else if (modelUsedStr.includes('qwen')) {
                         finalModelLabel = '<i class="fas fa-code"></i> Mode Code Analyst (Qwen3 Coder)';
-                        extraStyle = 'background: rgba(168, 85, 247, 0.15); color: #a855f7; border: 1px solid rgba(168, 85, 247, 0.3);';
+                        extraStyle =
+                            'background: rgba(168, 85, 247, 0.15); color: #a855f7; border: 1px solid rgba(168, 85, 247, 0.3);';
                         finalBadgeClass = '';
                     }
                     // 3. JIKA CERDAS (DeepSeek V3)
@@ -2301,17 +2338,21 @@
             let textHtml = '';
 
             if (mode === 'vision') {
-                badgeHtml = `<div class="mode-badge" style="background: rgba(74, 222, 128, 0.15); color: #22c55e; border: 1px solid rgba(74, 222, 128, 0.3);"><i class="fas fa-eye"></i> Mode Vision (Llama 3.2)</div>`;
+                badgeHtml =
+                    `<div class="mode-badge" style="background: rgba(74, 222, 128, 0.15); color: #22c55e; border: 1px solid rgba(74, 222, 128, 0.3);"><i class="fas fa-eye"></i> Mode Vision (Llama 3.2)</div>`;
                 textHtml = `<span class="typing-text">Menganalisis gambar...</span>`;
             } else if (mode === 'github') {
-                badgeHtml = `<div class="mode-badge" style="background: rgba(168, 85, 247, 0.15); color: #a855f7; border: 1px solid rgba(168, 85, 247, 0.3);"><i class="fas fa-code"></i> Mode Code Analyst (Qwen 3 Coder)</div>`;
+                badgeHtml =
+                    `<div class="mode-badge" style="background: rgba(168, 85, 247, 0.15); color: #a855f7; border: 1px solid rgba(168, 85, 247, 0.3);"><i class="fas fa-code"></i> Mode Code Analyst (Qwen 3 Coder)</div>`;
                 textHtml = `<span class="typing-text">Membaca repository GitHub...</span>`;
             } else if (mode === 'smart') {
                 badgeHtml = `<div class="mode-badge mode-smart"><i class="fas fa-brain"></i> Mode Cerdas (Qwen 3.5)</div>`;
-                textHtml = `<span class="typing-text">Menganalisis logika kompleks... <button class="switch-btn" onclick="switchToFastMode()">[Beralih ke Cepat]</button></span>`;
+                textHtml =
+                    `<span class="typing-text">Menganalisis logika kompleks... <button class="switch-btn" onclick="switchToFastMode()">[Beralih ke Cepat]</button></span>`;
             } else {
                 badgeHtml = `<div class="mode-badge mode-fast"><i class="fas fa-bolt"></i> Mode Cepat (Kimi)</div>`;
-                textHtml = `<span class="typing-text">SAHAJA AI sedang berpikir... <button class="switch-btn" style="color:#d4a017;" onclick="switchToMode('smart')">[Beralih ke Cerdas]</button></span>`;
+                textHtml =
+                    `<span class="typing-text">SAHAJA AI sedang berpikir... <button class="switch-btn" style="color:#d4a017;" onclick="switchToMode('smart')">[Beralih ke Cerdas]</button></span>`;
             }
 
             div.innerHTML =
@@ -2724,9 +2765,14 @@
                 let html = el.innerHTML;
 
                 // Replace emoji lama menjadi Ikon FontAwesome
-                html = html.replace(/📎 \[(.*?)\]/g, '<i class="fas fa-file-pdf" style="color: #3b82f6; margin-right: 5px;"></i> <b>[Dokumen: $1]</b>');
-                html = html.replace(/🖼️ \[(.*?)\]/g, '<i class="fas fa-image" style="color: #10b981; margin-right: 5px;"></i> <b>[$1]</b>');
-                html = html.replace(/📦 \[GitHub: (.*?)\]/g, '<i class="fab fa-github" style="color: #a855f7; margin-right: 5px;"></i> <b>[GitHub: $1]</b>');
+                html = html.replace(/📎 \[(.*?)\]/g,
+                    '<i class="fas fa-file-pdf" style="color: #3b82f6; margin-right: 5px;"></i> <b>[Dokumen: $1]</b>'
+                );
+                html = html.replace(/🖼️ \[(.*?)\]/g,
+                    '<i class="fas fa-image" style="color: #10b981; margin-right: 5px;"></i> <b>[$1]</b>');
+                html = html.replace(/📦 \[GitHub: (.*?)\]/g,
+                    '<i class="fab fa-github" style="color: #a855f7; margin-right: 5px;"></i> <b>[GitHub: $1]</b>'
+                );
 
                 el.innerHTML = html;
             });
@@ -2746,7 +2792,8 @@
             // Sensor scroll
             chatContainerBox.addEventListener('scroll', () => {
                 // Kalau jarak dari bawah lebih dari 150px, munculkan tombol
-                if (chatContainerBox.scrollTop + chatContainerBox.clientHeight < chatContainerBox.scrollHeight - 150) {
+                if (chatContainerBox.scrollTop + chatContainerBox.clientHeight < chatContainerBox.scrollHeight -
+                    150) {
                     document.getElementById('scrollToBottomBtn').style.display = 'block';
                 } else {
                     document.getElementById('scrollToBottomBtn').style.display = 'none';

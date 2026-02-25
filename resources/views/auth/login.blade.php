@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=yes">
     <title>Login - SAHAJA AI</title>
     <link href="https://fonts.bunny.net/css?family=poppins:400,500,600,700" rel="stylesheet">
+    <link rel="icon" type="image/png" href="https://i.ibb.co.com/jZZ0648R/Logo-SAHAJA-AI.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
@@ -222,7 +223,9 @@
 </head>
 <body>
     <div class="auth-card">
-        <div class="logo"><i class="fas fa-robot"></i></div>
+        <div style="text-align: center; margin-bottom: 20px;">
+            <img src="https://i.ibb.co.com/wrrG06ds/Logo-SAHAJA-AI.png" alt="Logo SAHAJA AI" style="width: 110px; height: auto; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
+        </div>
         <h2>Selamat Datang Kembali</h2>
         <p>Masuk untuk melanjutkan ke SAHAJA AI</p>
 

@@ -10,8 +10,7 @@
     <link href="https://fonts.bunny.net/css?family=poppins:400,500,600,700" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-    <link rel="icon"
-        href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🤖</text></svg>">
+    <link rel="icon" type="image/png" href="https://i.ibb.co.com/jZZ0648R/Logo-SAHAJA-AI.png">
 
     <style>
         /* ===== THEME VARIABLES ===== */
@@ -835,7 +834,9 @@
     <div class="welcome-container">
         <header class="welcome-header">
             <div class="brand">
-                <div class="brand-icon"><i class="fas fa-robot"></i></div>
+                <div class="chat-title" style="display: flex; align-items: center;">
+                    <img src="https://i.ibb.co.com/jZZ0648R/Logo-SAHAJA-AI.png" alt="Logo" style="width: 28px; height: 28px; margin-right: 10px; border-radius: 6px; object-fit: contain;">
+                </div>
                 <span class="brand-text">SAHAJA AI</span>
             </div>
             <button class="theme-toggle" id="themeToggleBtn">
