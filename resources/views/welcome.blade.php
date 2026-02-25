@@ -849,7 +849,7 @@
             <h1 class="hero-title">SAHAJA AI</h1>
             <div class="hero-version">Beta V 3.4</div>
             <p class="hero-description">
-                Asisten cerdas berbasis 4 models AI <strong>DeepSeek V3.2, Kimi K2, Llama 3.2-11b-vision-instruct, & Qwen 3 Coder</strong> setara dengan AI Besar lainnya siap membantu dan
+                Asisten cerdas berbasis 4 models AI <strong>Qwen3.5-397b-a17b, Kimi K2, Llama 3.2-11b-vision-instruct, & Qwen 3 Coder</strong> setara dengan AI Besar lainnya siap membantu dan
                 brainstorming ide Anda.
             </p>
         </div>

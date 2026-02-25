@@ -1409,6 +1409,30 @@
             opacity: 1;
             transform: translateY(0);
         }
+
+        #scrollToBottomBtn {
+            position: absolute; /* KUNCI RAHASIA: Mengikuti kotak input, bukan layar monitor */
+            top: -60px; /* Melayang pas di atas kotak input */
+            right: 0; /* Selalu rata dengan sisi kanan kotak input */
+
+            background-color: var(--accent-color, #3b82f6); /* BIRU ICONIC SAHAJA AI */
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            font-size: 16px;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            z-index: 100;
+            display: none;
+            transition: all 0.3s ease;
+        }
+
+        #scrollToBottomBtn:hover {
+            background-color: #2563eb; /* Biru agak gelap saat disentuh mouse */
+            transform: translateY(-3px);
+        }
     </style>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
     <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
@@ -1559,13 +1583,17 @@
         </div>
 
         <div class="input-container">
-            <div class="input-wrapper">
+                <div class="input-wrapper" style="position: relative;">
 
-                <div class="file-preview-container" id="filePreviewContainer">
-                    <i class="fas fa-file-alt" style="color: var(--accent-color);"></i>
-                    <span class="file-name-text" id="fileNameDisplay">document.pdf</span>
-                    <i class="fas fa-times" onclick="removeFile()" title="Hapus File"></i>
-                </div>
+                    <button id="scrollToBottomBtn" onclick="scrollToBottomSmooth()" title="Ke pesan terbaru">
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+
+                    <div class="file-preview-container" id="filePreviewContainer">
+                        <i class="fas fa-file-alt" style="color: var(--accent-color);"></i>
+                        <span class="file-name-text" id="fileNameDisplay">document.pdf</span>
+                        <i class="fas fa-times" onclick="removeFile()" title="Hapus File"></i>
+                    </div>
 
                 <input type="file" id="docInput"
                     accept=".pdf, .docx, application/pdf, application/vnd.openxmlformats-officedocument.wordprocessingml.document"
@@ -2062,16 +2090,24 @@
                     const promptQuestion = messageInput || "Tolong analisis isi dokumen ini.";
                     finalMessageToSend =
                         `[Lampiran Dokumen: ${currentFileName}]\n"""\n${extractedFileText}\n"""\n\nInstruksi User: ${promptQuestion}`;
-                    displayMessage = `📎 [${currentFileName}]\n${promptQuestion}`;
+
+                    // PERUBAHAN: Ikon PDF/Dokumen warna Biru Elegan
+                    displayMessage = `<i class="fas fa-file-pdf" style="color: #3b82f6; margin-right: 5px;"></i> <b>[Dokumen: ${currentFileName}]</b>\n${promptQuestion}`;
+
                 } else if (base64Image) {
                     const promptQuestion = messageInput || "Tolong jelaskan gambar ini secara detail.";
                     finalMessageToSend = promptQuestion;
-                    displayMessage = `🖼️ [Gambar: ${currentFileName}]\n${promptQuestion}`;
+
+                    // PERUBAHAN: Ikon Gambar warna Hijau Segar
+                    displayMessage = `<i class="fas fa-image" style="color: #10b981; margin-right: 5px;"></i> <b>[Gambar: ${currentFileName}]</b>\n${promptQuestion}`;
+
                 } else if (currentGithubRepo) { // KONDISI BARU: JIKA ADA GITHUB REPO
                     const promptQuestion = messageInput || "Tolong analisis kode di repository ini.";
-                    // Yang dikirim ke backend tetap teks prompt-nya saja
                     finalMessageToSend = promptQuestion;
-                    displayMessage = `📦 [GitHub: ${currentFileName}]\n${promptQuestion}`;
+
+                    // PERUBAHAN: Ikon GitHub warna Ungu Estetik
+                    displayMessage = `<i class="fab fa-github" style="color: #a855f7; margin-right: 5px;"></i> <b>[GitHub: ${currentFileName}]</b>\n${promptQuestion}`;
+
                 } else {
                     finalMessageToSend = messageInput;
                 }
@@ -2198,13 +2234,13 @@
             let textHtml = '';
 
             if (mode === 'vision') {
-                badgeHtml = `<div class="mode-badge" style="background: rgba(74, 222, 128, 0.15); color: #22c55e; border: 1px solid rgba(74, 222, 128, 0.3);"><i class="fas fa-eye"></i> Mode Vision (Llama)</div>`;
+                badgeHtml = `<div class="mode-badge" style="background: rgba(74, 222, 128, 0.15); color: #22c55e; border: 1px solid rgba(74, 222, 128, 0.3);"><i class="fas fa-eye"></i> Mode Vision (Llama 3.2)</div>`;
                 textHtml = `<span class="typing-text">Menganalisis gambar...</span>`;
             } else if (mode === 'github') {
-                badgeHtml = `<div class="mode-badge" style="background: rgba(168, 85, 247, 0.15); color: #a855f7; border: 1px solid rgba(168, 85, 247, 0.3);"><i class="fas fa-code"></i> Mode Code Analyst (Qwen3)</div>`;
+                badgeHtml = `<div class="mode-badge" style="background: rgba(168, 85, 247, 0.15); color: #a855f7; border: 1px solid rgba(168, 85, 247, 0.3);"><i class="fas fa-code"></i> Mode Code Analyst (Qwen 3 Coder)</div>`;
                 textHtml = `<span class="typing-text">Membaca repository GitHub...</span>`;
             } else if (mode === 'smart') {
-                badgeHtml = `<div class="mode-badge mode-smart"><i class="fas fa-brain"></i> Mode Cerdas (DeepSeek)</div>`;
+                badgeHtml = `<div class="mode-badge mode-smart"><i class="fas fa-brain"></i> Mode Cerdas (Qwen 3.5)</div>`;
                 textHtml = `<span class="typing-text">Menganalisis logika kompleks... <button class="switch-btn" onclick="switchToFastMode()">[Beralih ke Cepat]</button></span>`;
             } else {
                 badgeHtml = `<div class="mode-badge mode-fast"><i class="fas fa-bolt"></i> Mode Cepat (Kimi)</div>`;
@@ -2611,7 +2647,59 @@
                 if (window.hljs) hljs.highlightElement(block);
             });
         }
+
+        // ==========================================
+        // 1. JURUS MAKEUP: UBAH EMOJI JADI IKON KEREN (REVISI CLASS)
+        // ==========================================
+        function formatAttachmentIcons() {
+            // Targetkan class yang BENAR sesuai kodingan aslimu:
+            document.querySelectorAll('.message.user .message-bubble').forEach(el => {
+                let html = el.innerHTML;
+
+                // Replace emoji lama menjadi Ikon FontAwesome
+                html = html.replace(/📎 \[(.*?)\]/g, '<i class="fas fa-file-pdf" style="color: #3b82f6; margin-right: 5px;"></i> <b>[Dokumen: $1]</b>');
+                html = html.replace(/🖼️ \[(.*?)\]/g, '<i class="fas fa-image" style="color: #10b981; margin-right: 5px;"></i> <b>[$1]</b>');
+                html = html.replace(/📦 \[GitHub: (.*?)\]/g, '<i class="fab fa-github" style="color: #a855f7; margin-right: 5px;"></i> <b>[GitHub: $1]</b>');
+
+                el.innerHTML = html;
+            });
+        }
+
+        // Jalankan saat web selesai di-load
+        document.addEventListener('DOMContentLoaded', formatAttachmentIcons);
+
+
+        // ==========================================
+        // 2. FITUR SCROLL TO BOTTOM
+        // ==========================================
+        // Targetkan ID kotak pesan aslimu
+        const chatContainerBox = document.getElementById('messagesContainer');
+
+        if (chatContainerBox) {
+            // Sensor scroll
+            chatContainerBox.addEventListener('scroll', () => {
+                // Kalau jarak dari bawah lebih dari 150px, munculkan tombol
+                if (chatContainerBox.scrollTop + chatContainerBox.clientHeight < chatContainerBox.scrollHeight - 150) {
+                    document.getElementById('scrollToBottomBtn').style.display = 'block';
+                } else {
+                    document.getElementById('scrollToBottomBtn').style.display = 'none';
+                }
+            });
+        }
+
+        // Fungsi meluncur ke bawah
+        function scrollToBottomSmooth() {
+            if (chatContainerBox) {
+                chatContainerBox.scrollTo({
+                    top: chatContainerBox.scrollHeight,
+                    behavior: 'smooth'
+                });
+            }
+        }
     </script>
+    {{-- <button id="scrollToBottomBtn" onclick="scrollToBottomSmooth()" title="Ke pesan terbaru">
+    <i class="fas fa-chevron-down"></i>
+</button> --}}
 </body>
 
 </html>

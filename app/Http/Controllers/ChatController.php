@@ -70,7 +70,7 @@ class ChatController extends Controller
                 $timeout = 300; // 4 Menit (Batas aman timeout hosting Alwaysdata)
             } else if (!$isSimple) {
                 // 3. SMART MODE (Bukan Github): DeepSeek V3 (NVIDIA)
-                $selectedModel = 'deepseek-ai/deepseek-v3.2'; // Sesuaikan dengan API Nvidia-mu
+                $selectedModel = 'qwen/qwen3.5-397b-a17b'; // Sesuaikan dengan API Nvidia-mu
                 $provider = 'nvidia';
                 $timeout = 300;
             } else {
