@@ -1433,7 +1433,26 @@
             background-color: #2563eb; /* Biru agak gelap saat disentuh mouse */
             transform: translateY(-3px);
         }
-        /* CSS UNTUK SHORTCUT CHIPS ALA GEMINI */
+        /* 1. DEKLARASI WARNA DEFAULT (DARK MODE) */
+        :root {
+            --chip-bg: #1e1e2d; /* Hitam elegan */
+            --chip-border: rgba(255, 255, 255, 0.1); /* Garis putih tipis */
+            --chip-hover: #2a2a3c;
+            --chip-text: #ffffff;
+            --chip-shadow: rgba(0, 0, 0, 0.3);
+        }
+
+        /* 2. DEKLARASI WARNA LIGHT MODE */
+        /* Sesuaikan 'body.light-mode' dengan class Light Mode di kodinganmu (kadang namanya .light-theme atau [data-theme="light"]) */
+        body.light-mode {
+            --chip-bg: #f3f4f6; /* Abu-abu sangat terang/putih */
+            --chip-border: rgba(0, 0, 0, 0.1); /* Garis hitam tipis */
+            --chip-hover: #e5e7eb; /* Abu-abu sedikit lebih gelap saat disentuh */
+            --chip-text: #1f2937; /* Teks hitam/abu gelap */
+            --chip-shadow: rgba(0, 0, 0, 0.05); /* Bayangan sangat halus */
+        }
+
+        /* 3. CSS TOMBOL CHIP YANG SUDAH PINTAR */
         .suggested-actions {
             display: flex;
             flex-wrap: wrap;
@@ -1442,27 +1461,30 @@
             margin-top: 35px;
             max-width: 650px;
         }
+
         .action-chip {
-            background-color: var(--bg-secondary, #1e1e2d); /* Sesuaikan dengan warna background gelapmu */
-            border: 1px solid rgba(255,255,255,0.1);
-            color: var(--text-primary, #ffffff);
+            background-color: var(--chip-bg);
+            border: 1px solid var(--chip-border);
+            color: var(--chip-text);
             padding: 12px 20px;
-            border-radius: 25px; /* Biar bulat lonjong kayak pil */
+            border-radius: 25px;
             font-size: 0.95rem;
             cursor: pointer;
             display: flex;
             align-items: center;
             gap: 10px;
-            transition: all 0.2s ease;
+            transition: all 0.3s ease; /* Transisi diperhalus biar pas ganti tema kelihatan smooth */
         }
+
         .action-chip i {
             font-size: 1.1rem;
         }
+
         .action-chip:hover {
-            background-color: var(--bg-hover, #2a2a3c);
+            background-color: var(--chip-hover);
             transform: translateY(-2px);
-            border-color: rgba(255,255,255,0.25);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            border-color: var(--chip-border);
+            box-shadow: 0 4px 12px var(--chip-shadow);
         }
     </style>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
