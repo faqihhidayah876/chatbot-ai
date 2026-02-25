@@ -1433,6 +1433,37 @@
             background-color: #2563eb; /* Biru agak gelap saat disentuh mouse */
             transform: translateY(-3px);
         }
+        /* CSS UNTUK SHORTCUT CHIPS ALA GEMINI */
+        .suggested-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            justify-content: center;
+            margin-top: 35px;
+            max-width: 650px;
+        }
+        .action-chip {
+            background-color: var(--bg-secondary, #1e1e2d); /* Sesuaikan dengan warna background gelapmu */
+            border: 1px solid rgba(255,255,255,0.1);
+            color: var(--text-primary, #ffffff);
+            padding: 12px 20px;
+            border-radius: 25px; /* Biar bulat lonjong kayak pil */
+            font-size: 0.95rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.2s ease;
+        }
+        .action-chip i {
+            font-size: 1.1rem;
+        }
+        .action-chip:hover {
+            background-color: var(--bg-hover, #2a2a3c);
+            transform: translateY(-2px);
+            border-color: rgba(255,255,255,0.25);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
     </style>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
     <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
@@ -1542,8 +1573,22 @@
             <div class="welcome-logo"><i class="fas fa-robot"></i></div>
             <div class="welcome-text">
                 <h1 class="welcome-title">SAHAJA AI</h1>
-                <p style="color: var(--text-secondary); font-size: 1.1rem;">Halo, {{ Auth::user()->name ?? 'Teman' }}.
-                    Apa yang bisa saya bantu?</p>
+                <p style="color: var(--text-secondary); font-size: 1.1rem;">Halo, {{ Auth::user()->name ?? 'Teman' }}. Apa yang bisa saya bantu?</p>
+            </div>
+
+            <div class="suggested-actions">
+                <button class="action-chip" onclick="useShortcut('Bantu saya menganalisis dan mencari error dari link GitHub berikut: ')">
+                    <i class="fab fa-github" style="color: #a855f7;"></i> <span>Analisis Kode GitHub</span>
+                </button>
+                <button class="action-chip" onclick="useShortcut('Tolong buatkan contoh kodingan Laravel CRUD sederhana.')">
+                    <i class="fas fa-code" style="color: #3b82f6;"></i> <span>Buat Kode Laravel</span>
+                </button>
+                <button class="action-chip" onclick="useShortcut('Buatkan saya ide judul project akhir website berbasis AI.')">
+                    <i class="fas fa-lightbulb" style="color: #eab308;"></i> <span>Ide Project Web</span>
+                </button>
+                <button class="action-chip" onclick="useShortcut('Jelaskan materi kuliah Sistem Informasi tentang basis data relasional.')">
+                    <i class="fas fa-book" style="color: #10b981;"></i> <span>Rangkuman Materi Kuliah</span>
+                </button>
             </div>
         </div>
 
@@ -2696,10 +2741,40 @@
                 });
             }
         }
+        // ==========================================
+        // 1. FUNGSI KLIK SHORTCUT ALA GEMINI
+        // ==========================================
+        function useShortcut(text) {
+            const inputField = document.getElementById('chatInput');
+
+            // Masukkan teks ke kotak input
+            inputField.value = text;
+
+            // Langsung fokuskan kursor ke dalam kotak, biarkan user menambah/edit teksnya dulu
+            inputField.focus();
+
+            // NOTE: Kalau kamu mau AI-nya LANGSUNG MENGIRIM PESAN otomatis saat diklik (tanpa perlu user klik tombol kirim lagi),
+            // hilangkan komentar (//) pada baris di bawah ini:
+            // document.getElementById('sendButton').click();
+        }
+
+        // ==========================================
+        // 2. AUTO-SHOW POPUP PEMBARUAN DI ROOM KOSONG
+        // ==========================================
+        document.addEventListener('DOMContentLoaded', () => {
+            // Cek apakah riwayat chat masih kosong (0)
+            const chatCount = {{ count($chats) }};
+            const updateModal = document.getElementById('updateModal');
+
+            // Jika kosong, langsung tembak pop-up nya!
+            if (chatCount === 0 && updateModal) {
+                // Beri sedikit delay (misal 500ms) agar transisinya terlihat natural saat user masuk
+                setTimeout(() => {
+                    updateModal.style.display = 'flex';
+                }, 500);
+            }
+        });
     </script>
-    {{-- <button id="scrollToBottomBtn" onclick="scrollToBottomSmooth()" title="Ke pesan terbaru">
-    <i class="fas fa-chevron-down"></i>
-</button> --}}
 </body>
 
 </html>
