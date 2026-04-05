@@ -1518,15 +1518,14 @@
                 <center>PEMBARUAN SAHAJA AI</center>
             </h2>
             <div class="modal-body">
-                <p><strong>1. Analisis Dokumen & Gambar OCR</strong><br>
-                    Sekarang Anda bisa mengupload file PDF atau Word (DOCX) & Gambar! SAHAJA AI akan menganalisis isinya
-                    untukmu.
+                <p><strong>1. Gemma 4 Kini Hadir di Sahaja AI</strong><br>
+                    AI dari Google DeepMind yang baru saja rilis 2026, Sahaja menggunakannya untuk Mode Vision.
                 </p>
-                <p><strong>2. Fitur Share Chat</strong><br>
-                    Bagikan obrolan SAHAJA AI kamu ke teman-teman dengan menggunakan link.
+                <p><strong>2. Fitur Switch Model AI</strong><br>
+                    Sekarang Anda bisa memilih model AI sendiri tanpa harus sistem yang memilih secara otomatis.
                 </p>
-                <p><strong>3. Voice Input</strong><br>
-                    Anda bisa langsung ngobrol dengan AI tanpa mengetik dengan menggunakan mikrofon.
+                <p><strong>3. Depreciated Kimi K2 from Groq</strong><br>
+                    Model Kimi K2 di switch ke Nvidia dikarenakan Depreciated, .
                 </p>
                 <p><strong>4. Fitur Upload Link Repo Github (by: Qwen3 Coder)</strong><br>
                     Sekarang Anda bisa upload link repo github anda, SAHAJA AI akan membaca codingan Anda.
@@ -1700,22 +1699,73 @@
                 <textarea class="chat-input" id="chatInput" placeholder="Ketik pesan Anda di sini..." rows="1"></textarea>
 
                 <div class="input-actions-wrapper">
-                    <div class="action-left" style="position: relative;">
-                        <button type="button" class="icon-action-btn" id="attachButton" title="Lampirkan File">
-                            <i class="fas fa-paperclip"></i>
-                        </button>
+                    <div class="action-left" style="display: flex; gap: 5px;">
 
-                        <div class="attach-menu" id="attachMenu">
-                            <div class="option-item" id="btnUploadImage">
-                                <i class="fas fa-image" style="color: #4ade80;"></i> Analisis Gambar (OCR)
-                            </div>
-                            <div class="option-item" id="btnUploadDoc">
-                                <i class="fas fa-file-pdf" style="color: #f87171;"></i> File (PDF/DOCS)
-                            </div>
-                            <div class="option-item" id="btnUploadGithub">
-                                <i class="fab fa-github" style="color: #a855f7;"></i> Link GitHub (Beta)
+                        <div style="position: relative;">
+                            <button type="button" class="icon-action-btn" id="attachButton" title="Lampirkan File">
+                                <i class="fas fa-paperclip"></i>
+                            </button>
+
+                            <div class="attach-menu" id="attachMenu">
+                                <div class="option-item" id="btnUploadImage">
+                                    <i class="fas fa-image" style="color: #4ade80;"></i> Analisis Gambar (OCR)
+                                </div>
+                                <div class="option-item" id="btnUploadDoc">
+                                    <i class="fas fa-file-pdf" style="color: #f87171;"></i> File (PDF/DOCS)
+                                </div>
+                                <div class="option-item" id="btnUploadGithub">
+                                    <i class="fab fa-github" style="color: #a855f7;"></i> Link GitHub (Beta)
+                                </div>
+                                <div class="option-item" id="btnCanvasMode">
+                                    <i class="fas fa-newspaper" style="color: #f59e0b;"></i> Mode Canvas (Editor)
+                                </div>
                             </div>
                         </div>
+
+                        <div style="position: relative;">
+                            <button type="button" class="icon-action-btn" id="modelSelectButton" title="Pilih Model AI">
+                                <i class="fas fa-magic" id="currentModelIcon"></i>
+                            </button>
+
+                            <div class="attach-menu" id="modelMenu" style="width: 280px;">
+                                <div class="option-item model-option" style="background: var(--glass-highlight); align-items: flex-start;" onclick="selectModelMode('auto', 'fa-magic')">
+                                    <i class="fas fa-magic" style="color: #3b82f6; margin-top: 4px; width: 20px;"></i>
+                                    <div style="display: flex; flex-direction: column; gap: 2px;">
+                                        <strong style="font-size: 0.95rem; color: var(--text-primary);">Mode Otomatis</strong>
+                                        <span style="font-size: 0.75rem; color: var(--text-secondary); line-height: 1.3;">Sistem menentukan berdasarkan prompt anda</span>
+                                    </div>
+                                </div>
+                                <div class="option-item model-option" style="align-items: flex-start;" onclick="selectModelMode('fast', 'fa-bolt')">
+                                    <i class="fas fa-bolt" style="color: #f59e0b; margin-top: 4px; width: 20px;"></i>
+                                    <div style="display: flex; flex-direction: column; gap: 2px;">
+                                        <strong style="font-size: 0.95rem; color: var(--text-primary);">Mode Cepat</strong>
+                                        <span style="font-size: 0.75rem; color: var(--text-secondary); line-height: 1.3;">Menjawab cepat dengan Kimi K2</span>
+                                    </div>
+                                </div>
+                                <div class="option-item model-option" style="align-items: flex-start;" onclick="selectModelMode('smart', 'fa-brain')">
+                                    <i class="fas fa-brain" style="color: #ec4899; margin-top: 4px; width: 20px;"></i>
+                                    <div style="display: flex; flex-direction: column; gap: 2px;">
+                                        <strong style="font-size: 0.95rem; color: var(--text-primary);">Mode Cerdas</strong>
+                                        <span style="font-size: 0.75rem; color: var(--text-secondary); line-height: 1.3;">Bernalar akurat dengan DeepSeek v3.2</span>
+                                    </div>
+                                </div>
+                                <div class="option-item model-option" style="align-items: flex-start;" onclick="selectModelMode('vision', 'fa-eye')">
+                                    <i class="fas fa-eye" style="color: #10b981; margin-top: 4px; width: 20px;"></i>
+                                    <div style="display: flex; flex-direction: column; gap: 2px;">
+                                        <strong style="font-size: 0.95rem; color: var(--text-primary);">Mode Vision</strong>
+                                        <span style="font-size: 0.75rem; color: var(--text-secondary); line-height: 1.3;">Menganalisa gambar dengan Gemma 4</span>
+                                    </div>
+                                </div>
+                                <div class="option-item model-option" style="align-items: flex-start;" onclick="selectModelMode('coding', 'fa-code')">
+                                    <i class="fas fa-code" style="color: #a855f7; margin-top: 4px; width: 20px;"></i>
+                                    <div style="display: flex; flex-direction: column; gap: 2px;">
+                                        <strong style="font-size: 0.95rem; color: var(--text-primary);">Mode Coding</strong>
+                                        <span style="font-size: 0.75rem; color: var(--text-secondary); line-height: 1.3;">Konteks besar dengan Qwen 3 Coder</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                     </div>
 
                     <div class="action-right">
@@ -1916,10 +1966,10 @@
         // ==========================================
         // FUNGSI MENU ATTACH & BACA FILE
         // ==========================================
-        attachBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            attachMenu.classList.toggle('show');
-        });
+        // attachBtn.addEventListener('click', (e) => {
+        //     e.stopPropagation();
+        //     attachMenu.classList.toggle('show');
+        // });
 
         document.getElementById('btnUploadDoc').addEventListener('click', () => {
             docInput.click();
@@ -2170,83 +2220,99 @@
         }
 
         async function sendMessage() {
-            if (isRecording && recognition) {
+            // 1. Matikan Voice Input (Aman dari error)
+            if (typeof isRecording !== 'undefined' && isRecording && typeof recognition !== 'undefined' && recognition) {
                 recognition.stop();
-                forceStopRecordingUI();
+                if (typeof forceStopRecordingUI === 'function') forceStopRecordingUI();
             }
 
+            // 2. Ambil Data Input
             const messageInput = chatInput.value.trim();
             let finalMessageToSend;
             let displayMessage = messageInput;
 
+            // Logika Force Mode (Beralih Mode Cepat/Cerdas dari dalam chat)
             if (window.activeForceMode !== null) {
                 if (!lastUserMessage) return;
                 finalMessageToSend = lastUserMessage;
-            } else {
-                if (!messageInput && !extractedFileText && !base64Image) return;
+            }
+            // Logika Pesan Baru
+            else {
+                if (!messageInput && !extractedFileText && !base64Image && !currentGithubRepo) return;
 
                 if (extractedFileText) {
                     const promptQuestion = messageInput || "Tolong analisis isi dokumen ini.";
-                    finalMessageToSend =
-                        `[Lampiran Dokumen: ${currentFileName}]\n"""\n${extractedFileText}\n"""\n\nInstruksi User: ${promptQuestion}`;
-
-                    // PERUBAHAN: Ikon PDF/Dokumen warna Biru Elegan
-                    displayMessage =
-                        `<i class="fas fa-file-pdf" style="color: #3b82f6; margin-right: 5px;"></i> <b>[Dokumen: ${currentFileName}]</b>\n${promptQuestion}`;
-
+                    finalMessageToSend = `[Lampiran Dokumen: ${currentFileName}]\n"""\n${extractedFileText}\n"""\n\nInstruksi User: ${promptQuestion}`;
+                    displayMessage = `<i class="fas fa-file-pdf" style="color: #3b82f6; margin-right: 5px;"></i> <b>[Dokumen: ${currentFileName}]</b>\n${promptQuestion}`;
                 } else if (base64Image) {
                     const promptQuestion = messageInput || "Tolong jelaskan gambar ini secara detail.";
                     finalMessageToSend = promptQuestion;
-
-                    // PERUBAHAN: Ikon Gambar warna Hijau Segar
-                    displayMessage =
-                        `<i class="fas fa-image" style="color: #10b981; margin-right: 5px;"></i> <b>[Gambar: ${currentFileName}]</b>\n${promptQuestion}`;
-
-                } else if (currentGithubRepo) { // KONDISI BARU: JIKA ADA GITHUB REPO
+                    displayMessage = `<i class="fas fa-image" style="color: #10b981; margin-right: 5px;"></i> <b>[Gambar: ${currentFileName}]</b>\n${promptQuestion}`;
+                } else if (currentGithubRepo) {
                     const promptQuestion = messageInput || "Tolong analisis kode di repository ini.";
                     finalMessageToSend = promptQuestion;
-
-                    // PERUBAHAN: Ikon GitHub warna Ungu Estetik
-                    displayMessage =
-                        `<i class="fab fa-github" style="color: #a855f7; margin-right: 5px;"></i> <b>[GitHub: ${currentFileName}]</b>\n${promptQuestion}`;
-
+                    displayMessage = `<i class="fab fa-github" style="color: #a855f7; margin-right: 5px;"></i> <b>[GitHub: ${currentFileName}]</b>\n${promptQuestion}`;
                 } else {
                     finalMessageToSend = messageInput;
                 }
-                lastUserMessage = finalMessageToSend;
+                lastUserMessage = finalMessageToSend; // Simpan untuk fitur retry
             }
 
+            // 3. UI Update (Tampilkan container pesan)
             if (window.activeForceMode === null) {
-                document.getElementById('welcomeScreen').style.display = 'none';
-                document.getElementById('messagesContainer').style.display = 'flex';
+                const welcome = document.getElementById('welcomeScreen');
+                if(welcome) welcome.style.display = 'none';
+
+                const msgContainer = document.getElementById('messagesContainer');
+                if(msgContainer) msgContainer.style.display = 'flex';
+
                 chatInput.value = '';
                 chatInput.style.height = 'auto';
                 appendMessage('user', displayMessage);
             }
 
+            // 4. KONSTRUKSI PAYLOAD (Mengirim pilihan manual user ke backend)
             const payload = {
                 message: finalMessageToSend,
-                session_id: currentSessionId
+                session_id: currentSessionId,
+                // Pastikan userSelectedMode dikirim (jika belum pilih, defaultnya 'auto')
+                manual_mode: typeof userSelectedMode !== 'undefined' ? userSelectedMode : 'auto'
             };
+
             if (base64Image) payload.image_data = base64Image;
-            if (currentGithubRepo) payload.github_repo = currentGithubRepo; // Untuk Github
+            if (currentGithubRepo) payload.github_repo = currentGithubRepo;
             if (window.activeForceMode !== null) payload.force_mode = window.activeForceMode;
 
-            let isComplex = detectComplexity(finalMessageToSend);
-            if (extractedFileText) isComplex = true;
-            let mode = (window.activeForceMode !== null) ? window.activeForceMode : (isComplex ? 'smart' : 'fast');
-            if (base64Image) mode = 'vision'; // mode gambar
-            if (currentGithubRepo) mode = 'github'; // mode github
+            // 5. TAMPILAN LOADING (Sudah Sinkron dengan Pilihan Manual)
+            let mode = 'fast';
+
+            if (window.activeForceMode !== null) {
+                mode = window.activeForceMode;
+            } else if (typeof userSelectedMode !== 'undefined' && userSelectedMode !== 'auto') {
+                mode = userSelectedMode; // Ikuti pilihan dari menu
+            } else {
+                // Logika Auto (Jika menu belum disentuh)
+                let isComplex = detectComplexity(finalMessageToSend);
+                if (extractedFileText) isComplex = true;
+                mode = isComplex ? 'smart' : 'fast';
+
+                if (base64Image) mode = 'vision';
+                if (currentGithubRepo) mode = 'github';
+            }
 
             const loadingId = appendLoadingWithMode(mode);
             scrollToBottom();
 
-            if (window.activeForceMode === null) removeFile();
+            // Reset File Input
+            if (window.activeForceMode === null) {
+                if (typeof removeFile === 'function') removeFile();
+            }
 
             if (currentController) currentController.abort();
             currentController = new AbortController();
 
             try {
+                // 6. FETCH KE BACKEND
                 const response = await fetch("{{ route('chat.send') }}", {
                     method: "POST",
                     headers: {
@@ -2262,53 +2328,52 @@
                 const data = await response.json();
                 if (data.error) throw new Error(data.message);
 
+                // 7. PROSES RESPON DAN TAMPILKAN
                 const loadingBubble = document.getElementById(loadingId);
+
                 if (loadingBubble) {
                     const aiMessageDiv = document.createElement('div');
                     aiMessageDiv.className = 'message ai';
 
-                    let finalModelLabel = '<i class="fas fa-bolt"></i> Mode Cepat (Kimi)';
+                    let finalModelLabel = '<i class="fas fa-bolt"></i> Mode Cepat (Kimi K2)';
                     let finalBadgeClass = 'mode-fast';
                     let extraStyle = '';
-
                     const modelUsedStr = (data.model_used || '').toLowerCase();
 
-                    // 1. JIKA VISION (Llama 11B)
-                    if (modelUsedStr.includes('vision') || modelUsedStr.includes('llama-3.2')) {
-                        finalModelLabel = '<i class="fas fa-eye"></i> Mode Vision (Llama-3.2)';
-                        extraStyle =
-                            'background: rgba(74, 222, 128, 0.15); color: #22c55e; border: 1px solid rgba(74, 222, 128, 0.3);';
+                    // Penyesuaian Badge dari Data Backend
+                    if (modelUsedStr.includes('vision') || modelUsedStr.includes('gemma')) {
+                        finalModelLabel = '<i class="fas fa-eye"></i> Mode Vision (Gemma 4)';
+                        extraStyle = 'background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3);';
                         finalBadgeClass = '';
-                    }
-                    // 2. JIKA GITHUB (Qwen3 Coder)
-                    else if (modelUsedStr.includes('qwen')) {
-                        finalModelLabel = '<i class="fas fa-code"></i> Mode Code Analyst (Qwen3 Coder)';
-                        extraStyle =
-                            'background: rgba(168, 85, 247, 0.15); color: #a855f7; border: 1px solid rgba(168, 85, 247, 0.3);';
-                        finalBadgeClass = '';
-                    }
-                    // 3. JIKA CERDAS (DeepSeek V3)
-                    else if (modelUsedStr.includes('deepseek')) {
+                    } else if (modelUsedStr.includes('deepseek')) {
                         finalModelLabel = '<i class="fas fa-brain"></i> Mode Cerdas (DeepSeek v3.2)';
                         finalBadgeClass = 'mode-smart';
-                    }
-                    // 4. JARING PENGAMAN: Apapun selain 3 di atas (yaitu Kimi K2 dari Groq) masuk sini
-                    else {
-                        finalModelLabel = '<i class="fas fa-bolt"></i> Mode Cepat (Kimi K2)';
-                        finalBadgeClass = 'mode-fast';
+                    } else if (modelUsedStr.includes('coder') || modelUsedStr.includes('qwen')) {
+                        finalModelLabel = '<i class="fas fa-code"></i> Mode Code Analyst (Qwen 3)';
+                        extraStyle = 'background: rgba(168, 85, 247, 0.15); color: #a855f7; border: 1px solid rgba(168, 85, 247, 0.3);';
+                        finalBadgeClass = '';
                     }
 
+                    // Render Chat Biasa (Bebas dari Canvas)
                     aiMessageDiv.innerHTML = `
-                        <div class="message-avatar ai-avatar-msg"><i class="fas fa-robot"></i></div>
+                        <div class="message-avatar ai-avatar-msg" style="background: transparent; padding: 0;">
+                            <img src="https://i.ibb.co.com/jZZ0648R/Logo-SAHAJA-AI.png" alt="AI" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover; border: 1px solid var(--border-color);">
+                        </div>
                         <div class="message-content">
+                            <div class="mode-badge ${finalBadgeClass}" style="${extraStyle}">${finalModelLabel}</div>
                             <div class="message-bubble markdown-body"></div>
                             <div class="ai-actions">
                                 <button class="action-btn" onclick="copyText(this)"><i class="far fa-copy"></i> Salin</button>
                             </div>
                         </div>
                     `;
+
                     loadingBubble.parentNode.replaceChild(aiMessageDiv, loadingBubble);
-                    animateGeminiStyle(aiMessageDiv.querySelector('.message-bubble'), data.ai_response);
+
+                    // Animasi teks berjalan normal
+                    const bubble = aiMessageDiv.querySelector('.message-bubble');
+                    if (bubble) animateGeminiStyle(bubble, data.ai_response);
+
                     scrollToBottom();
                 }
 
@@ -2316,17 +2381,27 @@
                     window.history.pushState({}, '', `/chat/${data.session_id}`);
                     currentSessionId = data.session_id;
                 }
+
                 window.activeForceMode = null;
 
             } catch (error) {
-                document.getElementById(loadingId)?.remove();
-                if (error.name !== 'AbortError') alert("Gagal: " + error.message);
+                const lBubble = document.getElementById(loadingId);
+                if(lBubble) lBubble.remove(); // Hapus loading kalau error
+
+                if (error.name !== 'AbortError') {
+                     // Pakai Toast Notification yang sudah kita buat sebelumnya
+                     if (typeof showToast === 'function') {
+                         showToast("Gagal: " + error.message, "error");
+                     } else {
+                         alert("Gagal: " + error.message);
+                     }
+                }
                 window.activeForceMode = null;
             }
         }
 
         // ==========================================
-        // FUNGSI UI & RENDER MATEMATIKA
+        // FUNGSI ANIMASI LOADING (UPDATED)
         // ==========================================
         function appendLoadingWithMode(mode) {
             const id = 'loading-' + Date.now();
@@ -2338,26 +2413,27 @@
             let textHtml = '';
 
             if (mode === 'vision') {
-                badgeHtml =
-                    `<div class="mode-badge" style="background: rgba(74, 222, 128, 0.15); color: #22c55e; border: 1px solid rgba(74, 222, 128, 0.3);"><i class="fas fa-eye"></i> Mode Vision (Llama 3.2)</div>`;
+                badgeHtml = `<div class="mode-badge" style="background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3);"><i class="fas fa-eye"></i> Mode Vision (Gemma 4)</div>`;
                 textHtml = `<span class="typing-text">Menganalisis gambar...</span>`;
-            } else if (mode === 'github') {
-                badgeHtml =
-                    `<div class="mode-badge" style="background: rgba(168, 85, 247, 0.15); color: #a855f7; border: 1px solid rgba(168, 85, 247, 0.3);"><i class="fas fa-code"></i> Mode Code Analyst (Qwen 3 Coder)</div>`;
-                textHtml = `<span class="typing-text">Membaca repository GitHub...</span>`;
-            } else if (mode === 'smart') {
-                badgeHtml = `<div class="mode-badge mode-smart"><i class="fas fa-brain"></i> Mode Cerdas (Qwen 3.5)</div>`;
-                textHtml =
-                    `<span class="typing-text">Menganalisis logika kompleks... <button class="switch-btn" onclick="switchToFastMode()">[Beralih ke Cepat]</button></span>`;
-            } else {
-                badgeHtml = `<div class="mode-badge mode-fast"><i class="fas fa-bolt"></i> Mode Cepat (Kimi)</div>`;
-                textHtml =
-                    `<span class="typing-text">SAHAJA AI sedang berpikir... <button class="switch-btn" style="color:#d4a017;" onclick="switchToMode('smart')">[Beralih ke Cerdas]</button></span>`;
+            }
+            // PERBAIKAN: Tangkap 'github' dan 'coding' sekaligus!
+            else if (mode === 'github' || mode === 'coding') {
+                badgeHtml = `<div class="mode-badge" style="background: rgba(168, 85, 247, 0.15); color: #a855f7; border: 1px solid rgba(168, 85, 247, 0.3);"><i class="fas fa-code"></i> Mode Code Analyst (Qwen 3 Coder)</div>`;
+                textHtml = `<span class="typing-text">Menganalisis baris kode...</span>`;
+            }
+            else if (mode === 'smart') {
+                badgeHtml = `<div class="mode-badge mode-smart"><i class="fas fa-brain"></i> Mode Cerdas (DeepSeek v3.2)</div>`;
+                textHtml = `<span class="typing-text">Bernalar... <button class="switch-btn" onclick="switchToFastMode()">[Beralih ke Cepat]</button></span>`;
+            }
+            // DEFAULT: Mode Cepat
+            else {
+                badgeHtml = `<div class="mode-badge mode-fast"><i class="fas fa-bolt"></i> Mode Cepat (Kimi K2)</div>`;
+                textHtml = `<span class="typing-text">SAHAJA AI sedang berpikir... <button class="switch-btn" style="color:#d4a017;" onclick="switchToMode('smart')">[Beralih ke Cerdas]</button></span>`;
             }
 
-            div.innerHTML =
-                `<div class="message-avatar ai-avatar-msg"><i class="fas fa-robot"></i></div><div class="message-content">${badgeHtml}<div class="message-bubble"><div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>${textHtml}</div></div></div>`;
+            div.innerHTML = `<div class="message-avatar ai-avatar-msg"><i class="fas fa-robot"></i></div><div class="message-content">${badgeHtml}<div class="message-bubble"><div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>${textHtml}</div></div></div>`;
             document.getElementById('messagesContainer').appendChild(div);
+
             return id;
         }
 
@@ -2369,8 +2445,6 @@
             if (t.split(' ').length < 10 && simple.some(k => t.includes(k))) return false;
             return t.split(' ').length > 15;
         }
-
-        // ========== FUNGSI COPY UNTUK PESAN (ROBUST) ==========
 
         // ========== FUNGSI COPY UNTUK PESAN (ROBUST) ==========
         function copyText(btn) {
@@ -2843,6 +2917,45 @@
                 }, 500);
             }
         });
+        // ==========================================
+        // LOGIKA MENU PILIH MODEL AI
+        // ==========================================
+        let userSelectedMode = 'auto'; // Default ke otomatis
+
+        const modelSelectButton = document.getElementById('modelSelectButton');
+        const modelMenu = document.getElementById('modelMenu');
+        const currentModelIcon = document.getElementById('currentModelIcon');
+
+        // Modifikasi tombol attach aslimu agar menutup menu model jika ditekan
+        attachBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if(modelMenu) modelMenu.classList.remove('show');
+            attachMenu.classList.toggle('show');
+        });
+
+        // Tombol pilih model ditekan
+        modelSelectButton.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if(attachMenu) attachMenu.classList.remove('show');
+            modelMenu.classList.toggle('show');
+        });
+
+        // Fungsi ketika list menu model dipilih
+        function selectModelMode(mode, iconClass) {
+            userSelectedMode = mode;
+
+            // Ubah ikon di tombol utama
+            currentModelIcon.className = `fas ${iconClass}`;
+
+            // Highlight menu yang dipilih (efek abu-abu)
+            document.querySelectorAll('.model-option').forEach(el => {
+                el.style.background = 'transparent';
+            });
+            event.currentTarget.style.background = 'var(--glass-highlight)';
+
+            // Tutup menu
+            modelMenu.classList.remove('show');
+        }
     </script>
 </body>
 

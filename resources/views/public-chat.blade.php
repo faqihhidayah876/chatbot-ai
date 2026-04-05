@@ -166,7 +166,7 @@
 
         <div class="footer">
             Dibagikan melalui <a href="/">SAHAJA AI</a>.
-            Mulai obrolan pintarmu sendiri sekarang!
+            Gass cobain Sahaja AI Sekarang!!
         </div>
     </div>
 

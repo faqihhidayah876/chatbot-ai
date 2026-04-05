@@ -40,47 +40,53 @@ class ChatController extends Controller
             $sessionId = $request->session_id;
             $userId = Auth::id();
 
-            // 1. DETEKSI MODE & INPUT
+            // 1. DETEKSI MODE & INPUT (Bebas Canvas!)
             $isSimple = $this->isSimpleQuery($userMessage);
             $hasImage = $request->has('image_data') && !empty($request->image_data);
             $hasGithub = $request->has('github_repo') && !empty($request->github_repo);
 
-            if ($request->has('force_mode')) {
-                if ($request->force_mode === 'fast') $isSimple = true;
-                elseif ($request->force_mode === 'smart') $isSimple = false;
+            // Tangkap pilihan mode manual dari Frontend
+            $manualMode = $request->input('manual_mode', 'auto');
+
+            // =========================================================
+            // 🌟 ALL-NVIDIA ARCHITECTURE 🌟
+            // =========================================================
+            $provider = 'nvidia';
+
+            // A. Logika Mode Manual (Pilihan User)
+            if ($manualMode !== 'auto') {
+                if ($manualMode === 'fast') {
+                    $selectedModel = 'moonshotai/kimi-k2-instruct';
+                    $timeout = 60;
+                } elseif ($manualMode === 'smart') {
+                    $selectedModel = 'deepseek-ai/deepseek-v3.2';
+                    $timeout = 300;
+                } elseif ($manualMode === 'vision') {
+                    $selectedModel = 'google/gemma-4-31b-it';
+                    $timeout = 180;
+                } elseif ($manualMode === 'coding') {
+                    $selectedModel = 'qwen/qwen3-coder-480b-a35b-instruct';
+                    $timeout = 300;
+                }
+            }
+            // B. Logika Mode Otomatis (Default)
+            else {
+                if ($hasImage) {
+                    $selectedModel = 'google/gemma-4-31b-it'; // Vision
+                    $timeout = 180;
+                } elseif ($hasGithub) {
+                    $selectedModel = 'qwen/qwen3-coder-480b-a35b-instruct'; // Coding
+                    $timeout = 300;
+                } elseif (!$isSimple) {
+                    $selectedModel = 'deepseek-ai/deepseek-v3.2'; // Cerdas
+                    $timeout = 300;
+                } else {
+                    $selectedModel = 'moonshotai/kimi-k2-instruct'; // Cepat
+                    $timeout = 60;
+                }
             }
 
-            // =========================================================
-            // 🌟 ARSITEKTUR DOUBLE ENGINE (NVIDIA + GROQ) 🌟
-            // =========================================================
-            // =========================================================
-            // 🌟 ARSITEKTUR TRIPLE ENGINE + GITHUB SPECIALIST 🌟
-            // =========================================================
-            $provider = 'nvidia'; // Default provider
-
-            if ($hasImage) {
-                // 1. VISION MODE: Llama 11B Vision (NVIDIA)
-                $selectedModel = 'meta/llama-3.2-11b-vision-instruct';
-                $provider = 'nvidia';
-                $timeout = 180;
-            } else if ($hasGithub) {
-                // 2. GITHUB SPECIALIST: Qwen 3 Coder (NVIDIA) - Monster 256k Context!
-                $selectedModel = 'qwen/qwen3-coder-480b-a35b-instruct';
-                $provider = 'nvidia';
-                $timeout = 300; // 4 Menit (Batas aman timeout hosting Alwaysdata)
-            } else if (!$isSimple) {
-                // 3. SMART MODE (Bukan Github): DeepSeek V3 (NVIDIA)
-                $selectedModel = 'qwen/qwen3.5-397b-a17b'; // Sesuaikan dengan API Nvidia-mu
-                $provider = 'nvidia';
-                $timeout = 300;
-            } else {
-                // 4. FAST MODE: Kimi K2 (GROQ)
-                $selectedModel = 'moonshotai/kimi-k2-instruct-0905';
-                $provider = 'groq';
-                $timeout = 60;
-            }
-
-            // 2. HANDLE SESSION (Dengan pencegah Double Room)
+            // 2. HANDLE SESSION
             if (!$sessionId) {
                 $title = Str::words($userMessage, 5, '...');
                 $recentSession = Session::where('user_id', $userId)
@@ -99,7 +105,7 @@ class ChatController extends Controller
                 if ($session) $session->touch();
             }
 
-            // 3. KONSTRUKSI PESAN (Tetap sama seperti versi stabil)
+            // 3. KONSTRUKSI PESAN (Bersih dari prompt Canvas)
             $configSahaja = config('sahaja');
             $systemPrompt = is_array($configSahaja) ? ($configSahaja['personality'] ?? "Kamu adalah SAHAJA AI.") : ($configSahaja ?? "Kamu adalah SAHAJA AI.");
 
@@ -107,10 +113,10 @@ class ChatController extends Controller
             $githubContent = "";
 
             if ($hasGithub) {
-                $githubContent = $this->fetchGithubRepoContent($request->github_repo);
+                $githubContent = $this->fetchGithubRepoContent($request->github_repo, $userMessage);
             }
 
-            $aturanKode = "\n\nATURAN KODE: Anda WAJIB membungkus kodingan menggunakan Markdown standar (3 backticks). DILARANG KERAS menambahkan simbol apapun (seperti @ atau spasi) sebelum tanda backticks.";
+            $aturanKode = "\n\nATURAN KODE: Anda WAJIB membungkus kodingan menggunakan Markdown standar (3 backticks). DILARANG KERAS menambahkan simbol apapun sebelum tanda backticks.";
 
             if ($hasImage) {
                 $promptVision = "Peranmu adalah SAHAJA AI, Data Analyst. Ekstrak data dari gambar secara detail.\n\nPertanyaan User:" . $userMessage;
@@ -122,8 +128,7 @@ class ChatController extends Controller
                     ]
                 ];
             } else if ($hasGithub) {
-                $messages[] = ["role" => "system", "content" => "Kamu adalah SAHAJA AI, Senior Software Engineer. Jawablah berdasarkan [DATA REPOSITORY] di bawah. Jika tertulis 'SISTEM ERROR', jelaskan error tersebut. Jika
-                Anda WAJIB membungkus kodingan menggunakan Markdown standar (3 backticks). DILARANG KERAS menambahkan simbol apapun (seperti @ atau spasi) sebelum tanda backticks." . $aturanKode];
+                $messages[] = ["role" => "system", "content" => "Kamu adalah SAHAJA AI, Senior Software Engineer. Jawablah berdasarkan [DATA REPOSITORY] di bawah. Jika tertulis 'SISTEM ERROR', jelaskan error tersebut.\n" . $aturanKode];
                 $messages[] = [
                     "role" => "user",
                     "content" => "[URL]: " . $request->github_repo . "\n\n[DATA REPOSITORY]:\n" . $githubContent . "\n\n[PERTANYAAN USER]: " . $userMessage
@@ -145,7 +150,7 @@ class ChatController extends Controller
                 $messages[] = ["role" => "user", "content" => $userMessage];
             }
 
-            // 4. CALL API (Dengan pelemparan Provider)
+            // 4. CALL API
             session_write_close();
             $aiReply = "";
 
@@ -153,30 +158,16 @@ class ChatController extends Controller
                 $aiReply = "⚠️ **GitHub Scanner Terblokir**\n\n" . $githubContent;
             } else {
                 try {
-                    // Oper variabel $provider ke fungsi callAI
-                    $aiReply = $this->callAI($selectedModel, $messages, $timeout, $provider);
+                    $aiReply = $this->callAI($selectedModel, $messages, $timeout);
                 } catch (\Exception $e) {
                     $errorMsg = $e->getMessage();
                     try { Log::error("AI Error: " . $errorMsg); } catch (\Exception $logErr) {}
-
-                    if ($provider === 'nvidia') {
-                        // FALLBACK: Jika Nvidia mati/lambat, BANTING SETIR KE GROQ!
-                        try {
-                            $fallbackReply = $this->callAI('moonshotai/kimi-k2-instruct-0905', $messages, 60, 'groq');
-                            $aiReply = $fallbackReply . "\n\n*(Nvidia Engine sedang sibuk. Dialihkan ke Groq Engine)*";
-                        } catch (\Exception $e2) {
-                            $aiReply = "🔌 **Semua Engine Mati (Nvidia & Groq)**\n\nDetail: `" . substr($e2->getMessage(), 0, 150) . "`";
-                        }
-                    } else {
-                        $aiReply = "🔌 **API Groq Error**\n\nDetail: `" . substr($errorMsg, 0, 200) . "`";
-                    }
+                    $aiReply = "🔌 **API NVIDIA Error**\n\nDetail: `" . substr($errorMsg, 0, 200) . "`";
                 }
             }
 
             if ($aiReply) {
-                // Hapus simbol @ yang nempel di backtick (contoh: @```php jadi ```php)
                 $aiReply = preg_replace('/@```/', '```', $aiReply);
-                // Pastikan AI tidak ngawur ngasih 4 backtick
                 $aiReply = preg_replace('/````/', '```', $aiReply);
             }
 
@@ -194,11 +185,12 @@ class ChatController extends Controller
                 'ai_response' => $aiReply,
             ]);
 
+            // Kembalikan JSON (Bersih dari Canvas)
             return response()->json([
                 'session_id' => $sessionId,
                 'user_message' => $dbUserMessage,
                 'ai_response' => $aiReply,
-                'model_used' => $selectedModel . ' (' . strtoupper($provider) . ')'
+                'model_used' => $selectedModel . ' (NVIDIA)'
             ]);
 
         } catch (\Throwable $globalEx) {
@@ -209,17 +201,11 @@ class ChatController extends Controller
         }
     }
 
-    // FUNGSI SAKLAR API OTOMATIS
-    private function callAI($model, $messages, $timeout, $provider = 'nvidia')
+    // FUNGSI API (Murni NVIDIA)
+    private function callAI($model, $messages, $timeout)
     {
-        // Tentukan Kunci dan Pintu Gerbang berdasarkan Provider
-        if ($provider === 'groq') {
-            $apiKey = env('GROQ_API_KEY');
-            $url = "https://api.groq.com/openai/v1/chat/completions";
-        } else {
-            $apiKey = env('NVIDIA_API_KEY');
-            $url = "https://integrate.api.nvidia.com/v1/chat/completions";
-        }
+        $apiKey = env('NVIDIA_API_KEY');
+        $url = "https://integrate.api.nvidia.com/v1/chat/completions";
 
         $response = Http::withOptions([
             'verify' => false,
@@ -237,7 +223,7 @@ class ChatController extends Controller
         ]);
 
         if (!$response->successful()) {
-            throw new \Exception("HTTP {$response->status()} | Provider: {$provider} | Response: " . $response->body());
+            throw new \Exception("HTTP {$response->status()} | Response: " . $response->body());
         }
 
         $data = $response->json();
