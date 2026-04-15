@@ -1536,6 +1536,87 @@
             .nav-btn { padding: 8px 12px; font-size: 0.9rem; }
             .settings-content { padding: 20px; }
         }
+        /* PERBAIKAN UNTUK MESSAGES TIDAK BOCOR KE KANAN */
+    .messages-container {
+        overflow-x: hidden !important;
+        width: 100% !important;
+        word-wrap: break-word;
+        word-break: break-word;
+    }
+
+    .message {
+        max-width: 100% !important;
+        width: 100%;
+    }
+
+    .message-content {
+        max-width: calc(100% - 50px) !important; /* Kurangi ruang avatar */
+        min-width: 0;
+        overflow-x: auto;
+    }
+
+    .message-bubble {
+        word-break: break-word;
+        overflow-wrap: break-word;
+        max-width: 100%;
+    }
+
+    /* Konten Markdown (kode, tabel, gambar) tidak boleh bocor */
+    .markdown-body pre,
+    .markdown-body table,
+    .markdown-body img {
+        max-width: 100% !important;
+        overflow-x: auto !important;
+        display: block;
+    }
+
+    .markdown-body table {
+        display: block;
+        white-space: nowrap;
+    }
+
+    /* PERBAIKAN INPUT CONTAINER DI HP AGAR TIDAK KEPENDAM */
+    @media (max-width: 768px) {
+        .messages-container {
+            padding-bottom: 160px !important; /* beri ruang ekstra agar input tidak nutup chat */
+        }
+
+        .input-container {
+            position: fixed !important;
+            bottom: 0 !important;
+            left: 0;
+            right: 0;
+            background: var(--main-bg);
+            z-index: 100;
+            padding: 8px 12px !important;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+        }
+
+        body.light-mode .input-container {
+            background: var(--main-bg) !important;
+        }
+
+        .input-wrapper {
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        /* Pastikan chat terakhir tidak ketutupan input */
+        .message:last-child {
+            margin-bottom: 10px;
+        }
+    }
+
+    /* Perbaikan untuk elemen yang panjang (kode, link) */
+    .markdown-body pre code {
+        white-space: pre-wrap;
+        word-break: break-all;
+    }
+
+    /* Avatar pesan user/ai tidak ikut melar */
+    .message-avatar {
+        flex-shrink: 0;
+    }
 
     </style>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
