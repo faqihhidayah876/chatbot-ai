@@ -1944,7 +1944,7 @@
                         <button class="github-submit-btn" style="background: transparent; color: var(--text-primary); border: 1px solid var(--glass-border); padding: 5px 15px;" onclick="window.open('{{ route('privacy') }}', '_blank')">Lihat</button>
                     </div>
                     <div style="margin-top: 20px; text-align: center; color: var(--text-secondary); font-size: 0.85rem;">
-                        Versi Beta 3.6<br>
+                        Beta V 3.6<br>
                         Dibuat oleh: Faqih Hidayah
                     </div>
                 </div>
