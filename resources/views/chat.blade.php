@@ -1623,6 +1623,23 @@
                 max-width: 95% !important; /* Biar di HP pesannya lebih lebar dan lega */
             }
         }
+        /* 3. TINGGIKAN DERAJAT SIDEBAR BIAR DI ATAS INPUT BOX */
+        @media (max-width: 768px) {
+            .sidebar {
+                z-index: 10000 !important; /* Harus lebih tinggi dari kotak input yang 9999 */
+            }
+        }
+        /* ====================================================== */
+        /* FIX: TOMBOL FITUR KETUTUPAN KOTAK INPUT DI HP          */
+        /* ====================================================== */
+        .welcome-screen {
+            justify-content: flex-start !important; /* Normalisasi scroll agar tidak error di HP */
+            padding-top: 10vh !important; /* Jaga agar posisi tetap elegan di tengah layar */
+            padding-bottom: 160px !important; /* Bantalan tebal di bawah agar tidak tertutup input */
+        }
+        .suggested-actions {
+            margin-bottom: 100px !important; /* Dorongan ekstra ke atas */
+        }
 
     </style>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
