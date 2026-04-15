@@ -69,9 +69,20 @@
             background-color: var(--main-bg);
             color: var(--text-primary);
             height: 100vh;
+            height: 100dvh; /* FIX UNTUK MOBILE BROWSER */
             overflow: hidden;
             display: flex;
             transition: background 0.3s, color 0.3s;
+        }
+
+        .main-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            height: 100dvh; /* FIX UNTUK MOBILE BROWSER */
+            position: relative;
+            transition: all 0.3s ease;
         }
 
         body::before {
@@ -642,15 +653,18 @@
             flex-direction: column;
             max-width: 85%;
             min-width: 0;
+            overflow: hidden; /* FIX: Cegah teks mendobrak batas layar */
         }
 
-        /* FIX BATAS TINGGI BUBBLE USER (Agar PDF tidak kepanjangan di UI) */
         .message-bubble {
             padding: 16px 20px;
             border-radius: 16px;
             line-height: 1.6;
             font-size: 0.95rem;
             position: relative;
+            word-wrap: break-word; /* FIX: Paksa teks panjang turun ke bawah */
+            overflow-wrap: break-word;
+            word-break: break-word;
         }
 
         .user .message-bubble {
@@ -677,7 +691,8 @@
             display: block;
             line-height: 1.7;
             font-size: 0.95rem;
-            overflow-x: auto;
+            /* overflow-x: auto Dihapus dari sini agar teks tidak meluber */
+            word-wrap: break-word;
         }
 
         .markdown-body>* {
@@ -686,7 +701,8 @@
 
         .markdown-body p {
             margin-bottom: 16px;
-            white-space: pre-wrap;
+            white-space: normal; /* FIX: Ganti pre-wrap jadi normal agar natural membungkus baris */
+            word-wrap: break-word;
         }
 
         .markdown-body h1,
@@ -1168,6 +1184,8 @@
             justify-content: center;
             text-align: center;
             padding: 20px;
+            overflow-y: auto; /* FIX: Biar tombol bisa di-scroll di HP kecil */
+            min-height: 0;    /* FIX: Mencegah elemen mendorong kotak input ke bawah layar */
         }
 
         .welcome-logo {
@@ -1318,6 +1336,9 @@
             .sidebar.mobile-open { transform: translateX(0); box-shadow: 10px 0 30px rgba(0, 0, 0, 0.5); }
             .toggle-btn-sidebar { display: none; }
             .mobile-toggle-btn { display: block; background: transparent; border: none; font-size: 1.4rem; color: var(--text-primary); margin-right: 15px; }
+            .input-container {
+                padding: 4px 12px !important;
+                position: relative !important;}
 
             /* PERBAIKAN POP-UP SETTINGS UNTUK HP */
             .settings-modal-box { flex-direction: column; height: 85vh; width: 95%; }
@@ -1931,651 +1952,7 @@
             </div>
         </div>
     </div>
-    <div class="modal-overlay" id="shareModal">
-        <div class="modal-box" style="text-align: center; max-width: 400px;">
-            <button class="modal-close" onclick="document.getElementById('shareModal').classList.remove('show')"><i class="fas fa-times"></i></button>
-            <h3 style="margin-bottom: 15px;"><i class="fas fa-share-alt" style="color: var(--accent-color);"></i> Bagikan Percakapan</h3>
-            <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 15px;">Salin tautan di bawah ini untuk membagikan percakapan ini ke publik.</p>
-            <div style="display: flex; gap: 10px;">
-                <input type="text" id="shareLinkInput" class="github-input" readonly style="flex: 1; background: var(--glass-highlight);">
-                <button class="github-submit-btn" onclick="copyShareLink()"><i class="far fa-copy"></i> Salin</button>
-            </div>
-        </div>
-    </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
-
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
-
-    <script>
-        // ==========================================
-        // 1. VARIABEL GLOBAL (Dideklarasikan SEKALI saja)
-        // ==========================================
-        const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
-        let currentSessionId = "{{ $currentSession ? $currentSession->id : '' }}";
-        let currentController = null;
-        let lastUserMessage = "";
-        window.activeForceMode = null;
-
-        // File & Input State
-        let extractedFileText = "";
-        let base64Image = null;
-        let currentFileName = "";
-        let currentGithubRepo = "";
-        let pendingAvatarBase64 = null;
-
-        // Modal State
-        let targetActionId = null;
-        let targetActionType = '';
-
-        // DOM Elements
-        const chatInput = document.getElementById('chatInput');
-        const voiceBtn = document.getElementById('voiceButton');
-        const attachBtn = document.getElementById('attachButton');
-        const attachMenu = document.getElementById('attachMenu');
-        const docInput = document.getElementById('docInput');
-        const imageInput = document.getElementById('imageInput');
-        const filePreviewContainer = document.getElementById('filePreviewContainer');
-        const fileNameDisplay = document.getElementById('fileNameDisplay');
-        const settingsMenu = document.getElementById('settingsMenu');
-
-        // ==========================================
-        // 2. INISIALISASI MARKED.JS (Markdown)
-        // ==========================================
-        marked.setOptions({
-            sanitize: true, breaks: true, gfm: true,
-            highlight: function(code, lang) {
-                const language = hljs.getLanguage(lang) ? lang : 'plaintext';
-                return hljs.highlight(code, { language }).value;
-            }
-        });
-
-        // ==========================================
-        // 3. FUNGSI TOAST (BADGE NOTIFIKASI)
-        // ==========================================
-        function showToast(message, type = 'info') {
-            let container = document.getElementById('toast-container');
-            if (!container) {
-                container = document.createElement('div');
-                container.id = 'toast-container';
-                container.style.cssText = 'position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 100000; display: flex; flex-direction: column; gap: 10px; pointer-events: none;';
-                document.body.appendChild(container);
-            }
-            const toast = document.createElement('div');
-            const icon = type === 'success' ? 'check-circle' : (type === 'error' ? 'exclamation-circle' : 'info-circle');
-            const color = type === 'success' ? '#10b981' : (type === 'error' ? '#ef4444' : '#3b82f6');
-            toast.style.cssText = `background: rgba(30, 41, 59, 0.95); color: white; padding: 12px 24px; border-radius: 12px; font-size: 0.9rem; display: flex; align-items: center; gap: 10px; animation: slideDown 0.3s ease forwards; backdrop-filter: blur(8px); border-left: 4px solid ${color};`;
-            toast.innerHTML = `<i class="fas fa-${icon}"></i> <span>${message}</span>`;
-            container.appendChild(toast);
-            setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 3000);
-        }
-
-        // ==========================================
-        // 4. KENDALI MODAL CUSTOM (UI)
-        // ==========================================
-        function closeCustomModal(modalId) {
-            const m = document.getElementById(modalId);
-            if (m) m.classList.remove('show');
-        }
-
-        function openConfirmModal(title, text, type, id = null) {
-            targetActionType = type;
-            targetActionId = id;
-            document.getElementById('dangerModalTitle').innerText = title;
-            document.getElementById('dangerModalText').innerText = text;
-            document.getElementById('confirmDangerModal').classList.add('show');
-            document.querySelectorAll('.options-menu, .logout-menu').forEach(el => el.classList.remove('show'));
-        }
-
-        function toggleMenu(e, id) {
-            if (e) { e.preventDefault(); e.stopPropagation(); }
-            const targetMenu = document.getElementById(id);
-            if (!targetMenu) return;
-            const isShown = targetMenu.classList.contains('show');
-            document.querySelectorAll('.options-menu, .logout-menu, .attach-menu').forEach(el => el.classList.remove('show'));
-            if (!isShown) targetMenu.classList.add('show');
-        }
-
-        // ==========================================
-        // 5. MANAJEMEN SESSION (RENAME, DELETE, SHARE)
-        // ==========================================
-        function renameSession(id) {
-            targetActionId = id;
-            document.getElementById('renameInput').value = document.getElementById(`title-${id}`).innerText;
-            document.getElementById('renameRoomModal').classList.add('show');
-            document.getElementById(`menu-${id}`)?.classList.remove('show');
-        }
-
-        function deleteSession(id) {
-            openConfirmModal("Hapus Percakapan?", "Percakapan ini akan dihapus secara permanen.", "deleteRoom", id);
-        }
-
-        function clearAllChats() {
-            openConfirmModal("Hapus Semua Obrolan?", "Seluruh riwayat chat Anda di semua percakapan akan musnah. Ini tidak dapat dibatalkan.", "clearAllChats");
-        }
-
-        async function shareSession(id) {
-            try {
-                const response = await fetch(`/session/${id}/share`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken } });
-                const data = await response.json();
-                if (data.success) {
-                    document.getElementById('shareLinkInput').value = data.url;
-                    document.getElementById('shareModal').classList.add('show');
-                }
-            } catch(e) { showToast("Gagal membuat link", "error"); }
-            document.getElementById(`menu-${id}`)?.classList.remove('show');
-        }
-
-        function copyShareLink() {
-            const input = document.getElementById('shareLinkInput');
-            input.select(); document.execCommand("copy");
-            showToast("Tautan berhasil disalin!", "success");
-            closeCustomModal('shareModal');
-        }
-
-        // ==========================================
-        // 6. EKSEKUSI TOMBOL MODAL (OTAK DATABASE)
-        // ==========================================
-        async function executeRename() {
-            const newName = document.getElementById('renameInput').value.trim();
-            if(!newName) return showToast("Nama tidak boleh kosong", "error");
-            try {
-                await fetch(`/session/${targetActionId}/rename`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken }, body: JSON.stringify({ title: newName }) });
-                document.getElementById(`title-${targetActionId}`).innerText = newName;
-                closeCustomModal('renameRoomModal'); // TUTUP MODAL DULU
-                showToast("Nama berhasil diubah", "success"); // BARU MUNCULKAN TOAST
-            } catch(e) { showToast("Gagal mengganti nama", "error"); }
-        }
-
-        async function executeDangerAction() {
-            closeCustomModal('confirmDangerModal');
-            showToast("Memproses...", "info");
-
-            try {
-                if (targetActionType === 'deleteRoom') {
-                    await fetch(`/session/${targetActionId}/delete`, { method: 'DELETE', headers: { 'X-CSRF-TOKEN': csrfToken } });
-                    document.getElementById(`session-${targetActionId}`)?.remove();
-                    if (window.location.pathname.includes('/chat/')) {
-                        const parts = window.location.pathname.split('/');
-                        if(parts[parts.length-1] == targetActionId) window.location.href = "/chat";
-                    }
-                    showToast("Percakapan dihapus", "success");
-
-                } else if (targetActionType === 'clearAllChats') {
-                    await fetch('/profile/chat/clear', { method: 'DELETE', headers: { 'X-CSRF-TOKEN': csrfToken } });
-                    showToast("Seluruh riwayat berhasil dihapus", "success");
-                    setTimeout(() => window.location.href = '/chat', 1000);
-
-                } else if (targetActionType === 'deleteAccount') {
-                    await fetch('/profile/account/delete', { method: 'DELETE', headers: { 'X-CSRF-TOKEN': csrfToken } });
-                    window.location.href = '/';
-
-                } else if (targetActionType === 'deleteAvatar') {
-                    await fetch('/profile/update', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken }, body: JSON.stringify({ avatar: null }) });
-                    showToast("Foto profil dihapus", "success");
-                    setTimeout(() => window.location.reload(), 1000);
-                }
-            } catch(e) { showToast("Terjadi kesalahan server", "error"); }
-        }
-
-        // ==========================================
-        // 7. SETTINGS MODAL & PROFIL (Avatar, Tema)
-        // ==========================================
-        function openSettingsModal() {
-            document.getElementById('settingsModal').classList.add('show');
-            document.getElementById('logout-menu')?.classList.remove('show');
-            const isLight = document.body.classList.contains('light-mode');
-            document.getElementById('btnThemeLight').classList.toggle('active', isLight);
-            document.getElementById('btnThemeDark').classList.toggle('active', !isLight);
-        }
-
-        function closeSettingsModal() { document.getElementById('settingsModal').classList.remove('show'); }
-
-        function switchTab(tabId) {
-            document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
-            document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
-            document.getElementById('tab-' + tabId).classList.add('active');
-            event.currentTarget.classList.add('active');
-        }
-
-        function setTheme(mode) {
-            const isLight = mode === 'light';
-            document.body.classList.toggle('light-mode', isLight);
-            localStorage.setItem('theme', isLight ? 'light' : 'dark');
-            document.getElementById('btnThemeLight').classList.toggle('active', isLight);
-            document.getElementById('btnThemeDark').classList.toggle('active', !isLight);
-        }
-
-        document.getElementById('avatarInput')?.addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function(event) {
-                const img = new Image();
-                img.src = event.target.result;
-                img.onload = () => {
-                    const canvas = document.createElement('canvas');
-                    const MAX = 200;
-                    let w = img.width; let h = img.height;
-                    if (w > h) { if (w > MAX) { h *= MAX / w; w = MAX; } }
-                    else { if (h > MAX) { w *= MAX / h; h = MAX; } }
-                    canvas.width = w; canvas.height = h;
-                    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-
-                    pendingAvatarBase64 = canvas.toDataURL('image/jpeg', 0.8);
-                    document.getElementById('previewAvatar').src = pendingAvatarBase64;
-                    showToast("Foto siap. Jangan lupa klik tombol 'Simpan'.", "info");
-                }
-            }
-            reader.readAsDataURL(file);
-        });
-
-        async function simpanProfil() {
-            const newName = document.getElementById('inputNamaProfil').value.trim();
-            if(!newName) return showToast("Nama tidak boleh kosong!", "error");
-            const payload = { name: newName };
-            if (pendingAvatarBase64 !== null) payload.avatar = pendingAvatarBase64;
-
-            try {
-                const res = await fetch('/profile/update', {
-                    method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken }, body: JSON.stringify(payload)
-                });
-                const data = await res.json();
-                if(data.success) {
-                    showToast("Profil berhasil diperbarui!", "success");
-                    setTimeout(() => window.location.reload(), 1000);
-                }
-            } catch(e) { showToast("Gagal menyimpan profil", "error"); }
-        }
-
-        // ==========================================
-        // 8. LOGIKA ATTACHMENT (Gambar, PDF, Github)
-        // ==========================================
-        document.getElementById('btnUploadDoc')?.addEventListener('click', () => { docInput.click(); attachMenu.classList.remove('show'); });
-        document.getElementById('btnUploadImage')?.addEventListener('click', () => { imageInput.click(); attachMenu.classList.remove('show'); });
-
-        const githubModal = document.getElementById('githubModal');
-        document.getElementById('btnUploadGithub')?.addEventListener('click', () => { attachMenu.classList.remove('show'); githubModal.classList.add('show'); document.getElementById('githubLinkInput').focus(); });
-        document.getElementById('closeGithubModalBtn')?.addEventListener('click', () => { githubModal.classList.remove('show'); });
-
-        document.getElementById('submitGithubBtn')?.addEventListener('click', () => {
-            const link = document.getElementById('githubLinkInput').value.trim();
-            if (link.includes('github.com')) {
-                removeFile();
-                const urlParts = link.split('github.com/');
-                if (urlParts.length > 1) {
-                    let repoName = urlParts[1].replace('.git', '').split('/').slice(0, 2).join('/');
-                    currentGithubRepo = link; currentFileName = repoName;
-                    filePreviewContainer.style.display = 'flex';
-                    filePreviewContainer.querySelector('i').className = 'fab fa-github'; filePreviewContainer.querySelector('i').style.color = '#a855f7';
-                    fileNameDisplay.textContent = "Repo: " + repoName;
-                    githubModal.classList.remove('show');
-                }
-            } else alert('Tolong masukkan link GitHub yang valid!');
-        });
-
-        imageInput?.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-            removeFile();
-            currentFileName = file.name;
-            filePreviewContainer.style.display = 'flex';
-            filePreviewContainer.querySelector('i').className = 'fas fa-image'; filePreviewContainer.querySelector('i').style.color = '#4ade80';
-            fileNameDisplay.textContent = "Mengompresi..."; attachBtn.style.display = 'none';
-
-            const reader = new FileReader(); reader.readAsDataURL(file);
-            reader.onload = event => {
-                const img = new Image(); img.src = event.target.result;
-                img.onload = () => {
-                    const canvas = document.createElement('canvas');
-                    const MAX = 1600; let w = img.width; let h = img.height;
-                    if (w > h && w > MAX) { h *= MAX / w; w = MAX; } else if (h > MAX) { w *= MAX / h; h = MAX; }
-                    canvas.width = w; canvas.height = h; canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-                    base64Image = canvas.toDataURL('image/jpeg', 0.9);
-                    fileNameDisplay.textContent = currentFileName + " (Siap)"; attachBtn.style.display = 'flex'; imageInput.value = '';
-                }
-            };
-        });
-
-        docInput?.addEventListener('change', async (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-            removeFile();
-            currentFileName = file.name;
-            filePreviewContainer.style.display = 'flex';
-            filePreviewContainer.querySelector('i').className = 'fas fa-file-alt'; filePreviewContainer.querySelector('i').style.color = 'var(--accent-color)';
-            fileNameDisplay.textContent = "Mengekstrak..."; attachBtn.style.display = 'none';
-
-            try {
-                if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) extractedFileText = await extractPdfText(file);
-                else if (file.name.toLowerCase().endsWith('.docx') || file.type.includes('wordprocessingml')) extractedFileText = await extractDocxText(file);
-                else { alert("Format tidak didukung!"); removeFile(); return; }
-                if (extractedFileText.length > 25000) extractedFileText = extractedFileText.substring(0, 25000) + "\n\n[INFO: TEKS DIPOTONG]";
-                fileNameDisplay.textContent = currentFileName;
-            } catch (err) { alert("Gagal membaca dokumen."); removeFile(); }
-            finally { attachBtn.style.display = 'flex'; docInput.value = ''; }
-        });
-
-        function removeFile() {
-            extractedFileText = ""; base64Image = null; currentFileName = ""; currentGithubRepo = "";
-            filePreviewContainer.style.display = 'none'; docInput.value = ''; imageInput.value = '';
-        }
-
-        async function extractPdfText(file) {
-            const arrayBuffer = await file.arrayBuffer();
-            const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-            let text = ""; const maxPages = Math.min(pdf.numPages, 25);
-            for (let i = 1; i <= maxPages; i++) {
-                const page = await pdf.getPage(i); const content = await page.getTextContent();
-                text += content.items.map(item => item.str).join(" ") + "\n";
-            }
-            return text;
-        }
-
-        async function extractDocxText(file) {
-            const arrayBuffer = await file.arrayBuffer();
-            const result = await mammoth.extractRawText({ arrayBuffer: arrayBuffer });
-            return result.value;
-        }
-
-        // ==========================================
-        // 9. LOGIKA MODEL AI (Auto, Fast, Smart, Vision, Code)
-        // ==========================================
-        let userSelectedMode = 'auto';
-        document.getElementById('modelSelectButton')?.addEventListener('click', (e) => {
-            e.stopPropagation(); attachMenu.classList.remove('show'); document.getElementById('modelMenu').classList.toggle('show');
-        });
-        attachBtn?.addEventListener('click', (e) => {
-            e.stopPropagation(); document.getElementById('modelMenu').classList.remove('show'); attachMenu.classList.toggle('show');
-        });
-
-        function selectModelMode(mode, iconClass) {
-            userSelectedMode = mode;
-            document.getElementById('currentModelIcon').className = `fas ${iconClass}`;
-            document.querySelectorAll('.model-option').forEach(el => el.style.background = 'transparent');
-            event.currentTarget.style.background = 'var(--glass-highlight)';
-            document.getElementById('modelMenu').classList.remove('show');
-        }
-
-        function switchToMode(targetMode) {
-            window.activeForceMode = targetMode;
-            if (currentController) currentController.abort();
-            const oldLoading = document.querySelector('.message.ai:last-child');
-            if (oldLoading && oldLoading.querySelector('.typing-indicator')) oldLoading.remove();
-            sendMessage();
-        }
-        function switchToFastMode() { switchToMode('fast'); }
-
-        function detectComplexity(text) {
-            const t = text.toLowerCase();
-            const complex = ['coding', 'buatkan', 'analisis', 'html', 'laravel', 'script', 'error', 'database'];
-            const simple = ['halo', 'hai', 'tes', 'ngoding', 'cerita'];
-            if (complex.some(k => t.includes(k))) return true;
-            if (t.split(' ').length < 10 && simple.some(k => t.includes(k))) return false;
-            return t.split(' ').length > 15;
-        }
-
-        // ==========================================
-        // 10. KIRIM PESAN & RENDER CHAT
-        // ==========================================
-        async function sendMessage() {
-            if (typeof isRecording !== 'undefined' && isRecording && recognition) { recognition.stop(); forceStopRecordingUI(); }
-
-            const messageInput = chatInput.value.trim();
-            let finalMessageToSend; let displayMessage = messageInput;
-
-            if (window.activeForceMode !== null) {
-                if (!lastUserMessage) return; finalMessageToSend = lastUserMessage;
-            } else {
-                if (!messageInput && !extractedFileText && !base64Image && !currentGithubRepo) return;
-                if (extractedFileText) {
-                    const promptQuestion = messageInput || "Tolong analisis isi dokumen ini.";
-                    finalMessageToSend = `[Lampiran Dokumen: ${currentFileName}]\n"""\n${extractedFileText}\n"""\n\nInstruksi User: ${promptQuestion}`;
-                    displayMessage = `<i class="fas fa-file-pdf" style="color: #3b82f6; margin-right: 5px;"></i> <b>[Dokumen: ${currentFileName}]</b>\n${promptQuestion}`;
-                } else if (base64Image) {
-                    const promptQuestion = messageInput || "Tolong jelaskan gambar ini secara detail.";
-                    finalMessageToSend = promptQuestion;
-                    displayMessage = `<i class="fas fa-image" style="color: #10b981; margin-right: 5px;"></i> <b>[Gambar: ${currentFileName}]</b>\n${promptQuestion}`;
-                } else if (currentGithubRepo) {
-                    const promptQuestion = messageInput || "Tolong analisis kode di repository ini.";
-                    finalMessageToSend = promptQuestion;
-                    displayMessage = `<i class="fab fa-github" style="color: #a855f7; margin-right: 5px;"></i> <b>[GitHub: ${currentFileName}]</b>\n${promptQuestion}`;
-                } else { finalMessageToSend = messageInput; }
-                lastUserMessage = finalMessageToSend;
-            }
-
-            if (window.activeForceMode === null) {
-                const welcome = document.getElementById('welcomeScreen'); if (welcome) welcome.style.display = 'none';
-                const msgContainer = document.getElementById('messagesContainer'); if (msgContainer) msgContainer.style.display = 'flex';
-                chatInput.value = ''; chatInput.style.height = 'auto';
-                appendMessage('user', displayMessage);
-            }
-
-            const payload = { message: finalMessageToSend, session_id: currentSessionId, manual_mode: userSelectedMode };
-            if (base64Image) payload.image_data = base64Image;
-            if (currentGithubRepo) payload.github_repo = currentGithubRepo;
-            if (window.activeForceMode !== null) payload.force_mode = window.activeForceMode;
-
-            let mode = 'fast';
-            if (window.activeForceMode !== null) mode = window.activeForceMode;
-            else if (userSelectedMode !== 'auto') mode = userSelectedMode;
-            else {
-                let isComplex = detectComplexity(finalMessageToSend);
-                if (extractedFileText) isComplex = true;
-                mode = isComplex ? 'smart' : 'fast';
-                if (base64Image) mode = 'vision'; if (currentGithubRepo) mode = 'github';
-            }
-
-            const loadingId = appendLoadingWithMode(mode);
-            scrollToBottom();
-            if (window.activeForceMode === null) removeFile();
-
-            if (currentController) currentController.abort();
-            currentController = new AbortController();
-
-            try {
-                const response = await fetch("{{ route('chat.send') }}", {
-                    method: "POST", headers: { "Content-Type": "application/json", "X-CSRF-TOKEN": csrfToken, "Accept": "application/json" },
-                    body: JSON.stringify(payload), signal: currentController.signal
-                });
-                if (!response.ok) throw new Error(`Server Error: ${response.status}`);
-                const data = await response.json();
-                if (data.error) throw new Error(data.message);
-
-                const loadingBubble = document.getElementById(loadingId);
-                if (loadingBubble) {
-                    const aiMessageDiv = document.createElement('div'); aiMessageDiv.className = 'message ai';
-                    let finalModelLabel = '<i class="fas fa-bolt"></i> Mode Cepat (Kimi K2)'; let finalBadgeClass = 'mode-fast'; let extraStyle = '';
-                    const modelUsedStr = (data.model_used || '').toLowerCase();
-
-                    if (modelUsedStr.includes('vision') || modelUsedStr.includes('gemma')) { finalModelLabel = '<i class="fas fa-eye"></i> Mode Vision (Gemma 4)'; extraStyle = 'background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3);'; finalBadgeClass = ''; }
-                    else if (modelUsedStr.includes('deepseek')) { finalModelLabel = '<i class="fas fa-brain"></i> Mode Cerdas (DeepSeek v3.2)'; finalBadgeClass = 'mode-smart'; }
-                    else if (modelUsedStr.includes('coder') || modelUsedStr.includes('qwen')) { finalModelLabel = '<i class="fas fa-code"></i> Mode Code Analyst (Qwen 3)'; extraStyle = 'background: rgba(168, 85, 247, 0.15); color: #a855f7; border: 1px solid rgba(168, 85, 247, 0.3);'; finalBadgeClass = ''; }
-
-                    aiMessageDiv.innerHTML = `<div class="message-avatar ai-avatar-msg" style="background: transparent; padding: 0;"><img src="https://i.ibb.co.com/jZZ0648R/Logo-SAHAJA-AI.png" alt="AI" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover; border: 1px solid var(--border-color);"></div><div class="message-content"><div class="mode-badge ${finalBadgeClass}" style="${extraStyle}">${finalModelLabel}</div><div class="message-bubble markdown-body"></div><div class="ai-actions"><button class="action-btn" onclick="copyText(this)"><i class="far fa-copy"></i> Salin</button></div></div>`;
-                    loadingBubble.parentNode.replaceChild(aiMessageDiv, loadingBubble);
-
-                    const bubble = aiMessageDiv.querySelector('.message-bubble');
-                    if (bubble) animateGeminiStyle(bubble, data.ai_response);
-                    scrollToBottom();
-                }
-
-                if (!currentSessionId && data.session_id) { window.history.pushState({}, '', `/chat/${data.session_id}`); currentSessionId = data.session_id; }
-                window.activeForceMode = null;
-
-            } catch (error) {
-                const lBubble = document.getElementById(loadingId); if (lBubble) lBubble.remove();
-                if (error.name !== 'AbortError') showToast("Gagal: " + error.message, "error");
-                window.activeForceMode = null;
-            }
-        }
-
-        function appendMessage(sender, text) {
-            const messageDiv = document.createElement('div'); messageDiv.classList.add('message', sender);
-            let safeText = text;
-            if (sender === 'user') safeText = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-
-            const avatarHtml = sender === 'user' ? `<div class="message-avatar"><img src="{{ Auth::user()->avatar ?? 'https://ui-avatars.com/api/?name='.urlencode(Auth::user()->name).'&background=2563eb&color=fff' }}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;"></div>` : `<div class="message-avatar ai-avatar-msg"><i class="fas fa-robot"></i></div>`;
-            messageDiv.innerHTML = `${avatarHtml}<div class="message-content"><div class="message-bubble">${safeText}</div></div>`;
-            document.getElementById('messagesContainer').appendChild(messageDiv);
-            scrollToBottom();
-        }
-
-        function appendLoadingWithMode(mode) {
-            const id = 'loading-' + Date.now(); const div = document.createElement('div'); div.id = id; div.className = 'message ai';
-            let badgeHtml = ''; let textHtml = '';
-            if (mode === 'vision') { badgeHtml = `<div class="mode-badge" style="background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3);"><i class="fas fa-eye"></i> Mode Vision (Gemma 4)</div>`; textHtml = `<span class="typing-text">Menganalisis gambar...</span>`; }
-            else if (mode === 'github' || mode === 'coding') { badgeHtml = `<div class="mode-badge" style="background: rgba(168, 85, 247, 0.15); color: #a855f7; border: 1px solid rgba(168, 85, 247, 0.3);"><i class="fas fa-code"></i> Mode Code Analyst (Qwen 3 Coder)</div>`; textHtml = `<span class="typing-text">Menganalisis baris kode...</span>`; }
-            else if (mode === 'smart') { badgeHtml = `<div class="mode-badge mode-smart"><i class="fas fa-brain"></i> Mode Cerdas (DeepSeek v3.2)</div>`; textHtml = `<span class="typing-text">Bernalar... <button class="switch-btn" onclick="switchToFastMode()">[Beralih ke Cepat]</button></span>`; }
-            else { badgeHtml = `<div class="mode-badge mode-fast"><i class="fas fa-bolt"></i> Mode Cepat (Kimi K2)</div>`; textHtml = `<span class="typing-text">SAHAJA AI sedang berpikir... <button class="switch-btn" style="color:#d4a017;" onclick="switchToMode('smart')">[Beralih ke Cerdas]</button></span>`; }
-            div.innerHTML = `<div class="message-avatar ai-avatar-msg"><i class="fas fa-robot"></i></div><div class="message-content">${badgeHtml}<div class="message-bubble"><div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>${textHtml}</div></div></div>`;
-            document.getElementById('messagesContainer').appendChild(div);
-            return id;
-        }
-
-        // ==========================================
-        // 11. UTILITAS & ANIMASI (Copy, Markdown Render, Scroll)
-        // ==========================================
-        function copyText(btn) {
-            try {
-                const messageContent = btn.closest('.message-content'); if (!messageContent) return;
-                let textElement = messageContent.querySelector('.markdown-body') || messageContent.querySelector('.message-bubble');
-                if (!textElement) return;
-                const textToCopy = textElement.innerText || textElement.textContent;
-                const originalHTML = btn.innerHTML;
-                const showSuccess = () => { btn.innerHTML = '<i class="fas fa-check"></i> Disalin'; btn.style.color = '#4ade80'; setTimeout(() => { btn.innerHTML = originalHTML; btn.style.color = ''; }, 2000); };
-                if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(textToCopy).then(showSuccess).catch(() => fallbackCopyText(textToCopy, showSuccess));
-                else fallbackCopyText(textToCopy, showSuccess);
-            } catch (err) { showToast('Gagal menyalin teks.', 'error'); }
-        }
-
-        function copyCode(button, codeElement) {
-            if (!codeElement) return;
-            const textToCopy = codeElement.textContent || codeElement.innerText; const originalHTML = button.innerHTML;
-            const showSuccess = () => { button.innerHTML = '<i class="fas fa-check"></i> Disalin'; button.style.background = 'rgba(74, 222, 128, 0.9)'; button.style.color = 'white'; setTimeout(() => { button.innerHTML = '<i class="far fa-copy"></i> Salin'; button.style.background = ''; button.style.color = ''; }, 2000); };
-            if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(textToCopy).then(showSuccess).catch(() => fallbackCopyText(textToCopy, showSuccess));
-            else fallbackCopyText(textToCopy, showSuccess);
-        }
-
-        function fallbackCopyText(text, callback) {
-            const textArea = document.createElement('textarea'); textArea.value = text; textArea.style.position = 'fixed'; textArea.style.left = '-9999px';
-            document.body.appendChild(textArea); textArea.focus(); textArea.select();
-            try { if (document.execCommand('copy') && callback) callback(); else showToast('Gagal menyalin', 'error'); } catch (err) {} document.body.removeChild(textArea);
-        }
-
-        function addCopyButtonsToCodeBlocks() {
-            document.querySelectorAll('.markdown-body pre').forEach((pre) => {
-                if (pre.previousElementSibling?.classList.contains('code-header')) return;
-                const code = pre.querySelector('code'); if (!code) return;
-                let language = 'plaintext'; const langClass = code.className.match(/language-(\w+)/); if (langClass) language = langClass[1];
-                const header = document.createElement('div'); header.className = 'code-header';
-                header.innerHTML = `<span class="code-lang">${language}</span><button class="code-copy-btn" aria-label="Salin kode"><i class="far fa-copy"></i> Salin</button>`;
-                pre.parentNode.insertBefore(header, pre); pre.style.borderRadius = '0 0 8px 8px'; pre.style.marginTop = '0';
-                const copyBtn = header.querySelector('.code-copy-btn');
-                copyBtn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); copyCode(copyBtn, code); });
-            });
-        }
-
-        function animateGeminiStyle(element, markdownText) {
-            const tempDiv = document.createElement('div'); renderAIContent(markdownText, tempDiv); element.innerHTML = '';
-            Array.from(tempDiv.children).forEach((child) => { const wrapper = document.createElement('div'); wrapper.className = 'gemini-block'; wrapper.appendChild(child); element.appendChild(wrapper); });
-            let delay = 0;
-            element.querySelectorAll('.gemini-block').forEach((block) => { setTimeout(() => { block.classList.add('show'); scrollToBottom(); }, delay); delay += 120; });
-            setTimeout(addCopyButtonsToCodeBlocks, delay + 100);
-        }
-
-        function renderAIContent(text, containerElement) {
-            let rawText = text.replace(/\\\[/g, '$$$$').replace(/\\\]/g, '$$$$').replace(/\\\(/g, '$$').replace(/\\\)/g, '$$');
-            const mathBlocks = {}; let mathIndex = 0;
-            rawText = rawText.replace(/\$\$([\s\S]*?)\$\$/g, function(match) { const placeholder = `@@MATH_BLOCK_${mathIndex}@@`; mathBlocks[placeholder] = match; mathIndex++; return placeholder; });
-            rawText = rawText.replace(/\$([^$\n]*?)\$/g, function(match) { const placeholder = `@@MATH_INLINE_${mathIndex}@@`; mathBlocks[placeholder] = match; mathIndex++; return placeholder; });
-            let htmlContent = marked.parse(rawText);
-            for (const [placeholder, mathText] of Object.entries(mathBlocks)) htmlContent = htmlContent.split(placeholder).join(mathText);
-            containerElement.innerHTML = htmlContent;
-            if (window.renderMathInElement) window.renderMathInElement(containerElement, { delimiters: [{ left: '$$', right: '$$', display: true }, { left: '$', right: '$', display: false }], throwOnError: false });
-            containerElement.querySelectorAll('pre code').forEach((block) => { if (window.hljs) hljs.highlightElement(block); });
-        }
-
-        function scrollToBottom() { const c = document.getElementById('messagesContainer'); if(c) c.scrollTop = c.scrollHeight; }
-        function scrollToBottomSmooth() { const c = document.getElementById('messagesContainer'); if(c) c.scrollTo({ top: c.scrollHeight, behavior: 'smooth' }); }
-
-        function formatAttachmentIcons() {
-            document.querySelectorAll('.message.user .message-bubble').forEach(el => {
-                let html = el.innerHTML;
-                html = html.replace(/📎 \[(.*?)\]/g, '<i class="fas fa-file-pdf" style="color: #3b82f6; margin-right: 5px;"></i> <b>[Dokumen: $1]</b>');
-                html = html.replace(/🖼️ \[(.*?)\]/g, '<i class="fas fa-image" style="color: #10b981; margin-right: 5px;"></i> <b>[$1]</b>');
-                html = html.replace(/📦 \[GitHub: (.*?)\]/g, '<i class="fab fa-github" style="color: #a855f7; margin-right: 5px;"></i> <b>[GitHub: $1]</b>');
-                el.innerHTML = html;
-            });
-        }
-
-        function useShortcut(text) { chatInput.value = text; chatInput.focus(); }
-
-        // ==========================================
-        // 12. EVENT LISTENER BAWAAN HALAMAN
-        // ==========================================
-        document.getElementById('sendButton')?.addEventListener('click', () => sendMessage());
-        chatInput?.addEventListener('input', function() { this.style.height = 'auto'; this.style.height = (this.scrollHeight) + 'px'; });
-        chatInput?.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } });
-
-        document.getElementById('sidebarToggleBtn')?.addEventListener('click', e => { e.stopPropagation(); document.getElementById('sidebar').classList.toggle('collapsed'); });
-        document.getElementById('mobileToggleBtn')?.addEventListener('click', e => { e.stopPropagation(); document.getElementById('sidebar').classList.toggle('mobile-open'); });
-
-        window.addEventListener('click', e => {
-            if (window.innerWidth <= 768 && !document.getElementById('sidebar').contains(e.target) && !e.target.closest('.mobile-toggle-btn')) document.getElementById('sidebar').classList.remove('mobile-open');
-            if (!e.target.closest('.settings-container')) document.querySelectorAll('.options-menu, .logout-menu, .attach-menu').forEach(el => el.classList.remove('show'));
-        });
-
-        const chatContainerBox = document.getElementById('messagesContainer');
-        if (chatContainerBox) {
-            chatContainerBox.addEventListener('scroll', () => {
-                if (chatContainerBox.scrollTop + chatContainerBox.clientHeight < chatContainerBox.scrollHeight - 150) document.getElementById('scrollToBottomBtn').style.display = 'block';
-                else document.getElementById('scrollToBottomBtn').style.display = 'none';
-            });
-        }
-
-        document.addEventListener('DOMContentLoaded', () => {
-            formatAttachmentIcons();
-            document.querySelectorAll('.message.ai').forEach((el) => {
-                const rawDiv = el.querySelector('.ai-raw-data'); const renderDiv = el.querySelector('.ai-rendered-data');
-                if (rawDiv && renderDiv) renderAIContent(rawDiv.textContent.trim(), renderDiv);
-            });
-            setTimeout(addCopyButtonsToCodeBlocks, 500);
-
-            const chatCount = {{ count($chats ?? []) }};
-            const updateModal = document.getElementById('updateModal');
-            if (chatCount === 0 && updateModal && !sessionStorage.getItem('sahajaModalShown')) {
-                setTimeout(() => { updateModal.classList.add('show'); sessionStorage.setItem('sahajaModalShown', 'true'); }, 500);
-            }
-            document.getElementById('closeModalBtn')?.addEventListener('click', () => updateModal?.classList.remove('show'));
-        });
-
-        // ==========================================
-        // 13. VOICE RECORDING
-        // ==========================================
-        let recognition = null; let isRecording = false; let final_transcript = '';
-        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            recognition = new SpeechRecognition(); recognition.lang = 'id-ID'; recognition.interimResults = true; recognition.continuous = false;
-            recognition.onstart = function() { isRecording = true; final_transcript = ''; voiceBtn.classList.add('recording'); voiceBtn.innerHTML = '<i class="fas fa-stop"></i>'; chatInput.placeholder = "Mendengarkan..."; };
-            recognition.onresult = function(event) {
-                let interim_transcript = '';
-                for (let i = event.resultIndex; i < event.results.length; ++i) { if (event.results[i].isFinal) final_transcript += event.results[i][0].transcript; else interim_transcript += event.results[i][0].transcript; }
-                const prefix = window.preRecordInput ? window.preRecordInput + ' ' : ''; chatInput.value = prefix + final_transcript + interim_transcript; chatInput.dispatchEvent(new Event('input'));
-            };
-            recognition.onerror = function() { forceStopRecordingUI(); }; recognition.onend = function() { forceStopRecordingUI(); };
-        } else { if(voiceBtn) voiceBtn.style.display = 'none'; }
-
-        function forceStopRecordingUI() { isRecording = false; voiceBtn.classList.remove('recording'); voiceBtn.innerHTML = '<i class="fas fa-microphone"></i>'; chatInput.placeholder = "Ketik pesan Anda di sini..."; }
-        voiceBtn?.addEventListener('click', () => {
-            if (!recognition) return showToast("Browser tidak support Voice", "error");
-            if (isRecording) { recognition.stop(); forceStopRecordingUI(); } else { window.preRecordInput = chatInput.value.trim(); try { recognition.start(); } catch (e) {} }
-        });
-
-    </script>
-    <div class="modal-overlay" id="shareModal">
+    <div class="modal-overlay" id="shareModal" style="z-index: 100005;">
         <div class="modal-content" style="max-width: 400px; background: var(--sidebar-bg); padding: 25px; border-radius: 12px; border: 1px solid var(--glass-border); text-align: center;">
             <button class="modal-close" onclick="closeCustomModal('shareModal')" style="position: absolute; right: 15px; top: 15px;"><i class="fas fa-times"></i></button>
             <h3 style="margin-bottom: 15px;"><i class="fas fa-share-alt" style="color: var(--accent-color);"></i> Bagikan Percakapan</h3>
@@ -2586,6 +1963,7 @@
             </div>
         </div>
     </div>
+
     <div class="modal-overlay" id="renameRoomModal" style="z-index: 100005;">
         <div class="modal-content" style="max-width: 400px; background: var(--sidebar-bg); padding: 25px; border-radius: 12px; border: 1px solid var(--glass-border);">
             <button class="modal-close" onclick="closeCustomModal('renameRoomModal')" style="position: absolute; right: 15px; top: 15px;"><i class="fas fa-times"></i></button>
@@ -2609,10 +1987,11 @@
             </div>
         </div>
     </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+
     <script>
-        // ==========================================
-        // 1. VARIABEL GLOBAL (ANTI BENTROK)
-        // ==========================================
         const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
         let currentSessionId = "{{ $currentSession ? $currentSession->id : '' }}";
         let currentController = null;
@@ -2627,9 +2006,6 @@
         const docInput = document.getElementById('docInput'); const imageInput = document.getElementById('imageInput');
         const filePreviewContainer = document.getElementById('filePreviewContainer'); const fileNameDisplay = document.getElementById('fileNameDisplay');
 
-        // ==========================================
-        // 2. FUNGSI TOAST & MODAL UI
-        // ==========================================
         function showToast(message, type = 'info') {
             let container = document.getElementById('toast-container');
             if (!container) {
@@ -2661,9 +2037,6 @@
             if (!isShown) targetMenu.classList.add('show');
         }
 
-        // ==========================================
-        // 3. MANAJEMEN SESSION (OTAK DATABASE)
-        // ==========================================
         function renameSession(id) {
             targetActionId = id; document.getElementById('renameInput').value = document.getElementById(`title-${id}`).innerText;
             document.getElementById('renameRoomModal').classList.add('show'); document.getElementById(`menu-${id}`)?.classList.remove('show');
@@ -2712,9 +2085,6 @@
             } catch(e) { showToast("Kesalahan server", "error"); }
         }
 
-        // ==========================================
-        // 4. PENGATURAN PROFIL
-        // ==========================================
         function openSettingsModal() { document.getElementById('settingsModal').classList.add('show'); document.getElementById('logout-menu')?.classList.remove('show'); }
         function closeSettingsModal() { document.getElementById('settingsModal').classList.remove('show'); }
         function switchTab(tabId) {
@@ -2755,9 +2125,6 @@
             } catch(e) { showToast("Gagal menyimpan profil", "error"); }
         }
 
-        // ==========================================
-        // 5. LAMPIRAN (FILE, GITHUB, GAMBAR)
-        // ==========================================
         document.getElementById('btnUploadDoc')?.addEventListener('click', () => { docInput.click(); attachMenu.classList.remove('show'); });
         document.getElementById('btnUploadImage')?.addEventListener('click', () => { imageInput.click(); attachMenu.classList.remove('show'); });
 
@@ -2822,9 +2189,6 @@
             return result.value;
         }
 
-        // ==========================================
-        // 6. CHAT LOGIC (Kirim & Render)
-        // ==========================================
         let userSelectedMode = 'auto';
         document.getElementById('modelSelectButton')?.addEventListener('click', (e) => { e.stopPropagation(); attachMenu.classList.remove('show'); document.getElementById('modelMenu').classList.toggle('show'); });
         attachBtn?.addEventListener('click', (e) => { e.stopPropagation(); document.getElementById('modelMenu').classList.remove('show'); attachMenu.classList.toggle('show'); });
@@ -2923,7 +2287,6 @@
         chatInput?.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } });
         document.getElementById('sidebarToggleBtn')?.addEventListener('click', e => { e.stopPropagation(); document.getElementById('sidebar').classList.toggle('collapsed'); });
         document.getElementById('mobileToggleBtn')?.addEventListener('click', e => { e.stopPropagation(); document.getElementById('sidebar').classList.toggle('mobile-open'); });
-
         window.addEventListener('click', e => {
             if (window.innerWidth <= 768 && !document.getElementById('sidebar').contains(e.target) && !e.target.closest('.mobile-toggle-btn')) document.getElementById('sidebar').classList.remove('mobile-open');
             if (!e.target.closest('.settings-container')) document.querySelectorAll('.options-menu, .logout-menu, .attach-menu').forEach(el => el.classList.remove('show'));
@@ -2957,5 +2320,4 @@
         voiceBtn?.addEventListener('click', () => { if (!recognition) return showToast("Browser tidak support Voice", "error"); if (isRecording) { recognition.stop(); forceStopRecordingUI(); } else { window.preRecordInput = chatInput.value.trim(); try { recognition.start(); } catch (e) {} } });
     </script>
 </body>
-
 </html>
