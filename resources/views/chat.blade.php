@@ -1330,20 +1330,23 @@
             font-size: 0.95rem;
         }
 
-        /* RESPONSIVE */
+        /* RESPONSIVE (KHUSUS HP) */
         @media (max-width: 768px) {
             .sidebar { position: fixed; left: 0; top: 0; height: 100%; transform: translateX(-100%); z-index: 99; width: 280px !important; transition: transform 0.3s ease; }
             .sidebar.mobile-open { transform: translateX(0); box-shadow: 10px 0 30px rgba(0, 0, 0, 0.5); }
             .toggle-btn-sidebar { display: none; }
             .mobile-toggle-btn { display: block; background: transparent; border: none; font-size: 1.4rem; color: var(--text-primary); margin-right: 15px; }
+
+            /* KEMBALI KE KODINGAN LAMA YANG SEMPURNA */
             .input-container {
                 padding: 4px 12px !important;
-                position: relative !important;}
+                position: relative !important;
+            }
 
             /* PERBAIKAN POP-UP SETTINGS UNTUK HP */
             .settings-modal-box { flex-direction: column; height: 85vh; width: 95%; }
             .settings-sidebar { width: 100%; border-right: none; border-bottom: 1px solid var(--glass-border); flex-direction: row; padding: 10px; overflow-x: auto; white-space: nowrap; flex-shrink: 0; }
-            .settings-sidebar h3 { display: none; } /* Sembunyikan tulisan 'Pengaturan' biar lega */
+            .settings-sidebar h3 { display: none; }
             .nav-btn { padding: 8px 12px; font-size: 0.85rem; }
             .settings-content { padding: 15px; overflow-y: auto; }
             .profile-upload { flex-direction: column; text-align: center; }
@@ -1355,12 +1358,13 @@
             }
         }
 
+        /* JURUS RAHASIA DARI KODINGAN LAMAMU UNTUK GESTURE BAR / NOTCH */
         @supports (padding-bottom: env(safe-area-inset-bottom)) {
             .input-container {
-                padding-bottom: max(2px, env(safe-area-inset-bottom)) !important;
+                padding-bottom: max(10px, env(safe-area-inset-bottom)) !important;
             }
 
-            /* Penyesuaian ekstrim padding untuk device dengan notch (iPhone) */
+            /* Penyesuaian ekstrim padding untuk device dengan notch (iPhone/Android Modern) */
             .messages-container {
                 padding-bottom: max(150px, env(safe-area-inset-bottom) + 120px) !important;
             }
