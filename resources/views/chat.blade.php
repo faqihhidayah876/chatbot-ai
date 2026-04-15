@@ -1575,48 +1575,54 @@
         white-space: nowrap;
     }
 
-    /* PERBAIKAN INPUT CONTAINER DI HP AGAR TIDAK KEPENDAM */
-    @media (max-width: 768px) {
-        .messages-container {
-            padding-bottom: 160px !important; /* beri ruang ekstra agar input tidak nutup chat */
+    /* ====================================================== */
+        /* OBAT KUAT ANTI MELUBER & ANTI NYUNGSEP (OVERRIDE PAKSA)*/
+        /* ====================================================== */
+
+        /* 1. MENCEGAH TEKS & LINK PANJANG MELUBER KE KANAN */
+        .message-content {
+            min-width: 0 !important;
+        }
+        .message-bubble, .markdown-body, .markdown-body p {
+            word-wrap: break-word !important;
+            overflow-wrap: anywhere !important; /* Paksa link panjang putus ke bawah */
+            word-break: break-word !important;
+            max-width: 100% !important;
+        }
+        .markdown-body pre {
+            max-width: 100% !important;
+            overflow-x: auto !important; /* Hanya box kodingan yang bisa digeser kiri-kanan */
         }
 
-        .input-container {
-            position: fixed !important;
-            bottom: 0 !important;
-            left: 0;
-            right: 0;
-            background: var(--main-bg);
-            z-index: 100;
-            padding: 8px 12px !important;
-            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+        /* 2. MENGUNCI KOTAK INPUT DI DASAR LAYAR HP */
+        @media (max-width: 768px) {
+            body, html, .main-container {
+                height: 100% !important;
+                height: 100dvh !important;
+                overflow: hidden !important;
+            }
+            .input-container {
+                position: fixed !important;
+                bottom: 0 !important;
+                left: 0 !important;
+                right: 0 !important;
+                width: 100% !important;
+                z-index: 9999 !important; /* Paksa selalu paling depan */
+                padding: 10px 15px max(15px, env(safe-area-inset-bottom)) !important;
+                background: rgba(10, 14, 23, 0.95) !important;
+                backdrop-filter: blur(12px) !important;
+                border-top: 1px solid var(--glass-border) !important;
+            }
+            body.light-mode .input-container {
+                background: rgba(255, 255, 255, 0.95) !important;
+            }
+            .messages-container {
+                padding-bottom: 160px !important; /* Jarak aman biar chat terbawah gak tertutup input */
+            }
+            .message-content {
+                max-width: 95% !important; /* Biar di HP pesannya lebih lebar dan lega */
+            }
         }
-
-        body.light-mode .input-container {
-            background: var(--main-bg) !important;
-        }
-
-        .input-wrapper {
-            margin: 0 auto;
-            width: 100%;
-        }
-
-        /* Pastikan chat terakhir tidak ketutupan input */
-        .message:last-child {
-            margin-bottom: 10px;
-        }
-    }
-
-    /* Perbaikan untuk elemen yang panjang (kode, link) */
-    .markdown-body pre code {
-        white-space: pre-wrap;
-        word-break: break-all;
-    }
-
-    /* Avatar pesan user/ai tidak ikut melar */
-    .message-avatar {
-        flex-shrink: 0;
-    }
 
     </style>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
