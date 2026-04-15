@@ -2,8 +2,10 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
+use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\Fase2Controller;
 
 // 1. Halaman Depan (Welcome)
 Route::get('/', function () {
@@ -49,3 +51,42 @@ Route::post('/session/{id}/share', [ChatController::class, 'shareSession'])->nam
 
 // 7. Route untuk melihat chat publik (TIDAK PERLU LOGIN, biar temenmu bisa buka)
 Route::get('/share/{token}', [ChatController::class, 'showPublicSession'])->name('chat.public');
+
+// ROUTE FASE 2
+Route::middleware('auth')->group(function () {
+    Route::get('/online', [Fase2Controller::class, 'index'])->name('online.index');
+    Route::post('/online/post', [Fase2Controller::class, 'store'])->name('online.post');
+    Route::post('/online/{id}/like', [Fase2Controller::class, 'toggleLike'])->name('online.like');
+    Route::post('/online/{id}/comment', [App\Http\Controllers\Fase2Controller::class, 'addComment'])->name('online.comment');
+    Route::delete('/online/{id}/delete', [App\Http\Controllers\Fase2Controller::class, 'destroy'])->name('online.delete');
+
+    // Update Profil (Nama & Foto sekaligus)
+    Route::post('/profile/update', function(\Illuminate\Http\Request $request) {
+        $user = \App\Models\User::find(\Illuminate\Support\Facades\Auth::id());
+        if ($request->has('name')) {
+            $user->name = $request->name;
+        }
+        if ($request->has('avatar')) {
+            $user->avatar = $request->avatar; // Bisa bernilai null jika dihapus
+        }
+        $user->save();
+        return response()->json(['success' => true]);
+    });
+    // Hapus Semua Obrolan (Chat & Session)
+    Route::delete('/profile/chat/clear', function() {
+        $userId = \Illuminate\Support\Facades\Auth::id();
+        \App\Models\Chat::whereHas('session', function($q) use ($userId) { $q->where('user_id', $userId); })->delete();
+        \App\Models\Session::where('user_id', $userId)->delete();
+        return response()->json(['success' => true]);
+    });
+    // Hapus Akun Permanen
+    Route::delete('/profile/account/delete', function() {
+        $user = \App\Models\User::find(\Illuminate\Support\Facades\Auth::id());
+        $user->delete();
+        \Illuminate\Support\Facades\Auth::logout();
+        return response()->json(['success' => true]);
+    });
+});
+
+Route::get('/terms', function () { return view('terms'); })->name('terms');
+Route::get('/privacy', function () { return view('privacy'); })->name('privacy');

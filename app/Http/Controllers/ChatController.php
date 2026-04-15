@@ -57,7 +57,7 @@ class ChatController extends Controller
             if ($manualMode !== 'auto') {
                 if ($manualMode === 'fast') {
                     $selectedModel = 'moonshotai/kimi-k2-instruct';
-                    $timeout = 60;
+                    $timeout = 300;
                 } elseif ($manualMode === 'smart') {
                     $selectedModel = 'deepseek-ai/deepseek-v3.2';
                     $timeout = 300;
