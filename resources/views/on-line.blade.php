@@ -517,6 +517,10 @@
             gap: 10px;
         }
 
+        .mobile-toggle-btn {
+            display: none;
+        }
+
         .compose-box {
             display: flex;
             gap: 15px;
@@ -706,11 +710,16 @@
             .nav-btn { padding: 8px 12px; font-size: 0.85rem; }
             .settings-content { padding: 15px; overflow-y: auto; }
             .profile-upload { flex-direction: column; text-align: center; }
+            .mobile-toggle-btn {
+                display: block;
+                background: transparent;
+                border: none;
+                font-size: 1.4rem;
+                color: var(--text-primary);
+                margin-right: 15px;
+            }
         }
 
-        .mobile-toggle-btn {
-            display: none;
-        }
     </style>
 </head>
 

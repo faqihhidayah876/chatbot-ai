@@ -1574,9 +1574,8 @@
         display: block;
         white-space: nowrap;
     }
-
     /* ====================================================== */
-        /* OBAT KUAT ANTI MELUBER & ANTI NYUNGSEP (OVERRIDE PAKSA)*/
+        /* PERBAIKAN FINAL: ANTI MELUBER & LAYOUT FLEXBOX MURNI   */
         /* ====================================================== */
 
         /* 1. MENCEGAH TEKS & LINK PANJANG MELUBER KE KANAN */
@@ -1594,52 +1593,54 @@
             overflow-x: auto !important; /* Hanya box kodingan yang bisa digeser kiri-kanan */
         }
 
-        /* 2. MENGUNCI KOTAK INPUT DI DASAR LAYAR HP */
+        /* 2. LAYOUT HP (KEMBALI KE FLEXBOX MURNI, BUKAN FIXED) */
         @media (max-width: 768px) {
-            body, html, .main-container {
+            body, html {
                 height: 100% !important;
                 height: 100dvh !important;
                 overflow: hidden !important;
             }
+
+            .main-container {
+                height: 100% !important;
+                height: 100dvh !important;
+                display: flex !important;
+                flex-direction: column !important;
+                overflow: hidden !important;
+            }
+
+            .welcome-screen, .messages-container {
+                flex: 1 !important;
+                overflow-y: auto !important;
+                padding-bottom: 20px !important; /* Hapus padding raksasa yang kemarin */
+            }
+
             .input-container {
-                position: fixed !important;
-                bottom: 0 !important;
-                left: 0 !important;
-                right: 0 !important;
+                /* KEMBALIKAN KE ALIRAN NORMAL (Bukan Fixed) agar tidak menimpa konten */
+                position: relative !important;
                 width: 100% !important;
-                z-index: 9999 !important; /* Paksa selalu paling depan */
+                flex-shrink: 0 !important; /* Kunci agar tidak tergencet/nyungsep */
+
+                /* Turunkan z-index agar Pop-up Announcement & Settings tetap di depan */
+                z-index: 20 !important;
+
+                /* Bantalan bawah cerdas untuk garis navigasi HP (Gesture Bar) */
                 padding: 10px 15px max(15px, env(safe-area-inset-bottom)) !important;
+
                 background: rgba(10, 14, 23, 0.95) !important;
                 backdrop-filter: blur(12px) !important;
                 border-top: 1px solid var(--glass-border) !important;
             }
+
             body.light-mode .input-container {
                 background: rgba(255, 255, 255, 0.95) !important;
             }
-            .messages-container {
-                padding-bottom: 160px !important; /* Jarak aman biar chat terbawah gak tertutup input */
-            }
+
             .message-content {
-                max-width: 95% !important; /* Biar di HP pesannya lebih lebar dan lega */
+                max-width: 95% !important; /* Biar chat di HP lebih lebar dan lega */
             }
         }
-        /* 3. TINGGIKAN DERAJAT SIDEBAR BIAR DI ATAS INPUT BOX */
-        @media (max-width: 768px) {
-            .sidebar {
-                z-index: 10000 !important; /* Harus lebih tinggi dari kotak input yang 9999 */
-            }
-        }
-        /* ====================================================== */
-        /* FIX: TOMBOL FITUR KETUTUPAN KOTAK INPUT DI HP          */
-        /* ====================================================== */
-        .welcome-screen {
-            justify-content: flex-start !important; /* Normalisasi scroll agar tidak error di HP */
-            padding-top: 10vh !important; /* Jaga agar posisi tetap elegan di tengah layar */
-            padding-bottom: 160px !important; /* Bantalan tebal di bawah agar tidak tertutup input */
-        }
-        .suggested-actions {
-            margin-bottom: 100px !important; /* Dorongan ekstra ke atas */
-        }
+    </style>
 
     </style>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
