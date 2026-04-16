@@ -2,11 +2,17 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
     <title>Syarat Penggunaan - SAHAJA AI</title>
     <link rel="icon" type="image/png" href="https://i.ibb.co.com/jZZ0648R/Logo-SAHAJA-AI.png">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
     <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
         body {
             font-family: 'Poppins', sans-serif;
             background: #0a0e17;
@@ -14,6 +20,7 @@
             line-height: 1.6;
             padding: 40px 10%;
         }
+
         .container {
             max-width: 800px;
             margin: 0 auto;
@@ -22,26 +29,45 @@
             border-radius: 16px;
             border: 1px solid rgba(255,255,255,0.1);
         }
-        h1 { color: #2563eb; }
+
+        h1 {
+            color: #2563eb;
+            font-size: 2rem;
+            margin-bottom: 10px;
+            line-height: 1.3;
+        }
+
         h2 {
             margin-top: 30px;
             color: #06b6d4;
             font-size: 1.3rem;
             border-bottom: 1px solid rgba(6, 182, 212, 0.3);
             padding-bottom: 10px;
+            margin-bottom: 15px;
+            line-height: 1.3;
         }
+
         h3 {
             color: #60a5fa;
             margin-top: 20px;
             font-size: 1.1rem;
+            margin-bottom: 10px;
         }
+
+        p {
+            margin-bottom: 12px;
+            text-align: justify;
+        }
+
         ul, ol {
-            padding-left: 20px;
+            padding-left: 25px;
             margin: 10px 0;
         }
+
         li {
             margin-bottom: 8px;
         }
+
         .warning-box {
             background: rgba(239, 68, 68, 0.1);
             border-left: 4px solid #ef4444;
@@ -49,6 +75,7 @@
             margin: 20px 0;
             border-radius: 0 8px 8px 0;
         }
+
         .info-box {
             background: rgba(37, 99, 235, 0.1);
             border-left: 4px solid #2563eb;
@@ -56,26 +83,93 @@
             margin: 20px 0;
             border-radius: 0 8px 8px 0;
         }
-        a {
-            color: #06b6d4;
-            text-decoration: none;
-        }
-        a:hover {
-            text-decoration: underline;
-        }
+
         .section-divider {
             border-top: 1px solid rgba(255,255,255,0.1);
             margin: 30px 0;
         }
+
         strong {
             color: #93c5fd;
+        }
+
+        /* RESPONSIVE UNTUK HP */
+        @media screen and (max-width: 768px) {
+            body {
+                padding: 16px; /* Padding kecil di HP */
+            }
+
+            .container {
+                padding: 24px 20px; /* Padding lebih kecil di container */
+                border-radius: 12px;
+                width: 100%;
+            }
+
+            h1 {
+                font-size: 1.5rem; /* Judul lebih kecil di HP */
+                margin-bottom: 8px;
+            }
+
+            h2 {
+                font-size: 1.15rem;
+                margin-top: 24px;
+                padding-bottom: 8px;
+            }
+
+            h3 {
+                font-size: 1rem;
+                margin-top: 16px;
+            }
+
+            p, li {
+                font-size: 0.95rem;
+                line-height: 1.7;
+                text-align: left; /* Rata kiri lebih enak di HP */
+            }
+
+            ul, ol {
+                padding-left: 20px;
+            }
+
+            .warning-box, .info-box {
+                padding: 12px;
+                margin: 15px 0;
+            }
+
+            .section-divider {
+                margin: 24px 0;
+            }
+        }
+
+        /* UNTUK HP YANG SANGAT KECIL */
+        @media screen and (max-width: 480px) {
+            body {
+                padding: 12px;
+            }
+
+            .container {
+                padding: 20px 16px;
+                border-radius: 10px;
+            }
+
+            h1 {
+                font-size: 1.3rem;
+            }
+
+            h2 {
+                font-size: 1.1rem;
+            }
+
+            p, li {
+                font-size: 0.9rem;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Syarat dan Ketentuan Penggunaan</h1>
-        <p style="color: #94a3b8; font-style: italic; margin-bottom: 30px;">Terakhir diperbarui: 15 April 2026</p>
+        <h1><center>Syarat dan Ketentuan Penggunaan</center></h1>
+        <p style="color: #94a3b8; font-style: italic; margin-bottom: 30px; font-size: 0.9rem;">Terakhir diperbarui: 16 April 2026</p>
 
         <div class="warning-box">
             <strong>Perhatian:</strong> Mohon baca Syarat dan Ketentuan ini dengan saksama sebelum menggunakan SAHAJA AI. Dengan mengakses atau menggunakan layanan kami, Anda menyetujui untuk terikat oleh ketentuan-ketentuan berikut. Jika Anda tidak setuju, harap jangan menggunakan layanan ini.
@@ -87,7 +181,7 @@
             <li><strong>"SAHAJA AI"</strong> atau <strong>"Layanan"</strong> merujuk pada platform chatbot AI yang dapat diakses melalui website sahaja-chatbot-ai.alwaysdata.net dan subdomain terkait.</li>
             <li><strong>"Pengguna"</strong> atau <strong>"Anda"</strong> adalah individu yang mengakses atau menggunakan Layanan kami.</li>
             <li><strong>"Konten"</strong> mencakup teks, gambar, file, kode, atau materi lain yang diunggah, dikirim, atau diproses melalui Layanan.</li>
-            <li><strong>"AI Model"</strong> merujuk pada teknologi pemrosesan bahasa alami yang kami gunakan (NVIDIA AI, atau model lainnya).</li>
+            <li><strong>"AI Model"</strong> merujuk pada teknologi pemrosesan bahasa alami yang kami gunakan (NVIDIA atau model lainnya).</li>
             <li><strong>"Kami"</strong> merujuk pada pengelola dan tim pengembang SAHAJA AI.</li>
         </ul>
 
@@ -265,7 +359,7 @@
         <div class="info-box">
             <p>Untuk pertanyaan tentang syarat-syarat ini:</p>
             <ul>
-                <li>Email: vaaaqee@email.com</li>
+                <li>Email: vaaaqee@gmail.com</li>
                 <li>Alamat: Unspecified</li>
                 <li>Telepon: Unspecified</li>
             </ul>
@@ -273,11 +367,11 @@
 
         <div class="section-divider"></div>
 
-        <p style="text-align: center; color: #64748b; font-size: 0.9rem; margin-top: 30px;">
+        <p style="text-align: center; color: #64748b; font-size: 0.85rem; margin-top: 30px; line-height: 1.5;">
             <strong>Dengan mengklik "Daftar" atau menggunakan SAHAJA AI, Anda menyatakan telah membaca, memahami, dan menyetujui seluruh Syarat dan Ketentuan di atas.</strong>
         </p>
 
-        <p style="text-align: center; color: #64748b; font-size: 0.9rem;">
+        <p style="text-align: center; color: #64748b; font-size: 0.85rem; margin-top: 15px;">
             © 2026 SAHAJA AI. Seluruh hak dilindungi undang-undang.
         </p>
     </div>

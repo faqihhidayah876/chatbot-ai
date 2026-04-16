@@ -1315,6 +1315,48 @@
             background: var(--accent-color);
             color: white;
         }
+        /* ================================================= */
+        /* TOMBOL SILANG (X) DI LUAR POP-UP SETTINGS         */
+        /* ================================================= */
+        .modal-close-outside {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.6);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            width: 45px;
+            height: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 1.3rem;
+            cursor: pointer;
+            z-index: 100001; /* Pastikan di atas overlay */
+            transition: 0.2s;
+            backdrop-filter: blur(4px);
+        }
+
+        .modal-close-outside:hover {
+            background: var(--danger-color);
+            border-color: var(--danger-color);
+            transform: scale(1.1);
+        }
+
+        /* Penyesuaian khusus untuk HP */
+        @media (max-width: 768px) {
+            .modal-close-outside {
+                top: 15px;
+                right: 15px;
+                width: 40px;
+                height: 40px;
+                font-size: 1.1rem;
+            }
+            .settings-modal-box {
+                margin-top: 50px; /* Biar box agak turun menjauhi tombol X */
+            }
+        }
 
         .modal-content h2 {
             margin-bottom: 1.5rem;
@@ -1969,9 +2011,8 @@
         </div>
     </div>
     <div class="modal-overlay" id="settingsModal" style="z-index: 100000;">
+        <button class="modal-close-outside" onclick="closeSettingsModal()"><i class="fas fa-times"></i></button>
         <div class="settings-modal-box">
-            <button class="modal-close" onclick="closeSettingsModal()"><i class="fas fa-times"></i></button>
-
             <div class="settings-sidebar">
                 <h3 style="padding: 10px 10px; font-size: 1.1rem; color: var(--text-primary);">Pengaturan</h3>
                 <button class="nav-btn active" onclick="switchTab('umum')"><i class="fas fa-cog"></i> Umum</button>

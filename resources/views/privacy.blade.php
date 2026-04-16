@@ -2,11 +2,17 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
     <title>Kebijakan Privasi - SAHAJA AI</title>
     <link rel="icon" type="image/png" href="https://i.ibb.co.com/jZZ0648R/Logo-SAHAJA-AI.png">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
     <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
         body {
             font-family: 'Poppins', sans-serif;
             background: #0a0e17;
@@ -14,6 +20,7 @@
             line-height: 1.6;
             padding: 40px 10%;
         }
+
         .container {
             max-width: 800px;
             margin: 0 auto;
@@ -22,26 +29,43 @@
             border-radius: 16px;
             border: 1px solid rgba(255,255,255,0.1);
         }
-        h1 { color: #10b981; }
+
+        h1 {
+            color: #10b981;
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
         h2 {
             margin-top: 30px;
             color: #06b6d4;
             font-size: 1.3rem;
             border-bottom: 1px solid rgba(6, 182, 212, 0.3);
             padding-bottom: 10px;
+            margin-bottom: 15px;
         }
+
         h3 {
             color: #34d399;
             margin-top: 20px;
             font-size: 1.1rem;
+            margin-bottom: 10px;
         }
+
+        p {
+            margin-bottom: 12px;
+            text-align: justify;
+        }
+
         ul, ol {
-            padding-left: 20px;
+            padding-left: 25px;
             margin: 10px 0;
         }
+
         li {
             margin-bottom: 8px;
         }
+
         .highlight {
             background: rgba(16, 185, 129, 0.1);
             border-left: 4px solid #10b981;
@@ -49,13 +73,7 @@
             margin: 20px 0;
             border-radius: 0 8px 8px 0;
         }
-        a {
-            color: #06b6d4;
-            text-decoration: none;
-        }
-        a:hover {
-            text-decoration: underline;
-        }
+
         .contact-box {
             background: rgba(6, 182, 212, 0.1);
             border: 1px solid rgba(6, 182, 212, 0.3);
@@ -63,17 +81,80 @@
             border-radius: 8px;
             margin-top: 30px;
         }
+
         .last-updated {
             color: #94a3b8;
             font-style: italic;
             margin-bottom: 30px;
+            font-size: 0.9rem;
+        }
+
+        /* RESPONSIVE UNTUK HP */
+        @media screen and (max-width: 768px) {
+            body {
+                padding: 16px; /* Padding kecil di HP */
+            }
+
+            .container {
+                padding: 24px 20px; /* Padding lebih kecil di container */
+                border-radius: 12px;
+                width: 100%;
+            }
+
+            h1 {
+                font-size: 1.5rem; /* Judul lebih kecil di HP */
+            }
+
+            h2 {
+                font-size: 1.15rem;
+                margin-top: 24px;
+            }
+
+            h3 {
+                font-size: 1rem;
+            }
+
+            p, li {
+                font-size: 0.95rem;
+                line-height: 1.7;
+                text-align: left; /* Rata kiri lebih enak di HP */
+            }
+
+            ul, ol {
+                padding-left: 20px;
+            }
+
+            .highlight, .contact-box {
+                padding: 12px;
+                margin: 15px 0;
+            }
+        }
+
+        /* UNTUK HP YANG SANGAT KECIL */
+        @media screen and (max-width: 480px) {
+            body {
+                padding: 12px;
+            }
+
+            .container {
+                padding: 20px 16px;
+                border-radius: 10px;
+            }
+
+            h1 {
+                font-size: 1.3rem;
+            }
+
+            h2 {
+                font-size: 1.1rem;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Kebijakan Privasi</h1>
-        <p class="last-updated">Terakhir diperbarui: 15 April 2026</p>
+        <h1><center>Kebijakan Privasi</center></h1>
+        <p class="last-updated">Terakhir diperbarui: 16 April 2026</p>
 
         <div class="highlight">
             <strong>Penting:</strong> Dengan menggunakan SAHAJA AI, Anda mempercayakan informasi Anda kepada kami. Kami berkomitmen untuk melindungi privasi Anda dan menjaga transparansi penuh mengenai penggunaan data Anda.
@@ -109,7 +190,7 @@
         <h2>2. Cara Kami Menggunakan Data Anda</h2>
         <p>Data yang dikumpulkan digunakan untuk:</p>
         <ol>
-            <li><strong>Penyediaan Layanan:</strong> Memproses prompt Anda ke model AI NVIDIA dan mengembalikan respons yang relevan</li>
+            <li><strong>Penyediaan Layanan:</strong> Memproses prompt Anda ke model AI (NVIDIA/Gemini) dan mengembalikan respons yang relevan</li>
             <li><strong>Pengalaman Personal:</strong> Menyimpan riwayat chat agar Anda dapat melanjutkan percakapan kapan saja</li>
             <li><strong>Analisis Dokumen:</strong> Membaca dan menganalisis tautan GitHub atau dokumen yang Anda berikan untuk konteks percakapan</li>
             <li><strong>Perbaikan Layanan:</strong> Menganalisis pola penggunaan (secara anonim) untuk meningkatkan performa dan fitur</li>
@@ -168,7 +249,9 @@
             <li>Perlindungan terhadap hak, properti, atau keselamatan kami atau pengguna lain</li>
         </ul>
 
-        <p class="highlight"><strong>Penting:</strong> Kami <em>tidak pernah</em> menjual data pribadi Anda kepada pengiklan atau pihak ketiga untuk tujuan komersial.</p>
+        <div class="highlight">
+            <strong>Penting:</strong> Kami <em>tidak pernah</em> menjual data pribadi Anda kepada pengiklan atau pihak ketiga untuk tujuan komersial.
+        </div>
 
         <h2>5. Cookies dan Teknologi Pelacakan</h2>
         <p>Kami menggunakan cookies untuk:</p>
