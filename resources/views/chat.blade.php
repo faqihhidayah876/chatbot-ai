@@ -1924,55 +1924,40 @@
                                     onclick="selectModelMode('auto', 'fa-magic')">
                                     <i class="fas fa-magic" style="color: #3b82f6; margin-top: 4px; width: 20px;"></i>
                                     <div style="display: flex; flex-direction: column; gap: 2px;">
-                                        <strong style="font-size: 0.95rem; color: var(--text-primary);">Mode
-                                            Otomatis</strong>
-                                        <span
-                                            style="font-size: 0.75rem; color: var(--text-secondary); line-height: 1.3;">Sistem
-                                            menentukan berdasarkan prompt anda</span>
+                                        <strong style="font-size: 0.95rem; color: var(--text-primary);">Mode Otomatis</strong>
+                                        <span style="font-size: 0.75rem; color: var(--text-secondary); line-height: 1.3;">Sistem menentukan berdasarkan prompt anda</span>
                                     </div>
                                 </div>
                                 <div class="option-item model-option" style="align-items: flex-start;"
                                     onclick="selectModelMode('fast', 'fa-bolt')">
                                     <i class="fas fa-bolt" style="color: #f59e0b; margin-top: 4px; width: 20px;"></i>
                                     <div style="display: flex; flex-direction: column; gap: 2px;">
-                                        <strong style="font-size: 0.95rem; color: var(--text-primary);">Mode
-                                            Cepat</strong>
-                                        <span
-                                            style="font-size: 0.75rem; color: var(--text-secondary); line-height: 1.3;">Menjawab
-                                            cepat dengan Kimi K2</span>
+                                        <strong style="font-size: 0.95rem; color: var(--text-primary);">Mode Cepat</strong>
+                                        <span style="font-size: 0.75rem; color: var(--text-secondary); line-height: 1.3;">Menjawab instan dengan Groq Compound</span>
                                     </div>
                                 </div>
                                 <div class="option-item model-option" style="align-items: flex-start;"
                                     onclick="selectModelMode('smart', 'fa-brain')">
                                     <i class="fas fa-brain" style="color: #ec4899; margin-top: 4px; width: 20px;"></i>
                                     <div style="display: flex; flex-direction: column; gap: 2px;">
-                                        <strong style="font-size: 0.95rem; color: var(--text-primary);">Mode
-                                            Cerdas</strong>
-                                        <span
-                                            style="font-size: 0.75rem; color: var(--text-secondary); line-height: 1.3;">Bernalar
-                                            akurat dengan DeepSeek v3.2</span>
+                                        <strong style="font-size: 0.95rem; color: var(--text-primary);">Mode Cerdas</strong>
+                                        <span style="font-size: 0.75rem; color: var(--text-secondary); line-height: 1.3;">Bernalar tajam dengan Mistral 119B</span>
                                     </div>
                                 </div>
                                 <div class="option-item model-option" style="align-items: flex-start;"
                                     onclick="selectModelMode('vision', 'fa-eye')">
                                     <i class="fas fa-eye" style="color: #10b981; margin-top: 4px; width: 20px;"></i>
                                     <div style="display: flex; flex-direction: column; gap: 2px;">
-                                        <strong style="font-size: 0.95rem; color: var(--text-primary);">Mode
-                                            Vision</strong>
-                                        <span
-                                            style="font-size: 0.75rem; color: var(--text-secondary); line-height: 1.3;">Menganalisa
-                                            gambar dengan Gemma 4</span>
+                                        <strong style="font-size: 0.95rem; color: var(--text-primary);">Mode Vision</strong>
+                                        <span style="font-size: 0.75rem; color: var(--text-secondary); line-height: 1.3;">Menganalisa gambar dengan Gemma 4</span>
                                     </div>
                                 </div>
                                 <div class="option-item model-option" style="align-items: flex-start;"
                                     onclick="selectModelMode('coding', 'fa-code')">
                                     <i class="fas fa-code" style="color: #a855f7; margin-top: 4px; width: 20px;"></i>
                                     <div style="display: flex; flex-direction: column; gap: 2px;">
-                                        <strong style="font-size: 0.95rem; color: var(--text-primary);">Mode
-                                            Coding</strong>
-                                        <span
-                                            style="font-size: 0.75rem; color: var(--text-secondary); line-height: 1.3;">Konteks
-                                            besar dengan Qwen 3 Coder</span>
+                                        <strong style="font-size: 0.95rem; color: var(--text-primary);">Mode Coding</strong>
+                                        <span style="font-size: 0.75rem; color: var(--text-secondary); line-height: 1.3;">Konteks besar dengan Qwen 3 Coder</span>
                                     </div>
                                 </div>
                             </div>
@@ -2352,18 +2337,38 @@
             const messageInput = chatInput.value.trim(); let finalMessageToSend; let displayMessage = messageInput;
             if (window.activeForceMode !== null) { if (!lastUserMessage) return; finalMessageToSend = lastUserMessage; } else {
                 if (!messageInput && !extractedFileText && !base64Image && !currentGithubRepo) return;
-                if (extractedFileText) { finalMessageToSend = `[Lampiran Dokumen: ${currentFileName}]\n"""\n${extractedFileText}\n"""\n\nInstruksi User: ${messageInput || "Tolong analisis"}`; displayMessage = `<i class="fas fa-file-pdf" style="color: #3b82f6; margin-right: 5px;"></i> <b>[Dokumen: ${currentFileName}]</b>\n${messageInput}`; }
-                else if (base64Image) { finalMessageToSend = messageInput || "Jelaskan gambar ini."; displayMessage = `<i class="fas fa-image" style="color: #10b981; margin-right: 5px;"></i> <b>[Gambar: ${currentFileName}]</b>\n${messageInput}`; }
-                else if (currentGithubRepo) { finalMessageToSend = messageInput || "Analisis kode ini."; displayMessage = `<i class="fab fa-github" style="color: #a855f7; margin-right: 5px;"></i> <b>[GitHub: ${currentFileName}]</b>\n${messageInput}`; }
-                else { finalMessageToSend = messageInput; }
-                lastUserMessage = finalMessageToSend;
+                if (extractedFileText) {
+                finalMessageToSend = `[Lampiran Dokumen: ${currentFileName}]\n"""\n${extractedFileText}\n"""\n\nInstruksi User: ${messageInput || "Tolong analisis"}`;
+                displayMessage = `📎 [${currentFileName}]\n${messageInput}`;
             }
+            else if (base64Image) {
+                finalMessageToSend = messageInput || "Jelaskan gambar ini.";
+                displayMessage = `🖼️ [${currentFileName}]\n${messageInput}`;
+            }
+            else if (currentGithubRepo) {
+                finalMessageToSend = messageInput || "Analisis kode ini.";
+                displayMessage = `📦 [GitHub: ${currentFileName}]\n${messageInput}`;
+            }
+            else {
+                finalMessageToSend = messageInput;
+            }
+            lastUserMessage = finalMessageToSend;
 
             if (window.activeForceMode === null) {
-                const welcome = document.getElementById('welcomeScreen'); if (welcome) welcome.style.display = 'none';
-                const msgContainer = document.getElementById('messagesContainer'); if (msgContainer) msgContainer.style.display = 'flex';
-                chatInput.value = ''; chatInput.style.height = 'auto'; appendMessage('user', displayMessage);
+                const welcome = document.getElementById('welcomeScreen');
+                if (welcome) welcome.style.display = 'none';
+                const msgContainer = document.getElementById('messagesContainer');
+                if (msgContainer) msgContainer.style.display = 'flex';
+                chatInput.value = '';
+                chatInput.style.height = 'auto';
+
+                // Render pesan ke layar
+                appendMessage('user', displayMessage);
+
+                // KUNCI RAHASIA: Langsung ubah emoji jadi UI Biru Elegan!
+                formatAttachmentIcons();
             }
+        }
 
             const payload = { message: finalMessageToSend, session_id: currentSessionId, manual_mode: userSelectedMode };
             if (base64Image) payload.image_data = base64Image; if (currentGithubRepo) payload.github_repo = currentGithubRepo; if (window.activeForceMode !== null) payload.force_mode = window.activeForceMode;
@@ -2381,9 +2386,11 @@
                 const loadingBubble = document.getElementById(loadingId);
                 if (loadingBubble) {
                     const aiMessageDiv = document.createElement('div'); aiMessageDiv.className = 'message ai';
-                    let finalModelLabel = '<i class="fas fa-bolt"></i> Mode Cepat (Kimi K2)'; let finalBadgeClass = 'mode-fast'; let extraStyle = ''; const modelUsedStr = (data.model_used || '').toLowerCase();
+                    let finalModelLabel = '<i class="fas fa-bolt"></i> Mode Cepat (Groq)'; let finalBadgeClass = 'mode-fast'; let extraStyle = ''; const modelUsedStr = (data.model_used || '').toLowerCase();
                     if (modelUsedStr.includes('vision') || modelUsedStr.includes('gemma')) { finalModelLabel = '<i class="fas fa-eye"></i> Mode Vision'; extraStyle = 'background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3);'; finalBadgeClass = ''; }
-                    else if (modelUsedStr.includes('deepseek')) { finalModelLabel = '<i class="fas fa-brain"></i> Mode Cerdas'; finalBadgeClass = 'mode-smart'; }
+                    else if (modelUsedStr.includes('mistral')) {
+                        finalModelLabel = '<i class="fas fa-brain"></i> Mode Cerdas';
+                        finalBadgeClass = 'mode-smart'; }
                     else if (modelUsedStr.includes('coder') || modelUsedStr.includes('qwen')) { finalModelLabel = '<i class="fas fa-code"></i> Mode Code'; extraStyle = 'background: rgba(168, 85, 247, 0.15); color: #a855f7; border: 1px solid rgba(168, 85, 247, 0.3);'; finalBadgeClass = ''; }
 
                     aiMessageDiv.innerHTML = `<div class="message-avatar ai-avatar-msg" style="background: transparent; padding: 0;"><img src="https://i.ibb.co.com/jZZ0648R/Logo-SAHAJA-AI.png" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;"></div><div class="message-content"><div class="mode-badge ${finalBadgeClass}" style="${extraStyle}">${finalModelLabel}</div><div class="message-bubble markdown-body"></div><div class="ai-actions"><button class="action-btn" onclick="copyText(this)"><i class="far fa-copy"></i> Salin</button></div></div>`;
