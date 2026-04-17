@@ -39,12 +39,17 @@ class ChatController extends Controller
             $userMessage = $request->message;
             $sessionId = $request->session_id;
             $userId = Auth::id();
+            $maxTokensReq = (int) $request->input('max_tokens', 4096);
+            $enableThinkingReq = filter_var($request->input('enable_thinking', false), FILTER_VALIDATE_BOOLEAN);
 
             // 1. DETEKSI MODE & INPUT
             $isSimple = $this->isSimpleQuery($userMessage);
             $hasImage = $request->has('image_data') && !empty($request->image_data);
             $hasGithub = $request->has('github_repo') && !empty($request->github_repo);
             $manualMode = $request->input('manual_mode', 'auto');
+
+            $maxTokensReq = (int) $request->input('max_tokens', 4096);
+            $enableThinkingReq = filter_var($request->input('enable_thinking', false), FILTER_VALIDATE_BOOLEAN);
 
             // =========================================================
             // 🌟 MULTI-ENGINE ARCHITECTURE (GROQ + NVIDIA ONLY) 🌟
@@ -57,6 +62,11 @@ class ChatController extends Controller
                 elseif ($hasGithub) $activeMode = 'coding';
                 elseif (!$isSimple) $activeMode = 'smart';
                 else $activeMode = 'fast';
+            }
+
+            if ($activeMode !== 'smart') {
+                $maxTokensReq = 2048; // Hemat token untuk Groq/Vision
+                $enableThinkingReq = false; // Matikan Thinking paksa
             }
 
             $aiConfig = $this->getAiConfiguration($activeMode);
@@ -99,6 +109,32 @@ class ChatController extends Controller
                     $systemPrompt = is_array($configSahaja) ? ($configSahaja['personality'] ?? "Kamu adalah SAHAJA AI.") : ($configSahaja ?? "Kamu adalah SAHAJA AI.");
                     $aturanKode = "\n\nATURAN KODE: Anda WAJIB membungkus kodingan menggunakan Markdown standar (3 backticks). DILARANG KERAS menambahkan simbol apapun sebelum tanda backticks.";
 
+                    // SUNTIKAN JURUS THINKING MODE DENGAN CoT (Chain of Thought)
+                    if ($enableThinkingReq) {
+                        $aturanKode .= "\n\n[CRITICAL INSTRUCTION - CHAIN OF THOUGHT]: You MUST use the Chain of Thought (CoT) reasoning process. Sebelum memberikan jawaban akhir, kamu WAJIB memecah
+                        masalah dan berpikir selangkah demi selangkah (step-by-step).
+                        \n1. Chain-of-Thought (CoT) Advanced
+                        Untuk SEMUA pertanyaan kompleks (matematika, logika, coding, analisis), WAJIB melakukan reasoning eksplisit:
+                        \nParse & deconstruct problem
+                        \nIdentify relevant knowledge domains
+                        \nApply appropriate methodology/framework
+                        \nExecute step-by-step solution
+                        \nValidate & cross-check results
+                        \nSynthesize final answer dengan konteks user
+
+                        \n2. Self-Correction Mechanism
+                        Selalu tanyakan diri sendiri: 'Apakah ini sudah benar? Ada sudut pandang lain?' sebelum finalisasi jawaban.
+
+                        \n3. Multi-Perspective Analysis
+                        Untuk topik kompleks, berikan analisis dari 2-3 sudut pandang berbeda (technical, business, ethical, dll) lalu synthesize.
+                        \nLakukan juga langkah ini jika memungkinkan:
+                        \n1. Analisis masalahnya secara mendalam.
+                        \n2. Evaluasi berbagai kemungkinan pendekatan.
+                        \n3. Jabarkan logika penyelesaiannya.
+                        \n\nBungkus seluruh proses berpikirmu secara eksklusif di dalam tag <thinking> dan ditutup dengan </thinking>.
+                        Setelah tag ditutup, barulah berikan jawaban finalmu kepada user secara rapi.";
+                    }
+
                     $messages = [];
 
                     // JALUR KHUSUS VISION (Format NVIDIA / OpenAI)
@@ -136,12 +172,18 @@ class ChatController extends Controller
                     }
 
                     // Panggil API (Groq atau Nvidia)
-                    $aiReply = $this->callOpenAiCompatible($aiConfig['endpoint'], $aiConfig['key'], $selectedModel, $messages, $timeout);
+                    $aiReply = $this->callOpenAiCompatible($aiConfig['endpoint'], $aiConfig['key'], $selectedModel, $messages, $timeout, $maxTokensReq);
 
                 } catch (\Exception $e) {
                     $errorMsg = $e->getMessage();
                     try { Log::error("AI Error: " . $errorMsg); } catch (\Exception $logErr) {}
-                    $aiReply = "🔌 **API Error (" . strtoupper($aiConfig['provider']) . ")**\n\nDetail: `" . substr($errorMsg, 0, 200) . "`";
+
+                    // JURUS ANTI BANGKAI ERROR: Langsung lemparkan error 500 ke Frontend
+                    // Script akan terhenti di sini dan TIDAK AKAN melanjutkan ke fungsi Chat::create()
+                    return response()->json([
+                        'error' => true,
+                        'message' => 'NVIDIA/Groq sedang sibuk atau timeout. Silakan coba lagi.'
+                    ], 500);
                 }
             }
 
@@ -216,7 +258,7 @@ class ChatController extends Controller
         };
     }
 
-    private function callOpenAiCompatible($endpoint, $key, $model, $messages, $timeout)
+    private function callOpenAiCompatible($endpoint, $key, $model, $messages, $timeout, $maxTokens = 4096)
     {
         $response = Http::withOptions([
             'verify' => false,
@@ -230,7 +272,7 @@ class ChatController extends Controller
             "model" => $model,
             "messages" => $messages,
             "temperature" => 0.6,
-            "max_tokens" => 2048,
+            "max_tokens" => $maxTokens,
         ]);
 
         if (!$response->successful()) {

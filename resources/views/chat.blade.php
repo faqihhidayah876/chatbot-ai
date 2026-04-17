@@ -724,6 +724,21 @@
             color: #e3e3e3;
             display: block;
             max-width: 100%;
+            /* TAMBAHAN: Memaksa kode tidak meluber */
+            white-space: pre-wrap !important;
+            word-wrap: break-word !important;
+            word-break: break-all !important;
+        }
+
+        .markdown-body pre code {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.9em;
+            /* TAMBAHAN: Pastikan kode di dalam pre juga wrap */
+            white-space: pre-wrap !important;
+            word-wrap: break-word !important;
+            word-break: break-all !important;
+            display: block;
+            max-width: 100%;
         }
 
         .markdown-body code {
@@ -1394,6 +1409,28 @@
             .profile-upload { flex-direction: column; text-align: center; }
         }
 
+        /* CSS UNTUK TOGGLE SWITCH (ENABLE THINKING) */
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 24px;
+            flex-shrink: 0;
+        }
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+        .toggle-slider {
+            position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+            background-color: var(--glass-border); transition: .4s; border-radius: 24px;
+        }
+        .toggle-slider:before {
+            position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px;
+            background-color: var(--text-secondary); transition: .4s; border-radius: 50%;
+        }
+        .toggle-switch input:checked + .toggle-slider { background-color: var(--accent-color); }
+        .toggle-switch input:checked + .toggle-slider:before {
+            transform: translateX(20px); background-color: white;
+        }
+
         @media (max-width: 375px) {
             .messages-container {
                 padding: 15px 3% 130px !important;
@@ -1682,6 +1719,29 @@
                 max-width: 95% !important; /* Biar chat di HP lebih lebar dan lega */
             }
         }
+        /* ===== THINKING MODE UI ===== */
+        .thinking-container {
+            margin-bottom: 15px; border: 1px solid var(--glass-border);
+            border-radius: 8px; overflow: hidden; background: rgba(0, 0, 0, 0.15);
+        }
+        body.light-mode .thinking-container { background: rgba(241, 245, 249, 0.7); }
+
+        .thinking-header {
+            padding: 10px 12px; cursor: pointer; display: flex; align-items: center;
+            gap: 8px; font-size: 0.85rem; color: var(--text-secondary);
+            background: rgba(255, 255, 255, 0.05); user-select: none; transition: 0.2s;
+        }
+        .thinking-header:hover { background: rgba(255, 255, 255, 0.1); color: var(--text-primary); }
+        body.light-mode .thinking-header { background: rgba(0, 0, 0, 0.03); }
+        body.light-mode .thinking-header:hover { background: rgba(0, 0, 0, 0.08); color: #1e293b; }
+
+        .thinking-content {
+            display: none; padding: 12px; font-size: 0.85rem; color: var(--text-secondary);
+            border-top: 1px solid var(--glass-border); white-space: pre-wrap;
+            font-style: italic; line-height: 1.6;
+        }
+        .thinking-content.show { display: block; animation: fadeIn 0.3s ease; }
+
     </style>
 
     </style>
@@ -1772,7 +1832,7 @@
                 <div class="option-item" onclick="openSettingsModal()">
                     <i class="fas fa-cog"></i> Pengaturan
                 </div>
-                <div class="option-item" onclick="window.location.href='#'">
+                <div class="option-item" onclick="openHelpModal()">
                     <i class="fas fa-question-circle"></i> Bantuan & Umpan Balik
                 </div>
                 <hr style="border: 0; border-top: 1px solid var(--glass-border); margin: 5px 0;">
@@ -2065,6 +2125,28 @@
                         <button class="option-item delete" style="width: auto; padding: 8px 15px; border: 1px solid #ef4444; margin-top:10px;" onclick="openConfirmModal('Hapus Semua Obrolan?',
                         'Seluruh riwayat chat Anda di semua percakapan akan musnah. Ini tidak dapat dibatalkan.', 'clearAllChats')">Hapus semua obrolan</button>
                     </div>
+                    <hr style="border: 0; border-top: 1px solid var(--glass-border); margin: 25px 0 15px 0;">
+                    <h3 style="margin-bottom: 15px; color: var(--accent-color);"><i class="fas fa-sliders-h"></i> Konfigurasi Mesin AI</h3>
+
+                    <div style="margin-bottom: 20px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                            <strong style="font-size: 0.9rem;">Max Tokens (Panjang Jawaban)</strong>
+                            <span id="tokenValueDisplay" style="font-size: 0.85rem; font-family: monospace; color: var(--accent-color); font-weight: bold;">4096</span>
+                        </div>
+                        <input type="range" id="maxTokensInput" min="512" max="8192" step="512" value="4096" style="width: 100%; accent-color: var(--accent-color); cursor: pointer;" oninput="document.getElementById('tokenValueDisplay').innerText = this.value">
+                        <span style="font-size: 0.75rem; color: var(--text-secondary);">Atur batas maksimal kata. <b style="color: var(--danger-color);">*Hanya berlaku di Mode Cerdas.</b></span>
+                    </div>
+
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <strong style="display: block; font-size: 0.9rem;">Enable Thinking Mode</strong>
+                            <span style="font-size: 0.75rem; color: var(--text-secondary);">AI akan bernalar mendalam. <b style="color: var(--danger-color);">*Hanya berlaku di Mode Cerdas.</b></span>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="enableThinkingInput">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
                 </div>
 
                 <div id="tab-tentang" class="tab-pane">
@@ -2084,6 +2166,27 @@
                     </div>
                 </div>
             </div>
+            </div>
+        </div>
+    </div> <div class="modal-overlay" id="helpModal" style="z-index: 100005;">
+        <div class="modal-content" style="max-width: 550px; background: var(--sidebar-bg); padding: 25px; border-radius: 12px; border: 1px solid var(--glass-border);">
+            <button class="modal-close" onclick="closeCustomModal('helpModal')" style="position: absolute; right: 15px; top: 15px;"><i class="fas fa-times"></i></button>
+            <h2 style="font-size: 1.3rem; margin-bottom: 15px; color: var(--accent-color);"><i class="fas fa-question-circle"></i> Bantuan & Umpan Balik</h2>
+
+            <div style="display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 1px solid var(--glass-border); padding-bottom: 10px;">
+                <button onclick="switchHelpTab('faq')" class="github-submit-btn" id="btn-faq" style="flex: 1; padding: 8px;">FAQ Bantuan</button>
+                <button onclick="switchHelpTab('feedback')" class="github-submit-btn" id="btn-feedback" style="flex: 1; padding: 8px; background: transparent; color: var(--text-primary); border: 1px solid var(--glass-border);">Kirim Masukan</button>
+            </div>
+
+            <div id="help-faq">
+                <p style="margin-bottom: 10px;"><strong>Q: Apa itu Thinking Mode?</strong><br><span style="color: var(--text-secondary); font-size: 0.9rem;">Fitur untuk memaksa AI bernalar mendalam (Chain of Thought). Cocok untuk Coding & Logika.</span></p>
+                <p style="margin-bottom: 10px;"><strong>Q: Mengapa kena Error 502 Bad Gateway?</strong><br><span style="color: var(--text-secondary); font-size: 0.9rem;">Server NVIDIA kehabisan waktu memproses karena AI berpikir terlalu lama. Matikan Thinking Mode untuk tugas naratif biasa.</span></p>
+            </div>
+
+            <div id="help-feedback" style="display: none;">
+                <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 10px;">Masukan Anda membantu SAHAJA AI menjadi lebih baik.</p>
+                <textarea id="feedbackText" class="github-input" placeholder="Tulis masukan, kritik, atau laporan bug..." style="width: 100%; height: 100px; margin-bottom: 15px; resize: none;"></textarea>
+                <button onclick="submitFeedback()" class="github-submit-btn" style="width: 100%;">Kirim Sekarang</button>
             </div>
         </div>
     </div>
@@ -2328,55 +2431,83 @@
         document.getElementById('modelSelectButton')?.addEventListener('click', (e) => { e.stopPropagation(); attachMenu.classList.remove('show'); document.getElementById('modelMenu').classList.toggle('show'); });
         attachBtn?.addEventListener('click', (e) => { e.stopPropagation(); document.getElementById('modelMenu').classList.remove('show'); attachMenu.classList.toggle('show'); });
         function selectModelMode(mode, iconClass) { userSelectedMode = mode; document.getElementById('currentModelIcon').className = `fas ${iconClass}`; document.querySelectorAll('.model-option').forEach(el => el.style.background = 'transparent'); event.currentTarget.style.background = 'var(--glass-highlight)'; document.getElementById('modelMenu').classList.remove('show'); }
-        function switchToMode(targetMode) { window.activeForceMode = targetMode; if (currentController) currentController.abort(); const oldLoading = document.querySelector('.message.ai:last-child'); if (oldLoading && oldLoading.querySelector('.typing-indicator')) oldLoading.remove(); sendMessage(); }
+        let isSwitchingMode = false; // VARIABEL PENANDA BARU
+
+        function switchToMode(targetMode) {
+            window.activeForceMode = targetMode;
+            if (currentController) currentController.abort();
+            const oldLoading = document.querySelector('.message.ai:last-child');
+            if (oldLoading && oldLoading.querySelector('.typing-indicator')) oldLoading.remove();
+            sendMessage();
+        }
+
         function switchToFastMode() { switchToMode('fast'); }
-        function detectComplexity(text) { const t = text.toLowerCase(); const complex = ['coding', 'buatkan', 'analisis', 'html', 'laravel', 'script', 'error', 'database']; const simple = ['halo', 'hai', 'tes', 'ngoding', 'cerita']; if (complex.some(k => t.includes(k))) return true; if (t.split(' ').length < 10 && simple.some(k => t.includes(k))) return false; return t.split(' ').length > 15; }
+
+        function detectComplexity(text) {
+            const t = text.toLowerCase();
+            const complex = ['coding', 'buatkan', 'analisis', 'html', 'laravel', 'script', 'error', 'database'];
+            const simple = ['halo', 'hai', 'tes', 'ngoding', 'cerita'];
+            if (complex.some(k => t.includes(k))) return true;
+            if (t.split(' ').length < 10 && simple.some(k => t.includes(k))) return false;
+            return t.split(' ').length > 15;
+        }
 
         async function sendMessage() {
             if (typeof isRecording !== 'undefined' && isRecording && recognition) { recognition.stop(); forceStopRecordingUI(); }
-            const messageInput = chatInput.value.trim(); let finalMessageToSend; let displayMessage = messageInput;
-            if (window.activeForceMode !== null) { if (!lastUserMessage) return; finalMessageToSend = lastUserMessage; } else {
+            const messageInput = chatInput.value.trim();
+            let finalMessageToSend;
+            let displayMessage = messageInput;
+
+            if (window.activeForceMode !== null) {
+                if (!lastUserMessage) return; finalMessageToSend = lastUserMessage;
+            } else {
                 if (!messageInput && !extractedFileText && !base64Image && !currentGithubRepo) return;
                 if (extractedFileText) {
-                finalMessageToSend = `[Lampiran Dokumen: ${currentFileName}]\n"""\n${extractedFileText}\n"""\n\nInstruksi User: ${messageInput || "Tolong analisis"}`;
-                displayMessage = `📎 [${currentFileName}]\n${messageInput}`;
+                    finalMessageToSend = `[Lampiran Dokumen: ${currentFileName}]\n"""\n${extractedFileText}\n"""\n\nInstruksi User: ${messageInput || "Tolong analisis"}`;
+                    displayMessage = `📎 [${currentFileName}]\n${messageInput}`;
+                } else if (base64Image) {
+                    finalMessageToSend = messageInput || "Jelaskan gambar ini.";
+                    displayMessage = `🖼️ [${currentFileName}]\n${messageInput}`;
+                } else if (currentGithubRepo) {
+                    finalMessageToSend = messageInput || "Analisis kode ini.";
+                    displayMessage = `📦 [GitHub: ${currentFileName}]\n${messageInput}`;
+                } else {
+                    finalMessageToSend = messageInput;
+                }
+                lastUserMessage = finalMessageToSend;
+                if (window.activeForceMode === null) {
+                    const welcome = document.getElementById('welcomeScreen'); if (welcome) welcome.style.display = 'none';
+                    const msgContainer = document.getElementById('messagesContainer'); if (msgContainer) msgContainer.style.display = 'flex';
+                    chatInput.value = ''; chatInput.style.height = 'auto';
+                    appendMessage('user', displayMessage); formatAttachmentIcons();
+                }
             }
-            else if (base64Image) {
-                finalMessageToSend = messageInput || "Jelaskan gambar ini.";
-                displayMessage = `🖼️ [${currentFileName}]\n${messageInput}`;
-            }
-            else if (currentGithubRepo) {
-                finalMessageToSend = messageInput || "Analisis kode ini.";
-                displayMessage = `📦 [GitHub: ${currentFileName}]\n${messageInput}`;
-            }
-            else {
-                finalMessageToSend = messageInput;
-            }
-            lastUserMessage = finalMessageToSend;
 
-            if (window.activeForceMode === null) {
-                const welcome = document.getElementById('welcomeScreen');
-                if (welcome) welcome.style.display = 'none';
-                const msgContainer = document.getElementById('messagesContainer');
-                if (msgContainer) msgContainer.style.display = 'flex';
-                chatInput.value = '';
-                chatInput.style.height = 'auto';
+            const payload = {
+                message: finalMessageToSend, session_id: currentSessionId, manual_mode: userSelectedMode,
+                max_tokens: document.getElementById('maxTokensInput').value, enable_thinking: document.getElementById('enableThinkingInput').checked
+            };
 
-                // Render pesan ke layar
-                appendMessage('user', displayMessage);
-
-                // KUNCI RAHASIA: Langsung ubah emoji jadi UI Biru Elegan!
-                formatAttachmentIcons();
-            }
-        }
-
-            const payload = { message: finalMessageToSend, session_id: currentSessionId, manual_mode: userSelectedMode };
             if (base64Image) payload.image_data = base64Image; if (currentGithubRepo) payload.github_repo = currentGithubRepo; if (window.activeForceMode !== null) payload.force_mode = window.activeForceMode;
-            let mode = 'fast'; if (window.activeForceMode !== null) mode = window.activeForceMode; else if (userSelectedMode !== 'auto') mode = userSelectedMode; else { let isComplex = detectComplexity(finalMessageToSend); if (extractedFileText) isComplex = true; mode = isComplex ? 'smart' : 'fast'; if (base64Image) mode = 'vision'; if (currentGithubRepo) mode = 'github'; }
+
+            let mode = 'fast';
+            if (window.activeForceMode !== null) mode = window.activeForceMode;
+            else if (userSelectedMode !== 'auto') mode = userSelectedMode;
+            else {
+                let isComplex = detectComplexity(finalMessageToSend);
+                if (extractedFileText) isComplex = true; mode = isComplex ? 'smart' : 'fast';
+                if (base64Image) mode = 'vision'; if (currentGithubRepo) mode = 'github';
+            }
 
             const loadingId = appendLoadingWithMode(mode); scrollToBottom();
             if (window.activeForceMode === null) removeFile();
             if (currentController) currentController.abort(); currentController = new AbortController();
+
+            // JURUS AMAN: Kunci kotak input dan pudarkan tombol kirim saat AI sedang berpikir
+            chatInput.disabled = true;
+            const sendBtn = document.getElementById('sendButton');
+            sendBtn.style.opacity = '0.5';
+            sendBtn.style.pointerEvents = 'none';
 
             try {
                 const response = await fetch("{{ route('chat.send') }}", { method: "POST", headers: { "Content-Type": "application/json", "X-CSRF-TOKEN": csrfToken, "Accept": "application/json" }, body: JSON.stringify(payload), signal: currentController.signal });
@@ -2388,9 +2519,7 @@
                     const aiMessageDiv = document.createElement('div'); aiMessageDiv.className = 'message ai';
                     let finalModelLabel = '<i class="fas fa-bolt"></i> Mode Cepat (Groq)'; let finalBadgeClass = 'mode-fast'; let extraStyle = ''; const modelUsedStr = (data.model_used || '').toLowerCase();
                     if (modelUsedStr.includes('vision') || modelUsedStr.includes('gemma')) { finalModelLabel = '<i class="fas fa-eye"></i> Mode Vision'; extraStyle = 'background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3);'; finalBadgeClass = ''; }
-                    else if (modelUsedStr.includes('mistral')) {
-                        finalModelLabel = '<i class="fas fa-brain"></i> Mode Cerdas';
-                        finalBadgeClass = 'mode-smart'; }
+                    else if (modelUsedStr.includes('mistral')) { finalModelLabel = '<i class="fas fa-brain"></i> Mode Cerdas'; finalBadgeClass = 'mode-smart'; }
                     else if (modelUsedStr.includes('coder') || modelUsedStr.includes('qwen')) { finalModelLabel = '<i class="fas fa-code"></i> Mode Code'; extraStyle = 'background: rgba(168, 85, 247, 0.15); color: #a855f7; border: 1px solid rgba(168, 85, 247, 0.3);'; finalBadgeClass = ''; }
 
                     aiMessageDiv.innerHTML = `<div class="message-avatar ai-avatar-msg" style="background: transparent; padding: 0;"><img src="https://i.ibb.co.com/jZZ0648R/Logo-SAHAJA-AI.png" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;"></div><div class="message-content"><div class="mode-badge ${finalBadgeClass}" style="${extraStyle}">${finalModelLabel}</div><div class="message-bubble markdown-body"></div><div class="ai-actions"><button class="action-btn" onclick="copyText(this)"><i class="far fa-copy"></i> Salin</button></div></div>`;
@@ -2400,9 +2529,16 @@
                 if (!currentSessionId && data.session_id) { window.history.pushState({}, '', `/chat/${data.session_id}`); currentSessionId = data.session_id; }
                 window.activeForceMode = null;
             } catch (error) {
-                const lBubble = document.getElementById(loadingId); if (lBubble) lBubble.remove();
+                const lBubble = document.getElementById(loadingId);
+                if (lBubble) lBubble.remove();
                 if (error.name !== 'AbortError') showToast("Gagal: " + error.message, "error");
                 window.activeForceMode = null;
+            } finally {
+                // Buka kembali kunci kotak input setelah AI selesai menjawab
+                chatInput.disabled = false;
+                sendBtn.style.opacity = '1';
+                sendBtn.style.pointerEvents = 'auto';
+                chatInput.focus();
             }
         }
 
@@ -2433,7 +2569,50 @@
         function fallbackCopyText(text, callback) { const textArea = document.createElement('textarea'); textArea.value = text; textArea.style.position = 'fixed'; textArea.style.left = '-9999px'; document.body.appendChild(textArea); textArea.focus(); textArea.select(); try { if (document.execCommand('copy') && callback) callback(); else showToast('Gagal menyalin', 'error'); } catch (err) {} document.body.removeChild(textArea); }
         function addCopyButtonsToCodeBlocks() { document.querySelectorAll('.markdown-body pre').forEach((pre) => { if (pre.previousElementSibling?.classList.contains('code-header')) return; const code = pre.querySelector('code'); if (!code) return; let language = 'plaintext'; const langClass = code.className.match(/language-(\w+)/); if (langClass) language = langClass[1]; const header = document.createElement('div'); header.className = 'code-header'; header.innerHTML = `<span class="code-lang">${language}</span><button class="code-copy-btn" aria-label="Salin kode"><i class="far fa-copy"></i> Salin</button>`; pre.parentNode.insertBefore(header, pre); pre.style.borderRadius = '0 0 8px 8px'; pre.style.marginTop = '0'; const copyBtn = header.querySelector('.code-copy-btn'); copyBtn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); copyCode(copyBtn, code); }); }); }
         function animateGeminiStyle(element, markdownText) { const tempDiv = document.createElement('div'); renderAIContent(markdownText, tempDiv); element.innerHTML = ''; Array.from(tempDiv.children).forEach((child) => { const wrapper = document.createElement('div'); wrapper.className = 'gemini-block'; wrapper.appendChild(child); element.appendChild(wrapper); }); let delay = 0; element.querySelectorAll('.gemini-block').forEach((block) => { setTimeout(() => { block.classList.add('show'); scrollToBottom(); }, delay); delay += 120; }); setTimeout(addCopyButtonsToCodeBlocks, delay + 100); }
-        function renderAIContent(text, containerElement) { let rawText = text.replace(/\\\[/g, '$$$$').replace(/\\\]/g, '$$$$').replace(/\\\(/g, '$$').replace(/\\\)/g, '$$'); const mathBlocks = {}; let mathIndex = 0; rawText = rawText.replace(/\$\$([\s\S]*?)\$\$/g, function(match) { const placeholder = `@@MATH_BLOCK_${mathIndex}@@`; mathBlocks[placeholder] = match; mathIndex++; return placeholder; }); rawText = rawText.replace(/\$([^$\n]*?)\$/g, function(match) { const placeholder = `@@MATH_INLINE_${mathIndex}@@`; mathBlocks[placeholder] = match; mathIndex++; return placeholder; }); let htmlContent = marked.parse(rawText); for (const [placeholder, mathText] of Object.entries(mathBlocks)) htmlContent = htmlContent.split(placeholder).join(mathText); containerElement.innerHTML = htmlContent; if (window.renderMathInElement) window.renderMathInElement(containerElement, { delimiters: [{ left: '$$', right: '$$', display: true }, { left: '$', right: '$', display: false }], throwOnError: false }); containerElement.querySelectorAll('pre code').forEach((block) => { if (window.hljs) hljs.highlightElement(block); }); }
+        function renderAIContent(text, containerElement) {
+            let rawText = text.replace(/\\\[/g, '$$$$').replace(/\\\]/g, '$$$$').replace(/\\\(/g, '$$').replace(/\\\)/g, '$$');
+
+            // 1. JURUS RAHASIA: TANGKAP TAG <thinking> DULUAN
+            const thinkingBlocks = {};
+            let thinkingIndex = 0;
+            // Deteksi tag <thinking> ... </thinking> (Tidak peduli huruf besar/kecil)
+            rawText = rawText.replace(/<thinking>([\s\S]*?)<\/thinking>/gi, function(match, innerThinking) {
+                const placeholder = `@@THINKING_BLOCK_${thinkingIndex}@@`;
+                // Bersihkan teks & cegah injeksi HTML berbahaya
+                const cleanThinking = innerThinking.trim().replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+                // Sulap menjadi UI Kotak Interaktif
+                thinkingBlocks[placeholder] = `
+                <div class="thinking-container">
+                    <div class="thinking-header" onclick="this.nextElementSibling.classList.toggle('show'); const icon = this.querySelector('.fa-chevron-right'); if(icon.style.transform === 'rotate(90deg)') { icon.style.transform = 'none'; } else { icon.style.transform = 'rotate(90deg)'; }">
+                        <i class="fas fa-brain"></i> <span style="font-weight: 500;">Alur Berpikir AI</span>
+                        <i class="fas fa-chevron-right" style="margin-left: auto; transition: 0.2s;"></i>
+                    </div>
+                    <div class="thinking-content">${cleanThinking}</div>
+                </div>`;
+                thinkingIndex++;
+                return placeholder;
+            });
+
+            // 2. TANGKAP RUMUS MATEMATIKA (Biar tidak rusak oleh Markdown)
+            const mathBlocks = {};
+            let mathIndex = 0;
+            rawText = rawText.replace(/\$\$([\s\S]*?)\$\$/g, function(match) { const placeholder = `@@MATH_BLOCK_${mathIndex}@@`; mathBlocks[placeholder] = match; mathIndex++; return placeholder; });
+            rawText = rawText.replace(/\$([^$\n]*?)\$/g, function(match) { const placeholder = `@@MATH_INLINE_${mathIndex}@@`; mathBlocks[placeholder] = match; mathIndex++; return placeholder; });
+
+            // 3. UBAH TEKS JADI MARKDOWN (Tabel, Kodingan, dll)
+            let htmlContent = marked.parse(rawText);
+
+            // 4. KEMBALIKAN RUMUS & KOTAK THINKING KE TEMPAT ASALNYA
+            for (const [placeholder, mathText] of Object.entries(mathBlocks)) htmlContent = htmlContent.split(placeholder).join(mathText);
+            for (const [placeholder, thinkText] of Object.entries(thinkingBlocks)) htmlContent = htmlContent.split(placeholder).join(thinkText);
+
+            containerElement.innerHTML = htmlContent;
+
+            // 5. EKSEKUSI RENDER HIGHLIGHT KODE
+            if (window.renderMathInElement) window.renderMathInElement(containerElement, { delimiters: [{ left: '$$', right: '$$', display: true }, { left: '$', right: '$', display: false }], throwOnError: false });
+            containerElement.querySelectorAll('pre code').forEach((block) => { if (window.hljs) hljs.highlightElement(block); });
+        }
         function scrollToBottom() { const c = document.getElementById('messagesContainer'); if(c) c.scrollTop = c.scrollHeight; }
         function scrollToBottomSmooth() { const c = document.getElementById('messagesContainer'); if(c) c.scrollTo({ top: c.scrollHeight, behavior: 'smooth' }); }
         function formatAttachmentIcons() { document.querySelectorAll('.message.user .message-bubble').forEach(el => { let html = el.innerHTML; html = html.replace(/📎 \[(.*?)\]/g, '<i class="fas fa-file-pdf" style="color: #3b82f6; margin-right: 5px;"></i> <b>[Dokumen: $1]</b>'); html = html.replace(/🖼️ \[(.*?)\]/g, '<i class="fas fa-image" style="color: #10b981; margin-right: 5px;"></i> <b>[$1]</b>'); html = html.replace(/📦 \[GitHub: (.*?)\]/g, '<i class="fab fa-github" style="color: #a855f7; margin-right: 5px;"></i> <b>[GitHub: $1]</b>'); el.innerHTML = html; }); }
@@ -2475,6 +2654,23 @@
 
         function forceStopRecordingUI() { isRecording = false; voiceBtn.classList.remove('recording'); voiceBtn.innerHTML = '<i class="fas fa-microphone"></i>'; chatInput.placeholder = "Ketik pesan..."; }
         voiceBtn?.addEventListener('click', () => { if (!recognition) return showToast("Browser tidak support Voice", "error"); if (isRecording) { recognition.stop(); forceStopRecordingUI(); } else { window.preRecordInput = chatInput.value.trim(); try { recognition.start(); } catch (e) {} } });
+
+        function openHelpModal() { document.getElementById('helpModal').classList.add('show'); document.getElementById('logout-menu').classList.remove('show'); }
+        function switchHelpTab(tab) {
+            document.getElementById('help-faq').style.display = tab === 'faq' ? 'block' : 'none';
+            document.getElementById('help-feedback').style.display = tab === 'feedback' ? 'block' : 'none';
+            document.getElementById('btn-faq').style.background = tab === 'faq' ? 'var(--accent-gradient)' : 'transparent';
+            document.getElementById('btn-faq').style.border = tab === 'faq' ? 'none' : '1px solid var(--glass-border)';
+            document.getElementById('btn-feedback').style.background = tab === 'feedback' ? 'var(--accent-gradient)' : 'transparent';
+            document.getElementById('btn-feedback').style.border = tab === 'feedback' ? 'none' : '1px solid var(--glass-border)';
+        }
+        function submitFeedback() {
+            const text = document.getElementById('feedbackText').value.trim();
+            if(!text) return showToast("Tulis masukan terlebih dahulu", "error");
+            showToast("Terima kasih! Masukan Anda telah terkirim.", "success");
+            document.getElementById('feedbackText').value = '';
+            closeCustomModal('helpModal');
+        }
     </script>
 </body>
 </html>
