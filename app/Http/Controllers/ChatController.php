@@ -446,4 +446,21 @@ class ChatController extends Controller
             return "SISTEM ERROR: " . $e->getMessage();
         }
     }
+    // FUNGSI PENERIMA UMPAN BALIK
+    public function storeFeedback(Request $request)
+    {
+        $request->validate([
+            'message' => 'required|string|max:1000'
+        ]);
+
+        \App\Models\Feedback::create([
+            'user_id' => auth()->id(),
+            'message' => $request->message
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Umpan balik berhasil dikirim!'
+        ]);
+    }
 }

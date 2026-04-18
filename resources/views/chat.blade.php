@@ -2703,12 +2703,43 @@
             document.getElementById('btn-feedback').style.background = tab === 'feedback' ? 'var(--accent-gradient)' : 'transparent';
             document.getElementById('btn-feedback').style.border = tab === 'feedback' ? 'none' : '1px solid var(--glass-border)';
         }
-        function submitFeedback() {
-            const text = document.getElementById('feedbackText').value.trim();
+        async function submitFeedback() {
+            const btn = document.querySelector('#help-feedback button');
+            const textArea = document.getElementById('feedbackText');
+            const text = textArea.value.trim();
+
             if(!text) return showToast("Tulis masukan terlebih dahulu", "error");
-            showToast("Terima kasih! Masukan Anda telah terkirim.", "success");
-            document.getElementById('feedbackText').value = '';
-            closeCustomModal('helpModal');
+
+            // Ubah tombol jadi loading
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Mengirim...';
+            btn.disabled = true;
+
+            try {
+                const response = await fetch("{{ route('feedback.send') }}", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                        "Accept": "application/json"
+                    },
+                    body: JSON.stringify({ message: text })
+                });
+
+                const data = await response.json();
+                if(response.ok) {
+                    showToast("Terima kasih! Masukan Anda telah terkirim.", "success");
+                    textArea.value = '';
+                    closeCustomModal('helpModal');
+                } else {
+                    throw new Error("Gagal mengirim data");
+                }
+            } catch (error) {
+                showToast("Terjadi kesalahan jaringan", "error");
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
         }
         // Fungsi Buka Tutup Menu Export
         function toggleExportMenu(btn) {

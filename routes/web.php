@@ -59,6 +59,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/online/{id}/like', [Fase2Controller::class, 'toggleLike'])->name('online.like');
     Route::post('/online/{id}/comment', [App\Http\Controllers\Fase2Controller::class, 'addComment'])->name('online.comment');
     Route::delete('/online/{id}/delete', [App\Http\Controllers\Fase2Controller::class, 'destroy'])->name('online.delete');
+    Route::post('/feedback/send', [App\Http\Controllers\ChatController::class, 'storeFeedback'])->name('feedback.send');
 
     // Update Profil (Nama & Foto sekaligus)
     Route::post('/profile/update', function(\Illuminate\Http\Request $request) {
