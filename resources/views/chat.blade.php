@@ -1755,6 +1755,28 @@
         .mermaid-content { background: rgba(0,0,0,0.2); padding: 15px; overflow-x: auto; text-align: center; }
         .mermaid-code { display: none; background: #1e1e1e; padding: 15px; text-align: left; overflow-x: auto; }
 
+        /* ===== ONBOARDING SLIDER ANIMATION ===== */
+        @keyframes rotateGlow {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .slide-in-right {
+            animation: slideInRight 0.4s cubic-bezier(0.25, 0.8, 0.25, 1) forwards;
+        }
+        @keyframes slideInRight {
+            from { opacity: 0; transform: translateX(30px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        .onboard-dots {
+            display: flex; gap: 6px; align-items: center;
+        }
+        .dot {
+            width: 8px; height: 8px; border-radius: 50%; background: var(--text-secondary); opacity: 0.3; transition: 0.3s;
+        }
+        .dot.active {
+            width: 24px; border-radius: 10px; background: var(--accent-color); opacity: 1;
+        }
+
     </style>
 
     </style>
@@ -1765,25 +1787,54 @@
 
 <body>
 
-    <div class="modal-overlay" id="updateModal">
-        <div class="modal-content">
-            <button class="modal-close" id="closeModalBtn"><i class="fas fa-times"></i></button>
-            <h2>
-                <center>PEMBARUAN SAHAJA AI</center>
-            </h2>
-            <div class="modal-body">
-                <p><strong>1.Fitur Baru: SAHAJA Connect</strong><br>
-                    Kini tersedia fitur halaman Forum komunitas. dilengkapi fitur <b>Komentar</b>
-                </p>
-                <p><strong>2.Kustomisasi Profil & Avatar</strong><br>
-                    Sekarang Anda bisa mengunggah <b>Foto Profil</b> (maks 2MB).
-                </p>
-                <p><strong>3.Kontrol Penuh Privasi & Data</strong><br>
-                    Kini tersedia tombol untuk <b>Hapus Semua Obrolan</b> dan <b>Hapus Akun secara Permanen</b>. Halaman <i>Syarat Penggunaan</i> dan <i>Kebijakan Privasi</i> juga ditambahkan dan transparan.
-                </p>
-                <p><strong>4.Bug Fixes & Stabilitas</strong><br>
-                    Perbaikan beberapa *bug* fatal dan meningkatkan stabilitas.
-                </p>
+    <div class="modal-overlay" id="updateModal" style="z-index: 100010;">
+        <div class="modal-content" style="padding: 0; overflow: hidden; max-width: 550px; background: var(--sidebar-bg); border-radius: 20px;">
+            <button class="modal-close" id="closeModalBtn" style="z-index: 50; top: 15px; right: 15px; background: rgba(0,0,0,0.3); color: white;"><i class="fas fa-times"></i></button>
+
+            <div id="onboard-step-1" style="display: block; position: relative;">
+                <div style="background: var(--accent-gradient); padding: 50px 20px; text-align: center; position: relative; overflow: hidden;">
+                    <div style="position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 60%); animation: rotateGlow 15s linear infinite;"></div>
+                    <img src="https://i.ibb.co.com/wrrG06ds/Logo-SAHAJA-AI.png" alt="SAHAJA AI" style="width: 90px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.4); position: relative; z-index: 2; margin-bottom: 20px;">
+                    <h2 style="color: white; font-size: 1.8rem; font-weight: 700; position: relative; z-index: 2; margin: 0; border: none;">Selamat Datang di<br>SAHAJA AI</h2>
+                </div>
+                <div style="padding: 30px 25px;">
+                    <p style="color: var(--text-secondary); font-size: 0.95rem; line-height: 1.6; margin-bottom: 30px; text-align: center;">Asisten AI cerdas yang dirancang khusus untuk mempermudah pengerjaan tugas, penulisan kodingan, hingga analisis data Anda. Mari lihat apa saja yang baru!</p>
+
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div class="onboard-dots">
+                            <div class="dot active"></div>
+                            <div class="dot"></div>
+                        </div>
+                        <button onclick="nextOnboardStep()" class="github-submit-btn" style="padding: 10px 25px; border-radius: 30px; font-size: 0.9rem;">Selanjutnya <i class="fas fa-arrow-right" style="margin-left: 5px;"></i></button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="onboard-step-2" style="display: none; padding: 30px 25px;">
+                <h2 style="text-align: center; color: var(--accent-color); font-size: 1.3rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 15px; margin-bottom: 20px; margin-top: 10px;">PEMBARUAN SAHAJA AI</h2>
+
+                <div class="modal-body" style="font-size: 0.9rem; line-height: 1.6; max-height: 300px; overflow-y: auto; padding-right: 10px;">
+                    <p style="margin-bottom: 15px;"><strong>1. Fitur Baru: SAHAJA Connect</strong><br>
+                        Kini tersedia fitur halaman Forum komunitas, dilengkapi fitur <b>Komentar</b>.
+                    </p>
+                    <p style="margin-bottom: 15px;"><strong>2. Kustomisasi Profil & Avatar</strong><br>
+                        Sekarang Anda bisa mengunggah <b>Foto Profil</b> (maks 2MB).
+                    </p>
+                    <p style="margin-bottom: 15px;"><strong>3. Kontrol Penuh Privasi & Data</strong><br>
+                        Kini tersedia tombol untuk <b>Hapus Semua Obrolan</b> dan <b>Hapus Akun secara Permanen</b>. Halaman <i>Syarat Penggunaan</i> dan <i>Kebijakan Privasi</i> juga ditambahkan dan transparan.
+                    </p>
+                    <p style="margin-bottom: 5px;"><strong>4. Bug Fixes & Stabilitas</strong><br>
+                        Perbaikan beberapa <i>bug</i> fatal dan peningkatan stabilitas sistem.
+                    </p>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--glass-border);">
+                    <div class="onboard-dots">
+                        <div class="dot"></div>
+                        <div class="dot active"></div>
+                    </div>
+                    <button id="finishOnboardBtn" class="github-submit-btn" style="padding: 10px 25px; border-radius: 30px; font-size: 0.9rem; background: var(--success-color);">Mulai Sekarang <i class="fas fa-check" style="margin-left: 5px;"></i></button>
+                </div>
             </div>
         </div>
     </div>
@@ -2952,6 +3003,24 @@
             document.body.removeChild(link);
             showToast('Gambar Diagram Berhasil Diunduh!', 'success');
         };
+        // ==========================================
+        // FUNGSI SLIDER ONBOARDING / UPDATE MODAL
+        // ==========================================
+        function nextOnboardStep() {
+            const step1 = document.getElementById('onboard-step-1');
+            const step2 = document.getElementById('onboard-step-2');
+
+            // Sembunyikan slide 1, tampilkan slide 2 dengan animasi
+            step1.style.display = 'none';
+            step2.style.display = 'block';
+            step2.classList.add('slide-in-right');
+        }
+
+        // Fungsi tutup modal saat klik "Mulai Sekarang"
+        document.getElementById('finishOnboardBtn')?.addEventListener('click', () => {
+            const updateModal = document.getElementById('updateModal');
+            if(updateModal) updateModal.classList.remove('show');
+        });
     </script>
 </body>
 </html>
