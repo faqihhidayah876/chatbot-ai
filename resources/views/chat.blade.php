@@ -1776,9 +1776,50 @@
         .dot.active {
             width: 24px; border-radius: 10px; background: var(--accent-color); opacity: 1;
         }
+        /* ===== ANIMASI BACKGROUND AURORA & ORBS ===== */
+        @keyframes gradientAurora {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        @keyframes floatOrb {
+            0% { transform: translateY(0px) scale(1); opacity: 0.5; }
+            50% { transform: translateY(-25px) scale(1.2); opacity: 0.9; }
+            100% { transform: translateY(0px) scale(1); opacity: 0.5; }
+        }
+        /* ===== ANIMASI MEWAH: FADE IN & POP ===== */
+        @keyframes logoPopIn {
+            0% { opacity: 0; transform: scale(0.5); }
+            70% { transform: scale(1.05); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .animate-logo {
+            animation: logoPopIn 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+            opacity: 0;
+        }
+        .animate-title {
+            animation: fadeInUp 0.8s ease-out forwards;
+            animation-delay: 0.3s;
+            opacity: 0;
+        }
+        .animate-desc {
+            animation: fadeInUp 0.8s ease-out forwards;
+            animation-delay: 0.6s;
+            opacity: 0;
+        }
+        .animate-footer {
+            animation: fadeInUp 0.8s ease-out forwards;
+            animation-delay: 0.9s;
+            opacity: 0;
+        }
 
     </style>
-
     </style>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
     <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
@@ -1786,21 +1827,26 @@
 </head>
 
 <body>
-
     <div class="modal-overlay" id="updateModal" style="z-index: 100010;">
         <div class="modal-content" style="padding: 0; overflow: hidden; max-width: 550px; background: var(--sidebar-bg); border-radius: 20px;">
             <button class="modal-close" id="closeModalBtn" style="z-index: 50; top: 15px; right: 15px; background: rgba(0,0,0,0.3); color: white;"><i class="fas fa-times"></i></button>
 
             <div id="onboard-step-1" style="display: block; position: relative;">
-                <div style="background: var(--accent-gradient); padding: 50px 20px; text-align: center; position: relative; overflow: hidden;">
-                    <div style="position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 60%); animation: rotateGlow 15s linear infinite;"></div>
-                    <img src="https://i.ibb.co.com/wrrG06ds/Logo-SAHAJA-AI.png" alt="SAHAJA AI" style="width: 90px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.4); position: relative; z-index: 2; margin-bottom: 20px;">
-                    <h2 style="color: white; font-size: 1.8rem; font-weight: 700; position: relative; z-index: 2; margin: 0; border: none;">Selamat Datang di<br>SAHAJA AI</h2>
-                </div>
-                <div style="padding: 30px 25px;">
-                    <p style="color: var(--text-secondary); font-size: 0.95rem; line-height: 1.6; margin-bottom: 30px; text-align: center;">Asisten AI cerdas yang dirancang khusus untuk mempermudah pengerjaan tugas, penulisan kodingan, hingga analisis data Anda. Mari lihat apa saja yang baru!</p>
+                <div style="background: linear-gradient(-45deg, #0a0e17, #1e293b, var(--accent-color), #06b6d4); background-size: 400% 400%; animation: gradientAurora 12s ease infinite; padding: 60px 20px; text-align: center; position: relative; overflow: hidden;">
 
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div style="position: absolute; top: -10%; left: -10%; width: 180px; height: 180px; background: rgba(37, 99, 235, 0.6); border-radius: 50%; filter: blur(40px); animation: floatOrb 7s ease-in-out infinite;"></div>
+                    <div style="position: absolute; bottom: -20%; right: -10%; width: 220px; height: 220px; background: rgba(6, 182, 212, 0.5); border-radius: 50%; filter: blur(50px); animation: floatOrb 9s ease-in-out infinite reverse;"></div>
+                    <div style="position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 60%); animation: rotateGlow 20s linear infinite;"></div>
+
+                    <img src="https://i.ibb.co.com/wrrG06ds/Logo-SAHAJA-AI.png" alt="SAHAJA AI" class="animate-logo" style="width: 90px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.4); position: relative; z-index: 2; margin-bottom: 20px;">
+
+                    <h2 class="animate-title" style="color: white; font-size: 1.9rem; font-weight: 700; position: relative; z-index: 2; margin: 0; border: none; text-shadow: 0 4px 15px rgba(0,0,0,0.4); letter-spacing: 0.5px;">Selamat Datang di<br>SAHAJA AI</h2>
+                </div>
+
+                <div style="padding: 30px 25px;">
+                    <p class="animate-desc" style="color: var(--text-secondary); font-size: 0.95rem; line-height: 1.6; margin-bottom: 30px; text-align: center;">Asisten AI cerdas yang dirancang khusus untuk mempermudah pengerjaan tugas, penulisan kodingan, hingga analisis data Anda. Mari lihat apa saja yang baru!</p>
+
+                    <div class="animate-footer" style="display: flex; justify-content: space-between; align-items: center;">
                         <div class="onboard-dots">
                             <div class="dot active"></div>
                             <div class="dot"></div>
@@ -1833,7 +1879,7 @@
                         <div class="dot"></div>
                         <div class="dot active"></div>
                     </div>
-                    <button id="finishOnboardBtn" class="github-submit-btn" style="padding: 10px 25px; border-radius: 30px; font-size: 0.9rem; background: var(--success-color);">Mulai Sekarang <i class="fas fa-check" style="margin-left: 5px;"></i></button>
+                    <button onclick="closeOnboardModal()" class="github-submit-btn" style="position: relative; z-index: 999; cursor: pointer; padding: 10px 25px; border-radius: 30px; font-size: 0.9rem; background: var(--success-color);">Mulai Sekarang <i class="fas fa-check" style="margin-left: 5px;"></i></button>
                 </div>
             </div>
         </div>
@@ -2565,8 +2611,14 @@
             else if (userSelectedMode !== 'auto') mode = userSelectedMode;
             else {
                 let isComplex = detectComplexity(finalMessageToSend);
-                if (extractedFileText) isComplex = true; mode = isComplex ? 'smart' : 'fast';
-                if (base64Image) mode = 'vision'; if (currentGithubRepo) mode = 'github';
+                if (extractedFileText) isComplex = true;
+                mode = isComplex ? 'smart' : 'fast';
+
+                // JIKA ADA GAMBAR: Cek apakah prompt-nya rumit. Kalau rumit, tembak ke Mode Cerdas!
+                if (base64Image) {
+                    mode = isComplex ? 'smart' : 'vision';
+                }
+                if (currentGithubRepo) mode = 'github';
             }
 
             const loadingId = appendLoadingWithMode(mode); scrollToBottom();
@@ -2654,18 +2706,17 @@
         function renderAIContent(text, containerElement) {
             let rawText = text.replace(/\\\[/g, '$$$$').replace(/\\\]/g, '$$$$').replace(/\\\(/g, '$$').replace(/\\\)/g, '$$');
 
-            // 1. JURUS RAHASIA: TANGKAP TAG <thinking> DULUAN
+            // 1. JURUS RAHASIA: TANGKAP TAG <thinking> ATAU <think> DULUAN
             const thinkingBlocks = {};
             let thinkingIndex = 0;
-            // Deteksi tag <thinking> ... </thinking> (Tidak peduli huruf besar/kecil)
-            rawText = rawText.replace(/<thinking>([\s\S]*?)<\/thinking>/gi, function(match, innerThinking) {
+
+            // RegEx ini sudah di-upgrade agar bisa menangkap <think> dan <thinking> sekaligus
+            rawText = rawText.replace(/<(?:thinking|think)>([\s\S]*?)<\/(?:thinking|think)>/gi, function(match, innerThinking) {
                 const placeholder = `@@THINKING_BLOCK_${thinkingIndex}@@`;
-                // Bersihkan teks & cegah injeksi HTML berbahaya
                 const cleanThinking = innerThinking.trim().replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
-                // Sulap menjadi UI Kotak Interaktif
                 thinkingBlocks[placeholder] = `
-                <div class="thinking-container">
+                <div class="thinking-container" style="margin-bottom: 15px;">
                     <div class="thinking-header" onclick="this.nextElementSibling.classList.toggle('show'); const icon = this.querySelector('.fa-chevron-right'); if(icon.style.transform === 'rotate(90deg)') { icon.style.transform = 'none'; } else { icon.style.transform = 'rotate(90deg)'; }">
                         <i class="fas fa-brain"></i> <span style="font-weight: 500;">Alur Berpikir AI</span>
                         <i class="fas fa-chevron-right" style="margin-left: auto; transition: 0.2s;"></i>
@@ -2725,8 +2776,14 @@
                 }
             });
             setTimeout(addCopyButtonsToCodeBlocks, 500);
-            const chatCount = {{ count($chats ?? []) }}; const updateModal = document.getElementById('updateModal');
-            if (chatCount === 0 && updateModal && !sessionStorage.getItem('sahajaModalShown')) { setTimeout(() => { updateModal.classList.add('show'); sessionStorage.setItem('sahajaModalShown', 'true'); }, 500); }
+            const chatCount = {{ count($chats ?? []) }};
+            const updateModal = document.getElementById('updateModal');
+
+            if (chatCount === 0 && updateModal && !sessionStorage.getItem('sahajaModalShown')) {
+                setTimeout(() => {
+                    updateModal.classList.add('show');
+                    sessionStorage.setItem('sahajaModalShown', 'true');
+                }, 1000); }
             document.getElementById('closeModalBtn')?.addEventListener('click', () => updateModal?.classList.remove('show'));
         });
 
@@ -2905,33 +2962,24 @@
         // 1. Inisialisasi Tema Mermaid agar cocok dengan SAHAJA AI
         mermaid.initialize({ startOnLoad: false, theme: 'dark' });
 
-        // 2. Fungsi Menyulap Teks Code Menjadi Visual Diagram (ANTI-ERROR)
+        // 2. Fungsi Menyulap Teks Code Menjadi Visual Diagram (ANTI ERROR / ANTI BOM)
         async function processMermaidDiagrams(container) {
             const mermaidBlocks = container.querySelectorAll('code.language-mermaid');
             if(mermaidBlocks.length === 0) return;
 
+            // Gunakan perulangan FOR biasa (bukan forEach) agar bisa pakai 'await'
             for (let i = 0; i < mermaidBlocks.length; i++) {
                 const codeBlock = mermaidBlocks[i];
                 const preBlock = codeBlock.parentElement;
 
-                // Jangan proses dua kali
                 if(preBlock.classList.contains('mermaid-processed')) continue;
                 preBlock.classList.add('mermaid-processed');
 
-                // JURUS PEMBERSIH: Hapus Header "Salin" bawaan pre agar tidak dobel/nyangkut
-                if (preBlock.previousElementSibling && preBlock.previousElementSibling.classList.contains('code-header')) {
-                    preBlock.previousElementSibling.remove();
-                }
-
-                // Ambil teks murni
                 let rawCode = codeBlock.textContent || codeBlock.innerText;
-
-                // JURUS ANTI-BOMB: Bersihkan spasi ghaib (NBSP) yang bikin Mermaid meledak
-                rawCode = rawCode.replace(/\u00A0/g, ' ').trim();
+                rawCode = rawCode.replace(/\u00A0/g, ' ').trim(); // Bersihkan spasi ghaib
 
                 const uniqueId = 'mermaid-' + Date.now() + '-' + i;
 
-                // Buat UI Kotak DeepSeek Style
                 const wrapper = document.createElement('div');
                 wrapper.className = 'mermaid-wrapper';
                 wrapper.innerHTML = `
@@ -2940,31 +2988,30 @@
                             <button class="mermaid-tab active" onclick="switchMermaid('${uniqueId}', 'diagram', this)">Visual Diagram</button>
                             <button class="mermaid-tab" onclick="switchMermaid('${uniqueId}', 'code', this)">Source Code</button>
                         </div>
-                        <button class="mermaid-download" onclick="downloadMermaid('${uniqueId}')"><i class="fas fa-download"></i> SVG</button>
+                        <button class="mermaid-download" onclick="downloadMermaid('${uniqueId}')"><i class="fas fa-image"></i> JPG</button>
                     </div>
                     <div id="${uniqueId}-diagram" class="mermaid-content">
-                        <div style="color: var(--accent-color); padding: 20px;"><i class="fas fa-spinner fa-spin"></i> Sedang menggambar diagram...</div>
+                        <div style="color: var(--accent-color); padding: 20px;"><i class="fas fa-spinner fa-spin"></i> Menggambar diagram...</div>
                     </div>
                     <div id="${uniqueId}-code" class="mermaid-code">
                         <pre><code class="language-mermaid"></code></pre>
                     </div>
                 `;
 
-                // Masukkan teks ke dalam tab Source Code dengan aman
                 wrapper.querySelector('.language-mermaid').textContent = rawCode;
-
                 preBlock.replaceWith(wrapper);
 
-                // JURUS RENDER MURNI (Langsung suntik SVG, bypass HTML error)
                 try {
+                    // RENDER DIAGRAM SATU PER SATU SECARA AMAN
                     const { svg } = await mermaid.render(uniqueId + '-svg', rawCode);
                     document.getElementById(uniqueId + '-diagram').innerHTML = svg;
                 } catch (e) {
                     console.error("Mermaid Render Error:", e);
+                    // Kalau AI ngasih kodingan error, tampilkan pesan rapi, BUKAN logo bom!
                     document.getElementById(uniqueId + '-diagram').innerHTML = `
                         <div style="color: #ef4444; padding: 15px; border: 1px dashed #ef4444; border-radius: 8px; text-align: left;">
                             <i class="fas fa-exclamation-triangle"></i> <b>Diagram Gagal Digambar</b><br>
-                            <span style="font-size: 0.85rem; color: var(--text-secondary);">AI salah memberikan format/sintaks. Silakan klik tab <b>Source Code</b> untuk melihat kodenya.</span>
+                            <span style="font-size: 0.85rem; color: var(--text-secondary);">Sintaks diagram dari AI tidak valid. Klik tab <b>Source Code</b> untuk melihat kodenya.</span>
                         </div>
                     `;
                 }
@@ -2987,21 +3034,61 @@
         };
 
         // 4. Fungsi Tombol Download Gambar Diagram (SVG)
+        // 4. Fungsi Tombol Download Gambar Diagram (UBAH KE JPG UNTUK SUPPORT HP)
+        // 4. Fungsi Tombol Download Gambar Diagram (VERSI ULTRA HD - ANTI PECAH)
         window.downloadMermaid = function(id) {
             const svg = document.querySelector(`#${id}-diagram svg`);
             if(!svg) return showToast('Diagram belum selesai diproses', 'error');
 
-            const svgData = new XMLSerializer().serializeToString(svg);
-            const blob = new Blob([svgData], {type: 'image/svg+xml;charset=utf-8'});
-            const url = URL.createObjectURL(blob);
+            showToast('Merender gambar Ultra HD...', 'info');
 
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = 'SAHAJA_Diagram_' + Date.now() + '.svg';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            showToast('Gambar Diagram Berhasil Diunduh!', 'success');
+            // 1. Gandakan SVG agar tidak merusak tampilan asli di layar HP
+            const svgClone = svg.cloneNode(true);
+
+            // 2. KUNCI RAHASIA: Tentukan Skala Resolusi (3x lipat lebih tajam)
+            const scale = 5;
+            const origWidth = svg.getBoundingClientRect().width || 800;
+            const origHeight = svg.getBoundingClientRect().height || 600;
+
+            // 3. Paksa kloningan SVG menjadi ukuran raksasa sebelum difoto
+            svgClone.setAttribute("width", origWidth * scale);
+            svgClone.setAttribute("height", origHeight * scale);
+
+            // 4. Ambil data mentah dari SVG raksasa
+            const svgData = new XMLSerializer().serializeToString(svgClone);
+            const canvas = document.createElement("canvas");
+            const ctx = canvas.getContext("2d");
+            const img = new Image();
+
+            const b64Start = 'data:image/svg+xml;base64,';
+            const image64 = b64Start + btoa(unescape(encodeURIComponent(svgData)));
+
+            img.onload = function() {
+                // 5. Atur kanvas menjadi ukuran raksasa
+                canvas.width = origWidth * scale;
+                canvas.height = origHeight * scale;
+
+                // 6. Beri latar belakang putih bersih
+                ctx.fillStyle = "#ffffff";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                // 7. Gambar diagram HD ke atas kanvas
+                ctx.drawImage(img, 0, 0);
+
+                // 8. Cetak menjadi JPG dengan Kualitas Super Maximum (1.0)
+                const imgURI = canvas.toDataURL("image/jpeg", 1.0);
+
+                const link = document.createElement("a");
+                link.download = 'SAHAJA_Mermaid_' + Date.now() + '.jpg';
+                link.href = imgURI;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+
+                showToast('Gambar Berhasil Diunduh!', 'success');
+            };
+
+            img.src = image64;
         };
         // ==========================================
         // FUNGSI SLIDER ONBOARDING / UPDATE MODAL
@@ -3010,17 +3097,35 @@
             const step1 = document.getElementById('onboard-step-1');
             const step2 = document.getElementById('onboard-step-2');
 
-            // Sembunyikan slide 1, tampilkan slide 2 dengan animasi
-            step1.style.display = 'none';
-            step2.style.display = 'block';
-            step2.classList.add('slide-in-right');
-        }
+            // 1. Buat Slide 1 memudar dan bergeser perlahan ke kiri
+            step1.style.transition = "all 0.4s ease-in-out";
+            step1.style.opacity = "0";
+            step1.style.transform = "translateX(-30px)";
 
-        // Fungsi tutup modal saat klik "Mulai Sekarang"
-        document.getElementById('finishOnboardBtn')?.addEventListener('click', () => {
+            // 2. Tunggu 400ms (sampai animasi slide 1 selesai), baru panggil Slide 2
+            setTimeout(() => {
+                step1.style.display = 'none';
+                step2.style.display = 'block';
+                // Slide 2 masuk dari kanan (menggunakan CSS slide-in-right yang sudah ada)
+                step2.classList.add('slide-in-right');
+            }, 400);
+        }
+        // Fungsi untuk menutup modal dengan mulus
+        window.closeOnboardModal = function() {
             const updateModal = document.getElementById('updateModal');
-            if(updateModal) updateModal.classList.remove('show');
-        });
+            if(updateModal) {
+                // Berikan efek memudar sebelum hilang
+                updateModal.style.transition = "opacity 0.4s ease";
+                updateModal.style.opacity = "0";
+
+                setTimeout(() => {
+                    updateModal.classList.remove('show');
+                    // Reset opacity untuk pemakaian berikutnya
+                    updateModal.style.opacity = "1";
+                    updateModal.style.display = "none";
+                }, 400);
+            }
+        };
     </script>
 </body>
 </html>
