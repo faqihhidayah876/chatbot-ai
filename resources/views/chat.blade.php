@@ -9,6 +9,7 @@
     <title>SAHAJA AI</title>
     <link rel="icon" <link rel="icon" type="image/png" href="https://i.ibb.co.com/jZZ0648R/Logo-SAHAJA-AI.png">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/html-docx-js@0.3.1/dist/html-docx.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mermaid@10.8.0/dist/mermaid.min.js"></script>
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -1818,6 +1819,163 @@
             animation-delay: 0.9s;
             opacity: 0;
         }
+        /* ===== ANIMASI BENTO BOX (SLIDE 2) ===== */
+        .feature-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
+            padding: 16px;
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--glass-border);
+            margin-bottom: 12px;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            opacity: 0; /* Disembunyikan untuk animasi awal */
+        }
+
+        .feature-item:hover {
+            transform: translateY(-4px) scale(1.02);
+            background: rgba(37, 99, 235, 0.08);
+            border-color: rgba(37, 99, 235, 0.3);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        body.light-mode .feature-item {
+            background: #f8fafc;
+        }
+
+        body.light-mode .feature-item:hover {
+            background: #eff6ff;
+            box-shadow: 0 10px 25px rgba(37, 99, 235, 0.1);
+        }
+
+        .feature-icon-wrapper {
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.1rem;
+            flex-shrink: 0;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+        /* ===== GEMINI STYLE WELCOME SCREEN (REFINED) ===== */
+        .welcome-screen {
+            padding-top: 40px !important; /* Paksa logo agak turun */
+        }
+
+        .welcome-logo-container {
+            position: relative; margin-bottom: 20px;
+        }
+
+        .welcome-logo-glow {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 80px; height: 80px; background: rgba(37, 99, 235, 0.4);
+            filter: blur(30px); border-radius: 50%; z-index: 1;
+        }
+
+        .welcome-logo-img {
+            width: 65px; position: relative; z-index: 2; border-radius: 16px; /* Diperkecil */
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+        }
+
+        @keyframes floatLogo {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+
+        .welcome-greeting {
+            font-size: 2.4rem; font-weight: 600; margin-bottom: 5px;
+            background: linear-gradient(135deg, #4285f4, #d96570, #9b72cb, #06b6d4);
+            background-size: 300% 300%;
+            animation: gradientAurora 8s ease infinite;
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            letter-spacing: -1px; text-align: center; line-height: 1.2;
+        }
+
+        .welcome-subtext {
+            font-size: 1.2rem; color: var(--text-secondary); margin-bottom: 35px; font-weight: 500; text-align: center;
+        }
+
+        /* Grid Cards Desktop (Lebih Kompak & Rapi) */
+        .suggested-actions-grid {
+            display: grid; grid-template-columns: repeat(2, 1fr);
+            gap: 12px; max-width: 650px; width: 100%; margin: 0 auto;
+        }
+
+        .action-card {
+            background: rgba(30, 41, 59, 0.4); border: 1px solid var(--glass-border);
+            border-radius: 14px; padding: 14px 16px; cursor: pointer; text-align: left;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); position: relative; overflow: hidden;
+            display: flex; flex-direction: column; justify-content: flex-start; min-height: 90px;
+        }
+
+        body.light-mode .action-card { background: rgba(255, 255, 255, 0.6); }
+
+        .action-card:hover {
+            background: rgba(37, 99, 235, 0.1); border-color: rgba(37, 99, 235, 0.4);
+            transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+        }
+
+        .action-card-icon {
+            font-size: 1.2rem; margin-bottom: 8px; width: 34px; height: 34px;
+            background: rgba(255,255,255,0.05); border-radius: 50%; display: flex;
+            align-items: center; justify-content: center; transition: 0.3s; flex-shrink: 0;
+        }
+
+        body.light-mode .action-card-icon { background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        .action-card:hover .action-card-icon { transform: scale(1.1); }
+
+        .action-card-text { font-size: 0.85rem; color: var(--text-primary); font-weight: 500; line-height: 1.4; }
+
+        /* ===== PERBAIKAN KHUSUS HP (Horizontal Scroll ala Gemini) ===== */
+        @media (max-width: 768px) {
+            .welcome-screen { padding-top: 15px !important; justify-content: center; }
+            .welcome-logo-img { width: 55px; }
+            .welcome-logo-glow { width: 70px; height: 70px; }
+            .welcome-greeting { font-size: 1.8rem; }
+            .welcome-subtext { font-size: 0.95rem; margin-bottom: 25px; }
+
+            /* Menyulap Grid menjadi Scroll Samping di HP */
+            .suggested-actions-grid {
+                display: flex; flex-wrap: nowrap; overflow-x: auto;
+                scroll-snap-type: x mandatory; padding-bottom: 15px; gap: 10px;
+                -webkit-overflow-scrolling: touch;
+            }
+            .suggested-actions-grid::-webkit-scrollbar { display: none; /* Sembunyikan scrollbar agar rapi */ }
+            .action-card {
+                flex: 0 0 200px; /* Lebar kartu pas untuk layar HP */
+                scroll-snap-align: start; min-height: 95px;
+            }
+        }
+
+        .action-card {
+            background: rgba(30, 41, 59, 0.4); border: 1px solid var(--glass-border);
+            border-radius: 16px; padding: 20px; cursor: pointer; text-align: left;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); position: relative; overflow: hidden;
+            display: flex; flex-direction: column; justify-content: space-between; min-height: 120px;
+        }
+
+        body.light-mode .action-card { background: rgba(255, 255, 255, 0.6); }
+
+        .action-card:hover {
+            background: rgba(37, 99, 235, 0.1); border-color: rgba(37, 99, 235, 0.4);
+            transform: translateY(-4px); box-shadow: 0 12px 24px rgba(0,0,0,0.15);
+        }
+
+        .action-card-icon {
+            font-size: 1.4rem; margin-bottom: 15px; width: 42px; height: 42px;
+            background: rgba(255,255,255,0.05); border-radius: 50%; display: flex;
+            align-items: center; justify-content: center; transition: 0.3s;
+        }
+
+        body.light-mode .action-card-icon { background: white; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .action-card:hover .action-card-icon { transform: scale(1.1); }
+
+        .action-card-text { font-size: 0.95rem; color: var(--text-primary); font-weight: 500; line-height: 1.5; }
 
     </style>
     </style>
@@ -1840,46 +1998,83 @@
 
                     <img src="https://i.ibb.co.com/wrrG06ds/Logo-SAHAJA-AI.png" alt="SAHAJA AI" class="animate-logo" style="width: 90px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.4); position: relative; z-index: 2; margin-bottom: 20px;">
 
-                    <h2 class="animate-title" style="color: white; font-size: 1.9rem; font-weight: 700; position: relative; z-index: 2; margin: 0; border: none; text-shadow: 0 4px 15px rgba(0,0,0,0.4); letter-spacing: 0.5px;">Selamat Datang di<br>SAHAJA AI</h2>
+                    <div class="animate-title" style="position: relative; z-index: 2; margin: 0;">
+                        <h2 style="color: white; font-weight: 700; margin: 0; border: none; letter-spacing: 0.5px; font-size: 1.8rem; line-height: 1.3; text-shadow: 0 4px 15px rgba(0,0,0,0.4);">
+                            Selamat Datang di<br>
+                            <span class="welcome-greeting" style="font-size: 2.4rem; display: inline-block; padding-top: 5px; text-shadow: none;">SAHAJA AI</span>
+                        </h2>
+                    </div>
                 </div>
-
                 <div style="padding: 30px 25px;">
                     <p class="animate-desc" style="color: var(--text-secondary); font-size: 0.95rem; line-height: 1.6; margin-bottom: 30px; text-align: center;">Asisten AI cerdas yang dirancang khusus untuk mempermudah pengerjaan tugas, penulisan kodingan, hingga analisis data Anda. Mari lihat apa saja yang baru!</p>
-
                     <div class="animate-footer" style="display: flex; justify-content: space-between; align-items: center;">
                         <div class="onboard-dots">
                             <div class="dot active"></div>
                             <div class="dot"></div>
                         </div>
-                        <button onclick="nextOnboardStep()" class="github-submit-btn" style="padding: 10px 25px; border-radius: 30px; font-size: 0.9rem;">Selanjutnya <i class="fas fa-arrow-right" style="margin-left: 5px;"></i></button>
+                        <button onclick="nextOnboardStep()" class="github-submit-btn" style="position: relative; z-index: 999; cursor: pointer; padding: 10px 25px; border-radius: 30px; font-size: 0.9rem;">Selanjutnya <i class="fas fa-arrow-right" style="margin-left: 5px;"></i></button>
                     </div>
                 </div>
             </div>
 
-            <div id="onboard-step-2" style="display: none; padding: 30px 25px;">
-                <h2 style="text-align: center; color: var(--accent-color); font-size: 1.3rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 15px; margin-bottom: 20px; margin-top: 10px;">PEMBARUAN SAHAJA AI</h2>
-
-                <div class="modal-body" style="font-size: 0.9rem; line-height: 1.6; max-height: 300px; overflow-y: auto; padding-right: 10px;">
-                    <p style="margin-bottom: 15px;"><strong>1. Fitur Baru: SAHAJA Connect</strong><br>
-                        Kini tersedia fitur halaman Forum komunitas, dilengkapi fitur <b>Komentar</b>.
-                    </p>
-                    <p style="margin-bottom: 15px;"><strong>2. Kustomisasi Profil & Avatar</strong><br>
-                        Sekarang Anda bisa mengunggah <b>Foto Profil</b> (maks 2MB).
-                    </p>
-                    <p style="margin-bottom: 15px;"><strong>3. Kontrol Penuh Privasi & Data</strong><br>
-                        Kini tersedia tombol untuk <b>Hapus Semua Obrolan</b> dan <b>Hapus Akun secara Permanen</b>. Halaman <i>Syarat Penggunaan</i> dan <i>Kebijakan Privasi</i> juga ditambahkan dan transparan.
-                    </p>
-                    <p style="margin-bottom: 5px;"><strong>4. Bug Fixes & Stabilitas</strong><br>
-                        Perbaikan beberapa <i>bug</i> fatal dan peningkatan stabilitas sistem.
-                    </p>
+            <div id="onboard-step-2" style="display: none; padding: 0;">
+                <div style="background: var(--sidebar-bg); padding: 25px 25px 10px 25px; border-bottom: 1px solid var(--glass-border); position: relative; z-index: 10;">
+                    <h2 style="color: var(--accent-color); font-size: 1.4rem; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 10px;">
+                      PEMBARUAN SAHAJA AI
+                    </h2>
+                    <p style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 5px; margin-bottom: 0;">Apa yang baru dari SAHAJA AI Beta v3.6?</p>
                 </div>
 
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--glass-border);">
+                <div class="modal-body" style="padding: 20px 25px; max-height: 350px; overflow-y: auto;">
+
+                    <div class="feature-item" style="animation: fadeInUp 0.6s ease forwards; animation-delay: 0.1s;">
+                        <div class="feature-icon-wrapper" style="background: linear-gradient(135deg, #3b82f6, #1d4ed8);">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div>
+                            <strong style="display: block; font-size: 0.95rem; color: #3b82f6; margin-bottom: 3px;">SAHAJA Connect</strong>
+                            <span style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.4;">Forum komunitas baru yang dilengkapi dengan fitur diskusi dan komentar.</span>
+                        </div>
+                    </div>
+
+                    <div class="feature-item" style="animation: fadeInUp 0.6s ease forwards; animation-delay: 0.2s;">
+                        <div class="feature-icon-wrapper" style="background: linear-gradient(135deg, #10b981, #059669);">
+                            <i class="fas fa-user-edit"></i>
+                        </div>
+                        <div>
+                            <strong style="display: block; font-size: 0.95rem; color: #10b981; margin-bottom: 3px;">Kustomisasi Profil</strong>
+                            <span style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.4;">Unggah foto profil terbaikmu (maks 2MB) dan sesuaikan nama tampilan.</span>
+                        </div>
+                    </div>
+
+                    <div class="feature-item" style="animation: fadeInUp 0.6s ease forwards; animation-delay: 0.3s;">
+                        <div class="feature-icon-wrapper" style="background: linear-gradient(135deg, #f59e0b, #d97706);">
+                            <i class="fas fa-user-shield"></i>
+                        </div>
+                        <div>
+                            <strong style="display: block; font-size: 0.95rem; color: #f59e0b; margin-bottom: 3px;">Kontrol Privasi</strong>
+                            <span style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.4;">Hapus semua obrolan atau akun permanen dengan satu sentuhan klik.</span>
+                        </div>
+                    </div>
+
+                    <div class="feature-item" style="animation: fadeInUp 0.6s ease forwards; animation-delay: 0.4s;">
+                        <div class="feature-icon-wrapper" style="background: linear-gradient(135deg, #8b5cf6, #6d28d9);">
+                            <i class="fas fa-bug"></i>
+                        </div>
+                        <div>
+                            <strong style="display: block; font-size: 0.95rem; color: #8b5cf6; margin-bottom: 3px;">Perbaikan Bug (DOCX)</strong>
+                            <span style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.4;">Peningkatan stabilitas. Ekspor file Microsoft Word kini berjalan mulus di HP!</span>
+                        </div>
+                    </div>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 20px 25px; border-top: 1px solid var(--glass-border); background: var(--sidebar-bg);">
                     <div class="onboard-dots">
                         <div class="dot"></div>
-                        <div class="dot active"></div>
+                        <div class="dot active" style="width: 24px; background: var(--success-color);"></div>
                     </div>
-                    <button onclick="closeOnboardModal()" class="github-submit-btn" style="position: relative; z-index: 999; cursor: pointer; padding: 10px 25px; border-radius: 30px; font-size: 0.9rem; background: var(--success-color);">Mulai Sekarang <i class="fas fa-check" style="margin-left: 5px;"></i></button>
+                    <button onclick="closeOnboardModal()" class="github-submit-btn" style="position: relative; z-index: 999; cursor: pointer; padding: 10px 25px; border-radius: 30px; font-size: 0.9rem; background: var(--success-color); box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);">
+                        Mulai Sekarang <i class="fas fa-check" style="margin-left: 5px;"></i>
+                    </button>
                 </div>
             </div>
         </div>
@@ -1972,32 +2167,35 @@
         </div>
 
         <div class="welcome-screen" id="welcomeScreen" style="{{ count($chats) > 0 ? 'display: none;' : '' }}">
-            <div class="welcome-logo" style="background: transparent; box-shadow: none;">
-                <img src="https://i.ibb.co.com/wrrG06ds/Logo-SAHAJA-AI.png" alt="Logo SAHAJA AI"
-                    style="width: 100px; height: auto; border-radius: 15px;">
-            </div>
-            <div class="welcome-text">
-                <h1 class="welcome-title">SAHAJA AI</h1>
-                <p style="color: var(--text-secondary); font-size: 1.1rem;">Halo, {{ Auth::user()->name ?? 'Teman' }}.
-                    Apa yang bisa saya bantu?</p>
+            <div class="welcome-logo-container">
+                <div class="welcome-logo-glow"></div>
+                <img src="https://i.ibb.co.com/jZZ0648R/Logo-SAHAJA-AI.png" alt="Logo SAHAJA AI" class="welcome-logo-img">
             </div>
 
-            <div class="suggested-actions">
-                <button class="action-chip"
-                    onclick="useShortcut('Bantu saya menganalisis dan mencari error dari link GitHub berikut: ')">
-                    <i class="fab fa-github" style="color: #a855f7;"></i> <span>Analisis Kode GitHub</span>
+            <div class="welcome-text">
+                <h1 class="welcome-greeting">Halo, {{ explode(' ', Auth::user()->name ?? 'Teman')[0] }}</h1>
+                <h2 class="welcome-subtext">Apa yang bisa saya bantu hari ini?</h2>
+            </div>
+
+            <div class="suggested-actions-grid">
+                <button class="action-card" onclick="useShortcut('Bantu saya menganalisis dan mencari error dari link GitHub berikut: ')">
+                    <div class="action-card-icon" style="color: #a855f7;"><i class="fab fa-github"></i></div>
+                    <span class="action-card-text">Analisis kode dari repository GitHub secara mendalam</span>
                 </button>
-                <button class="action-chip"
-                    onclick="useShortcut('Tolong buatkan contoh kodingan Laravel CRUD sederhana.')">
-                    <i class="fas fa-code" style="color: #3b82f6;"></i> <span>Buat Kode Laravel</span>
+
+                <button class="action-card" onclick="useShortcut('Tolong buatkan contoh kodingan Laravel CRUD sederhana.')">
+                    <div class="action-card-icon" style="color: #3b82f6;"><i class="fas fa-code"></i></div>
+                    <span class="action-card-text">Buat kodingan Laravel, PHP, atau framework lainnya</span>
                 </button>
-                <button class="action-chip"
-                    onclick="useShortcut('Buatkan saya ide judul project akhir website berbasis AI.')">
-                    <i class="fas fa-lightbulb" style="color: #eab308;"></i> <span>Ide Project Web</span>
+
+                <button class="action-card" onclick="useShortcut('Buatkan saya ide judul project akhir website berbasis AI.')">
+                    <div class="action-card-icon" style="color: #eab308;"><i class="fas fa-lightbulb"></i></div>
+                    <span class="action-card-text">Eksplorasi ide project akhir & rancangan sistem</span>
                 </button>
-                <button class="action-chip"
-                    onclick="useShortcut('Jelaskan materi kuliah Sistem Informasi tentang basis data relasional.')">
-                    <i class="fas fa-book" style="color: #10b981;"></i> <span>Rangkuman Materi Kuliah</span>
+
+                <button class="action-card" onclick="useShortcut('Jelaskan materi kuliah Sistem Informasi tentang basis data relasional.')">
+                    <div class="action-card-icon" style="color: #10b981;"><i class="fas fa-book"></i></div>
+                    <span class="action-card-text">Rangkum materi perkuliahan & jurnal akademis</span>
                 </button>
             </div>
         </div>
@@ -2930,33 +3128,71 @@
         }
 
         // ==========================================
-        // 3. FUNGSI EXPORT DOCS (RAPI & ADA TABEL)
+        // FUNGSI EXPORT KE DOCX (ASLI, SUPPORT HP)
         // ==========================================
-        function exportToDoc(btn) {
-            const originalContainer = btn.closest('.message-content').querySelector('.markdown-body');
-            if (!originalContainer) return showToast("Gagal mengambil konten", "error");
+        window.exportToDoc = function(btn) {
+            // 1. Ambil isi teks dari gelembung chat AI (Ambil yang SUDAH RENDER / HTML)
+            const messageDiv = btn.closest('.message-content');
+            // Prioritaskan mengambil .ai-rendered-data agar yang diambil adalah HTML bersih, bukan raw markdown
+            const bubble = messageDiv.querySelector('.ai-rendered-data') || messageDiv.querySelector('.markdown-body');
 
-            showToast("Menyusun format Word...", "info");
+            if (!bubble) {
+                if (typeof showToast === "function") showToast("Gagal mengambil teks!", "error");
+                return;
+            }
 
-            const printDiv = prepareExportContent(originalContainer);
+            if (typeof showToast === "function") showToast("Merakit file DOCX...", "info");
 
-            // Bungkus dengan standar XML Microsoft Word
-            const header = `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
-                            <head><meta charset='utf-8'><title>Document</title></head><body>`;
-            const footer = "</body></html>";
+            // 2. KUNCI RAHASIA: Masukkan bubble ke dalam Mesin Pembersih (prepareExportContent)
+            // Langkah ini yang kemarin terlewat!
+            const cleanPrintDiv = prepareExportContent(bubble);
 
-            const sourceHTML = header + printDiv.outerHTML + footer;
-            const blob = new Blob(['\ufeff', sourceHTML], { type: 'application/msword' });
+            // 3. Siapkan kerangka HTML yang bersih agar rapi di Word
+            const contentHTML = `
+                <!DOCTYPE html>
+                <html lang="id">
+                <head>
+                    <meta charset="UTF-8">
+                    <title>SAHAJA AI Export</title>
+                    <style>
+                        body { font-family: 'Segoe UI', Arial, sans-serif; color: #333; line-height: 1.6; }
+                        h1, h2, h3 { color: #2563eb; }
+                        code { background-color: #f1f5f9; padding: 2px 5px; border-radius: 4px; font-family: monospace; }
+                        pre { background-color: #f8fafc; padding: 15px; border-left: 4px solid #2563eb; }
+                        table { border-collapse: collapse; width: 100%; margin-bottom: 20px; }
+                        table, th, td { border: 1px solid #cbd5e1; }
+                        th, td { padding: 10px; text-align: left; }
+                        th { background-color: #f1f5f9; }
+                    </style>
+                </head>
+                <body>
+                    <div style="border-bottom: 2px solid #2563eb; padding-bottom: 10px; margin-bottom: 20px;">
+                        <h2 style="margin: 0;">SAHAJA AI Document</h2>
+                        <span style="color: #64748b; font-size: 12px;">Diekspor pada: ${new Date().toLocaleString('id-ID')}</span>
+                    </div>
+                    ${cleanPrintDiv.innerHTML}
+                </body>
+                </html>
+            `;
 
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement("a");
-            link.href = url;
-            link.download = 'SAHAJA_AI_' + new Date().getTime() + '.doc';
-            link.click();
-            URL.revokeObjectURL(url);
+            try {
+                // 4. Gunakan Library untuk merakit HTML menjadi file .docx asli (Blob)
+                const converted = htmlDocx.asBlob(contentHTML);
 
-            showToast("Word Berhasil diunduh!", "success");
-        }
+                // 5. Buat proses download otomatis
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(converted);
+                link.download = 'SAHAJA_AI_Export_' + Date.now() + '.docx';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+
+                if (typeof showToast === "function") showToast("Berhasil diunduh! (DOCX)", "success");
+            } catch (error) {
+                console.error("Export Error:", error);
+                if (typeof showToast === "function") showToast("Gagal mengekspor dokumen.", "error");
+            }
+        };
 
         // ====================fungsi mermaid======================== //
         // 1. Inisialisasi Tema Mermaid agar cocok dengan SAHAJA AI
@@ -3033,9 +3269,7 @@
             }
         };
 
-        // 4. Fungsi Tombol Download Gambar Diagram (SVG)
         // 4. Fungsi Tombol Download Gambar Diagram (UBAH KE JPG UNTUK SUPPORT HP)
-        // 4. Fungsi Tombol Download Gambar Diagram (VERSI ULTRA HD - ANTI PECAH)
         window.downloadMermaid = function(id) {
             const svg = document.querySelector(`#${id}-diagram svg`);
             if(!svg) return showToast('Diagram belum selesai diproses', 'error');
