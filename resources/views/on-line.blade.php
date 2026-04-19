@@ -369,7 +369,8 @@
             border: 1px solid var(--glass-border);
             width: 800px;
             max-width: 95%;
-            height: 550px;
+            height: auto; /* <--- GANTI JADI AUTO */
+            min-height: 550px; /* <--- TAMBAHKAN INI */
             max-height: 90vh;
             display: flex;
             border-radius: 16px;
@@ -746,7 +747,13 @@
             .mobile-toggle-btn { display: block; background: transparent; border: none; font-size: 1.4rem; color: var(--text-primary); margin-right: 15px; }
 
             /* PERBAIKAN POP-UP SETTINGS UNTUK HP */
-            .settings-modal-box { flex-direction: column; height: 85vh; width: 95%; }
+            .settings-modal-box {
+                flex-direction: column;
+                height: auto; /* <--- GANTI JADI AUTO */
+                max-height: 85vh; /* <--- TAMBAHKAN INI */
+                width: 95%;
+                margin-top: 50px; /* Jarak agar tidak nabrak tombol X */
+            }
             .settings-sidebar { width: 100%; border-right: none; border-bottom: 1px solid var(--glass-border); flex-direction: row; padding: 10px; overflow-x: auto; white-space: nowrap; flex-shrink: 0; }
             .settings-sidebar h3 { display: none; } /* Sembunyikan tulisan 'Pengaturan' biar lega */
             .nav-btn { padding: 8px 12px; font-size: 0.85rem; }

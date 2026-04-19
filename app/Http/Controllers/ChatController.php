@@ -403,10 +403,12 @@ class ChatController extends Controller
                 $extension = pathinfo($path, PATHINFO_EXTENSION);
                 if (\Illuminate\Support\Str::endsWith($path, '.blade.php')) $extension = 'blade.php';
 
-                if (in_array(strtolower($extension), ['php', 'blade.php', 'js', 'json', 'md'])) {
+                // JURUS UPGRADE: Tambahkan ekstensi jsx, ts, tsx, css untuk ekosistem React/Node!
+                if (in_array(strtolower($extension), ['php', 'blade.php', 'js', 'jsx', 'ts', 'tsx', 'css', 'json', 'md'])) {
                     $pathLower = strtolower($path);
                     $treeMap .= "- {$path}\n";
-                    if (in_array($pathLower, ['readme.md', 'routes/web.php', 'composer.json'])) {
+                    // Tambahkan package.json agar AI tau ini project React
+                    if (in_array($pathLower, ['readme.md', 'routes/web.php', 'composer.json', 'package.json'])) {
                         $coreFiles[] = $path;
                     }
 
@@ -425,7 +427,7 @@ class ChatController extends Controller
 
             $filesToFetch = array_merge($priorityFiles, $coreFiles);
             $filesToFetch = array_unique($filesToFetch);
-            $filesToFetch = array_slice($filesToFetch, 0, 7);
+            $filesToFetch = array_slice($filesToFetch, 0, 15);
 
             $megaContent = $treeMap . "\n\n📄 KODE DARI FILE YANG RELEVAN:\n\n";
             foreach ($filesToFetch as $filePath) {
