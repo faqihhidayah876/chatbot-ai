@@ -1408,9 +1408,12 @@
             .toggle-btn-sidebar { display: none; }
             .mobile-toggle-btn { display: block; background: transparent; border: none; font-size: 1.4rem; color: var(--text-primary); margin-right: 15px; }
 
-            /* KEMBALI KE KODINGAN LAMA YANG SEMPURNA */
+            //* FIX KOTAK INPUT TERPENDAM DI BAWAH LAYAR HP */
             .input-container {
-                padding: 4px 12px !important;
+                /* Padding: Atas 8px, Kanan 12px, Bawah 25px, Kiri 12px */
+                padding: 8px 12px 25px 12px !important;
+                /* Jurus Pamungkas: Tambahkan jarak aman otomatis untuk HP modern (iPhone/Android) */
+                padding-bottom: calc(25px + env(safe-area-inset-bottom)) !important;
                 position: relative !important;
             }
 
@@ -2125,7 +2128,7 @@
                     <h2 style="color: var(--accent-color); font-size: 1.4rem; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 10px;">
                       PEMBARUAN SAHAJA AI
                     </h2>
-                    <p style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 5px; margin-bottom: 0;">Apa yang baru dari SAHAJA AI Beta v3.6?</p>
+                    <p style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 5px; margin-bottom: 0;">Apa yang baru dari SAHAJA AI Beta v4.0?</p>
                 </div>
 
                 <div class="modal-body" style="padding: 20px 25px; max-height: 350px; overflow-y: auto;">
@@ -2584,7 +2587,7 @@
                         <button class="github-submit-btn" style="background: transparent; color: var(--text-primary); border: 1px solid var(--glass-border); padding: 5px 15px;" onclick="window.open('{{ route('privacy') }}', '_blank')">Lihat</button>
                     </div>
                     <div style="margin-top: 20px; text-align: center; color: var(--text-secondary); font-size: 0.85rem;">
-                        Beta V 3.6<br>
+                        Beta V 4.0<br>
                         Dibuat oleh: Faqih Hidayah
                     </div>
                 </div>
