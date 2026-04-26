@@ -1618,30 +1618,6 @@
             .nav-btn { padding: 8px 12px; font-size: 0.9rem; }
             .settings-content { padding: 20px; }
         }
-        /* PERBAIKAN UNTUK MESSAGES TIDAK BOCOR KE KANAN */
-    .messages-container {
-        overflow-x: hidden !important;
-        width: 100% !important;
-        word-wrap: break-word;
-        word-break: break-word;
-    }
-
-    .message {
-        max-width: 100% !important;
-        width: 100%;
-    }
-
-    .message-content {
-        max-width: calc(100% - 50px) !important; /* Kurangi ruang avatar */
-        min-width: 0;
-        overflow-x: auto;
-    }
-
-    .message-bubble {
-        word-break: break-word;
-        overflow-wrap: break-word;
-        max-width: 100%;
-    }
 
     /* Konten Markdown (kode, tabel, gambar) tidak boleh bocor */
     .markdown-body pre,
@@ -1656,72 +1632,6 @@
         display: block;
         white-space: nowrap;
     }
-    /* ====================================================== */
-        /* PERBAIKAN FINAL: ANTI MELUBER & LAYOUT FLEXBOX MURNI   */
-        /* ====================================================== */
-
-        /* 1. MENCEGAH TEKS & LINK PANJANG MELUBER KE KANAN */
-        .message-content {
-            min-width: 0 !important;
-        }
-        .message-bubble, .markdown-body, .markdown-body p {
-            word-wrap: break-word !important;
-            overflow-wrap: anywhere !important; /* Paksa link panjang putus ke bawah */
-            word-break: break-word !important;
-            max-width: 100% !important;
-        }
-        .markdown-body pre {
-            max-width: 100% !important;
-            overflow-x: auto !important; /* Hanya box kodingan yang bisa digeser kiri-kanan */
-        }
-
-        /* 2. LAYOUT HP (KEMBALI KE FLEXBOX MURNI, BUKAN FIXED) */
-        @media (max-width: 768px) {
-            body, html {
-                height: 100% !important;
-                height: 100dvh !important;
-                overflow: hidden !important;
-            }
-
-            .main-container {
-                height: 100% !important;
-                height: 100dvh !important;
-                display: flex !important;
-                flex-direction: column !important;
-                overflow: hidden !important;
-            }
-
-            .welcome-screen, .messages-container {
-                flex: 1 !important;
-                overflow-y: auto !important;
-                padding-bottom: 20px !important; /* Hapus padding raksasa yang kemarin */
-            }
-
-            .input-container {
-                /* KEMBALIKAN KE ALIRAN NORMAL (Bukan Fixed) agar tidak menimpa konten */
-                position: relative !important;
-                width: 100% !important;
-                flex-shrink: 0 !important; /* Kunci agar tidak tergencet/nyungsep */
-
-                /* Turunkan z-index agar Pop-up Announcement & Settings tetap di depan */
-                z-index: 20 !important;
-
-                /* Bantalan bawah cerdas untuk garis navigasi HP (Gesture Bar) */
-                padding: 10px 15px max(15px, env(safe-area-inset-bottom)) !important;
-
-                background: rgba(10, 14, 23, 0.95) !important;
-                backdrop-filter: blur(12px) !important;
-                border-top: 1px solid var(--glass-border) !important;
-            }
-
-            body.light-mode .input-container {
-                background: rgba(255, 255, 255, 0.95) !important;
-            }
-
-            .message-content {
-                max-width: 95% !important; /* Biar chat di HP lebih lebar dan lega */
-            }
-        }
         /* ===== THINKING MODE UI ===== */
         .thinking-container {
             margin-bottom: 15px; border: 1px solid var(--glass-border);
@@ -1977,6 +1887,84 @@
 
         .action-card-text { font-size: 0.95rem; color: var(--text-primary); font-weight: 500; line-height: 1.5; }
 
+        /* ====================================================== */
+        /* JURUS MUTLAK ANTI MELUBER (BERSIH & FLEXBOX)           */
+        /* ====================================================== */
+        .messages-container {
+            overflow-x: hidden !important;
+            width: 100% !important;
+        }
+
+        .message {
+            width: 100%;
+            max-width: 100% !important;
+            display: flex;
+            gap: 15px;
+        }
+
+        .message-content {
+            flex: 1;              /* Paksa mengisi sisa ruang yang kosong */
+            min-width: 0 !important;         /* KUNCI FLEXBOX: Izinkan menyusut */
+            max-width: calc(100% - 55px) !important; /* Sisakan ruang mutlak untuk avatar AI/User */
+            overflow: visible !important; /* JANGAN pakai hidden, agar dropdown Salin/DOCX tidak terpotong! */
+        }
+
+        /* 1. Paksa potong teks biasa dan link panjang */
+        .message-bubble, .markdown-body {
+            max-width: 100%;
+            width: 100%;
+            word-wrap: break-word !important;
+            overflow-wrap: anywhere !important; /* 'anywhere' sangat ampuh memutus link panjang */
+            word-break: normal !important;
+        }
+
+        .markdown-body p, .markdown-body li {
+            white-space: pre-wrap !important; /* Pertahankan enter/paragraf */
+            word-wrap: break-word !important;
+            overflow-wrap: anywhere !important;
+            max-width: 100%;
+        }
+
+        /* 2. KEMBALIKAN FITUR SCROLL KIRI-KANAN UNTUK KODINGAN & TABEL */
+        /* Kodingan dan tabel JANGAN dipotong paksa, biarkan dia memanjang tapi beri Scrollbar! */
+        .markdown-body pre,
+        .markdown-body table,
+        .mermaid-wrapper {
+            max-width: 100% !important;
+            width: 100%;
+            overflow-x: auto !important; /* Munculkan scrollbar horizontal */
+            display: block;
+            word-break: normal !important;
+            overflow-wrap: normal !important;
+            white-space: normal !important;
+        }
+
+        .markdown-body pre code {
+            white-space: pre !important; /* Kembalikan ke normal agar syntax rapi memanjang */
+            word-break: normal !important;
+            overflow-wrap: normal !important;
+            display: block;
+        }
+
+        /* 3. Penyesuaian Ruang di HP */
+        @media (max-width: 768px) {
+            .message {
+                max-width: 100% !important;
+                width: 100% !important;
+            }
+            .message-content {
+                width: calc(100% - 50px) !important; /* Paksa hitungan pasti: Lebar layar dikurangi Avatar + Gap */
+                max-width: calc(100% - 50px) !important;
+                min-width: 0 !important;
+            }
+            .markdown-body pre,
+            .markdown-body table,
+            .mermaid-wrapper {
+                max-width: 100% !important;
+                /* JURUS PAMUNGKAS: Kunci lebar kotak kodingan pakai ukuran absolut layar HP (vw) */
+                width: calc(100vw - 100px) !important;
+            }
+        }
     </style>
     </style>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
@@ -3211,8 +3199,19 @@
                 if(preBlock.classList.contains('mermaid-processed')) continue;
                 preBlock.classList.add('mermaid-processed');
 
+                // Ambil teks murni
                 let rawCode = codeBlock.textContent || codeBlock.innerText;
-                rawCode = rawCode.replace(/\u00A0/g, ' ').trim(); // Bersihkan spasi ghaib
+
+                // 1. Bersihkan spasi ghaib (NBSP)
+                rawCode = rawCode.replace(/\u00A0/g, ' ').trim();
+
+                // 2. JURUS FILTER MESIN CUCI: Bersihkan kotoran sisa Markdown AI
+                // Hilangkan kata "mermaid" di awal teks jika AI tidak sengaja menuliskannya
+                rawCode = rawCode.replace(/^mermaid\s*/i, '');
+                // Hilangkan sisa backtick (```) yang nyangkut
+                rawCode = rawCode.replace(/```/g, '');
+                // Hilangkan spasi berlebih di awal & akhir
+                rawCode = rawCode.trim();
 
                 const uniqueId = 'mermaid-' + Date.now() + '-' + i;
 
