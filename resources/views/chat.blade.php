@@ -2918,16 +2918,19 @@
             if (typeof isRecording !== 'undefined' && isRecording && recognition) { recognition.stop(); forceStopRecordingUI(); }
             const messageInput = chatInput.value.trim();
 
-            // Cegah pengiriman jika kosong
+            // 1. CEGAH PENGIRIMAN JIKA KOSONG
             if (!messageInput && !extractedFileText && !base64Image && !currentGithubRepo) return;
 
+            // ========================================================
+            // 2. JURUS BYPASS MODE ALPHA (DEEP RESEARCH)
+            // ========================================================
             if (userSelectedMode === 'alpha' && window.activeForceMode === null) {
                 startDeepResearch(messageInput);
                 chatInput.disabled = false;
                 chatInput.style.height = 'auto';
                 chatInput.value = '';
                 chatInput.focus();
-                return; // STOP! Biarkan Sang Mandor (Deep Research) yang bekerja!
+                return; // STOP! Biarkan Sang Mandor yang bekerja!
             }
             // ========================================================
 
@@ -2935,8 +2938,7 @@
             let displayMessage = messageInput;
 
             if (window.activeForceMode !== null) {
-                if (!lastUserMessage) return;
-                finalMessageToSend = lastUserMessage;
+                if (!lastUserMessage) return; finalMessageToSend = lastUserMessage;
             } else {
                 if (extractedFileText) {
                     finalMessageToSend = `[Lampiran Dokumen: ${currentFileName}]\n"""\n${extractedFileText}\n"""\n\nInstruksi User: ${messageInput || "Tolong analisis"}`;
@@ -2951,26 +2953,8 @@
                     finalMessageToSend = messageInput;
                 }
                 lastUserMessage = finalMessageToSend;
-
                 if (window.activeForceMode === null) {
-                    // --- JURUS INSTAN SIDEBAR (ICON LINGKARAN) ---
-                    if (!currentSessionId) {
-                        const historyContainer = document.querySelector('.history-container');
-                        const label = historyContainer.querySelector('.history-label');
-                        const tempHtml = `
-                            <div class="history-item-wrapper active" id="temp-session-loading">
-                                <a href="#" class="history-item" style="pointer-events: none;">
-                                    <i class="fas fa-circle-notch fa-spin history-icon" style="color: var(--accent-color);"></i>
-                                    <div class="history-link">
-                                        <span class="history-text text-label">Menyiapkan chat...</span>
-                                    </div>
-                                </a>
-                            </div>`;
-                        if (label) label.insertAdjacentHTML('afterend', tempHtml);
-                    }
-
-                    const welcome = document.getElementById('welcomeScreen');
-                    if (welcome) welcome.style.display = 'none';
+                    const welcome = document.getElementById('welcomeScreen'); if (welcome) welcome.style.display = 'none';
                     const msgContainer = document.getElementById('messagesContainer'); if (msgContainer) msgContainer.style.display = 'flex';
                     chatInput.value = ''; chatInput.style.height = 'auto';
                     appendMessage('user', displayMessage); formatAttachmentIcons();
@@ -2981,81 +2965,70 @@
                 message: finalMessageToSend, session_id: currentSessionId, manual_mode: userSelectedMode,
                 max_tokens: document.getElementById('maxTokensInput').value, enable_thinking: document.getElementById('enableThinkingInput').checked
             };
-            if (base64Image) payload.image_data = base64Image;
-            if (extractedFileText) payload.file_name = currentFileName;
-            if (currentGithubRepo) payload.github_repo = currentGithubRepo;
 
-            currentController = new AbortController();
-            const loadingId = appendLoadingWithMode(userSelectedMode); scrollToBottom();
+            if (base64Image) payload.image_data = base64Image; if (currentGithubRepo) payload.github_repo = currentGithubRepo; if (window.activeForceMode !== null) payload.force_mode = window.activeForceMode;
+
+            let mode = 'fast';
+            if (window.activeForceMode !== null) mode = window.activeForceMode;
+            else if (userSelectedMode !== 'auto') mode = userSelectedMode;
+            else {
+                let isComplex = detectComplexity(finalMessageToSend);
+                if (extractedFileText) isComplex = true;
+                mode = isComplex ? 'smart' : 'fast';
+
+                // JIKA ADA GAMBAR: Cek apakah prompt-nya rumit. Kalau rumit, tembak ke Mode Cerdas!
+                if (base64Image) {
+                    mode = isComplex ? 'smart' : 'vision';
+                }
+                if (currentGithubRepo) mode = 'github';
+            }
+
+            const loadingId = appendLoadingWithMode(mode); scrollToBottom();
             if (window.activeForceMode === null) removeFile();
+            if (currentController) currentController.abort(); currentController = new AbortController();
+
+            // JURUS AMAN: Kunci kotak input dan pudarkan tombol kirim saat AI sedang berpikir
+            chatInput.disabled = true;
+            const sendBtn = document.getElementById('sendButton');
+            sendBtn.style.opacity = '0.5';
+            sendBtn.style.pointerEvents = 'none';
 
             try {
-                const response = await fetch('/send', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken, 'Accept': 'text/event-stream' },
-                    body: JSON.stringify(payload),
-                    signal: currentController.signal
-                });
+                // KEMBALI MENGGUNAKAN ROUTE LAMA YANG STABIL (TANPA STREAMING)
+                const response = await fetch("{{ route('chat.send') }}", { method: "POST", headers: { "Content-Type": "application/json", "X-CSRF-TOKEN": csrfToken, "Accept": "application/json" }, body: JSON.stringify(payload), signal: currentController.signal });
+                if (!response.ok) throw new Error(`Server Error: ${response.status}`);
+                const data = await response.json(); if (data.error) throw new Error(data.message);
 
-                if (!currentSessionId) {
-                    const dataRes = await response.clone().json();
+                const loadingBubble = document.getElementById(loadingId);
+                if (loadingBubble) {
+                    const aiMessageDiv = document.createElement('div'); aiMessageDiv.className = 'message ai';
+                    let finalModelLabel = '<i class="fas fa-bolt"></i> Mode Cepat (Groq)'; let finalBadgeClass = 'mode-fast'; let extraStyle = ''; const modelUsedStr = (data.model_used || '').toLowerCase();
+                    if (modelUsedStr.includes('vision') || modelUsedStr.includes('gemma')) { finalModelLabel = '<i class="fas fa-eye"></i> Mode Vision'; extraStyle = 'background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3);'; finalBadgeClass = ''; }
+                    else if (modelUsedStr.includes('mistral')) { finalModelLabel = '<i class="fas fa-brain"></i> Mode Cerdas'; finalBadgeClass = 'mode-smart'; }
+                    else if (modelUsedStr.includes('coder') || modelUsedStr.includes('qwen')) { finalModelLabel = '<i class="fas fa-code"></i> Mode Code'; extraStyle = 'background: rgba(168, 85, 247, 0.15); color: #a855f7; border: 1px solid rgba(168, 85, 247, 0.3);'; finalBadgeClass = ''; }
 
-                    // ========================================================
-                    // --- JURUS AMPUH RELOAD (SOLUSI ROOM CHAT HILANG) ---
-                    // ========================================================
-                    if (dataRes.session_id) {
-                        // Redirect ke URL chat baru agar sidebar me-render ulang room yang baru dibuat
-                        window.location.href = `/chat/${dataRes.session_id}`;
-                        return;
-                    }
-                    // ========================================================
+                    aiMessageDiv.innerHTML = `<div class="message-avatar ai-avatar-msg" style="background: transparent; padding: 0;"><img src="https://i.ibb.co.com/jZZ0648R/Logo-SAHAJA-AI.png" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;"></div><div class="message-content"><div class="mode-badge ${finalBadgeClass}" style="${extraStyle}">${finalModelLabel}</div><div class="message-bubble markdown-body"></div><div class="ai-actions" style="position: relative; display: flex; gap: 5px; align-items: center;"><button class="action-btn" onclick="copyText(this)"><i class="far fa-copy"></i> Salin</button><div class="export-dropdown-container"><button class="action-btn" onclick="toggleExportMenu(this)"><i class="fas fa-ellipsis-v"></i></button><div class="export-menu" style="display: none; position: absolute; bottom: 100%; left: 0; background: var(--sidebar-bg); border: 1px solid var(--glass-border); border-radius: 8px; padding: 5px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); z-index: 50; width: 140px; margin-bottom: 5px;"><div class="option-item" style="font-size: 0.8rem; padding: 6px 10px;" onclick="exportToDoc(this)"><i class="fas fa-file-word" style="color: #3b82f6;"></i> Unduh DOCS</div></div></div></div></div>`;
+                    loadingBubble.parentNode.replaceChild(aiMessageDiv, loadingBubble);
+
+                    // RENDER & ANIMASI TEKS DENGAN SEMPURNA
+                    const bubble = aiMessageDiv.querySelector('.message-bubble'); if (bubble) animateGeminiStyle(bubble, data.ai_response); scrollToBottom();
                 }
 
-                if (!response.ok) {
-                    document.getElementById(loadingId).remove();
-                    const errorData = await response.json();
-                    appendMessage('ai', `Error: ${errorData.message || 'Terjadi kesalahan'}`);
-                    return;
-                }
-
-                document.getElementById(loadingId).remove();
-                const aiMessageDiv = appendMessage('ai', '');
-                const rawDiv = aiMessageDiv.querySelector('.ai-raw-data');
-                const renderDiv = aiMessageDiv.querySelector('.ai-rendered-data');
-
-                const reader = response.body.getReader();
-                const decoder = new TextDecoder();
-                let accumulatedContent = "";
-
-                while (true) {
-                    const { done, value } = await reader.read();
-                    if (done) break;
-                    const chunk = decoder.decode(value);
-                    const lines = chunk.split('\n');
-                    for (const line of lines) {
-                        if (line.startsWith('data: ')) {
-                            const data = line.slice(6);
-                            if (data === '[DONE]') break;
-                            try {
-                                const json = JSON.parse(data);
-                                if (json.content) {
-                                    accumulatedContent += json.content;
-                                    rawDiv.textContent = accumulatedContent;
-                                    renderAIContent(accumulatedContent, renderDiv);
-                                    scrollToBottomSmooth();
-                                }
-                            } catch (e) { console.error("Error parsing stream:", e); }
-                        }
-                    }
-                }
-                formatAttachmentIcons();
-
+                // MENGGUNAKAN PUSHSTATE LAMA TANPA REFRESH HALAMAN
+                if (!currentSessionId && data.session_id) { window.history.pushState({}, '', `/chat/${data.session_id}`); currentSessionId = data.session_id; }
+                window.activeForceMode = null;
             } catch (error) {
-                if (error.name !== 'AbortError') {
-                    document.getElementById(loadingId).remove();
-                    appendMessage('ai', `Terjadi kesalahan koneksi.`);
-                }
-            } finally { currentController = null; window.activeForceMode = null; chatInput.disabled = false; chatInput.focus(); }
+                const lBubble = document.getElementById(loadingId);
+                if (lBubble) lBubble.remove();
+                if (error.name !== 'AbortError') showToast("Gagal: " + error.message, "error");
+                window.activeForceMode = null;
+            } finally {
+                // Buka kembali kunci kotak input setelah AI selesai menjawab
+                chatInput.disabled = false;
+                sendBtn.style.opacity = '1';
+                sendBtn.style.pointerEvents = 'auto';
+                chatInput.focus();
+            }
         }
 
         function appendMessage(sender, text) {

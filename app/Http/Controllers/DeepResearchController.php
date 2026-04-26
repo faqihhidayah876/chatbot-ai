@@ -68,7 +68,7 @@ class DeepResearchController extends Controller
                     'max_results' => 5
                 ]);
 
-                if (!$response->successful()) throw new \Exception('Tavily API error.');
+                if (!$response->successful()) throw new \Exception('Tavily API menolak: ' . $response->body());
 
                 $tavilyData = $response->json();
                 $context = "";
@@ -102,10 +102,11 @@ class DeepResearchController extends Controller
                 ATURAN WAJIB:
                 1. Gunakan Heading (H2, H3) untuk membagi poin pembahasan.
                 2. Setiap poin informasi utama WAJIB mencantumkan referensi angka di akhir kalimat, misal: [1], [2].
-                3. Di bagian paling bawah, buat bagian khusus bernama '### 📚 Daftar Referensi'.
+                3. Di bagian paling bawah, buat bagian khusus bernama '### Daftar Referensi'.
                 4. Pada bagian referensi tersebut, Anda WAJIB mencantumkan semua sumber yang digunakan dalam format link Markdown: [Nama Judul Artikel/Jurnal](URL).
                 5. Jika URL tersedia, pastikan link tersebut bisa diklik.
-                6. Jangan memberikan kalimat 'Agen Alpha, Tanggal: [Tanggal Laporan]' dan juga Agen Alpha '[Tanda Tangan Digital] [Kontak: email@agenalpha.com]'
+                6. Jangan memberikan kalimat 'Agen Alpha, Tanggal: [Tanggal Laporan]' dan juga Agen Alpha '[Tanda Tangan Digital] [Kontak: email@agenalpha.com]'.
+                7. SANGAT PENTING: JANGAN membungkus jawaban Anda dengan markdown code block (```markdown ... ```). Langsung tuliskan teks formatnya secara natural!
 
                 DATA WEB UNTUK DIOLAH:
                 " . $context;
@@ -121,7 +122,17 @@ class DeepResearchController extends Controller
                 ]);
 
                 $aiData = $response->json();
-                $finalMarkdown = $aiData['choices'][0]['message']['content'] ?? 'Gagal.';
+                $finalMarkdown = $aiData['choices'][0]['message']['content'] ?? 'Gagal memproses data AI.';
+
+                // ==========================================================
+                // JURUS SAPU JAGAT: Bersihkan backtick jika AI masih ngeyel
+                // ==========================================================
+                $finalMarkdown = trim($finalMarkdown);
+                $finalMarkdown = preg_replace('/^```markdown\s*/i', '', $finalMarkdown); // Hapus awalan ```markdown
+                $finalMarkdown = preg_replace('/^```\s*/', '', $finalMarkdown);          // Hapus awalan ``` (jika ada)
+                $finalMarkdown = preg_replace('/```\s*$/', '', $finalMarkdown);          // Hapus akhiran ```
+                $finalMarkdown = trim($finalMarkdown);
+                // ==========================================================
 
                 // JURUS PAMUNGKAS: Simpan hasil akhir ke tabel CHATS agar tidak hilang saat refresh!
                 Chat::create([
