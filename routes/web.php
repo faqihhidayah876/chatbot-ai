@@ -1,11 +1,12 @@
 <?php
 
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
-use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\Fase2Controller;
+use App\Http\Controllers\DeepResearchController;
 
 // 1. Halaman Depan (Welcome)
 Route::get('/', function () {
@@ -35,6 +36,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/new', [ChatController::class, 'newChat'])->name('chat.new');
     Route::put('/session/{id}/rename', [ChatController::class, 'renameSession'])->name('session.rename');
     Route::delete('/session/{id}/delete', [ChatController::class, 'deleteSession'])->name('session.delete');
+    Route::post('/deep-research/init', [DeepResearchController::class, 'initResearch'])->name('deep-research.init');
+    Route::post('/deep-research/step', [DeepResearchController::class, 'processStep'])->name('deep-research.step');
 });
 
 // 5. Khusus Admin

@@ -68,6 +68,17 @@
             font-family: 'Poppins', sans-serif;
         }
 
+        /* JURUS GEMBOK LAYAR MUTLAK ANTI MELUBER */
+        html, body {
+            overflow-x: hidden !important;
+            max-width: 100vw !important;
+            width: 100% !important;
+        }
+        .main-container, .messages-container {
+            overflow-x: hidden !important;
+            max-width: 100vw !important;
+        }
+
         body {
             background-color: var(--main-bg);
             color: var(--text-primary);
@@ -1903,7 +1914,7 @@
         }
 
         .message-content {
-            flex: 1;              /* Paksa mengisi sisa ruang yang kosong */
+            /* flex: 1;              Paksa mengisi sisa ruang yang kosong */
             min-width: 0 !important;         /* KUNCI FLEXBOX: Izinkan menyusut */
             max-width: calc(100% - 55px) !important; /* Sisakan ruang mutlak untuk avatar AI/User */
             overflow: visible !important; /* JANGAN pakai hidden, agar dropdown Salin/DOCX tidak terpotong! */
@@ -1912,7 +1923,6 @@
         /* 1. Paksa potong teks biasa dan link panjang */
         .message-bubble, .markdown-body {
             max-width: 100%;
-            width: 100%;
             word-wrap: break-word !important;
             overflow-wrap: anywhere !important; /* 'anywhere' sangat ampuh memutus link panjang */
             word-break: normal !important;
@@ -1946,24 +1956,129 @@
             display: block;
         }
 
-        /* 3. Penyesuaian Ruang di HP */
+        /* 3. Penyesuaian Ruang di HP (FIXED ABADI) */
         @media (max-width: 768px) {
             .message {
                 max-width: 100% !important;
                 width: 100% !important;
             }
             .message-content {
-                width: calc(100% - 50px) !important; /* Paksa hitungan pasti: Lebar layar dikurangi Avatar + Gap */
-                max-width: calc(100% - 50px) !important;
+                /* Sisakan ruang 55px untuk avatar dan margin, sisanya pakai persen agar patuh! */
+                max-width: calc(100% - 55px) !important;
                 min-width: 0 !important;
+                /* Paksa konten di dalamnya terpotong rapi jika over */
+                overflow: hidden !important;
+            }
+            .message-bubble {
+                width: 100% !important;
+                max-width: 100% !important;
             }
             .markdown-body pre,
             .markdown-body table,
             .mermaid-wrapper {
+                /* Gunakan 100% BUKAN 100vw agar patuh pada kotak bubble! */
+                width: 100% !important;
                 max-width: 100% !important;
-                /* JURUS PAMUNGKAS: Kunci lebar kotak kodingan pakai ukuran absolut layar HP (vw) */
-                width: calc(100vw - 100px) !important;
+                box-sizing: border-box !important;
+                overflow-x: auto !important; /* Kodingan/tabel akan punya scrollbar sendiri */
             }
+        }
+        /* ====================================================== */
+        /* FASE 2: FITUR ALPHA (DEEP RESEARCH SPLIT SCREEN)       */
+        /* ====================================================== */
+        .research-panel {
+            width: 0;
+            background: rgba(10, 14, 23, 0.95);
+            border-left: 1px solid var(--glass-border);
+            display: flex;
+            flex-direction: column;
+            transition: width 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+            overflow: hidden;
+            z-index: 40;
+            white-space: nowrap;
+        }
+        body.light-mode .research-panel { background: #f8fafc; }
+
+        .research-panel.active { width: 400px; }
+
+        .research-header {
+            padding: 18px 20px; border-bottom: 1px solid var(--glass-border);
+            display: flex; align-items: center; justify-content: space-between;
+            font-weight: 700; color: #ef4444; font-size: 1.1rem;
+        }
+
+        .research-logs {
+            flex: 1; padding: 20px; overflow-y: auto; overflow-x: hidden;
+            display: flex; flex-direction: column; gap: 12px;
+            font-family: 'Roboto Mono', monospace; font-size: 0.85rem;
+        }
+
+        .log-item {
+            background: rgba(0,0,0,0.3); padding: 12px; border-radius: 8px;
+            border-left: 3px solid #3b82f6; color: var(--text-primary);
+            animation: slideInRight 0.3s ease forwards; white-space: normal;
+        }
+        .log-item.processing { border-color: #f59e0b; color: #f59e0b; }
+        .log-item.success { border-color: #10b981; color: #10b981; }
+
+        @media (max-width: 768px) {
+            .research-panel.active {
+                position: absolute; top: 0; right: 0;
+                width: 100% !important; height: 100%; z-index: 150; border-left: none;
+            }
+        }
+        #floatingResearchBtn {
+            position: fixed;
+            top: 20px; /* Pindahkan agak ke atas agar tidak tertutup input chat */
+            right: 20px;
+            z-index: 10001; /* Pastikan di atas segalanya */
+            background: var(--accent-gradient);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 30px;
+            box-shadow: 0 10px 25px rgba(37, 99, 235, 0.4);
+            font-size: 0.9rem;
+            border: 1px solid rgba(255,255,255,0.3);
+            font-weight: 600;
+        }
+        /* ===== STYLE LINK DI DALAM JAWABAN AI ===== */
+        .markdown-body a {
+            color: #3b82f6 !important; /* Warna biru cerah */
+            text-decoration: none;
+            font-weight: 600;
+            border-bottom: 1px dashed rgba(59, 130, 246, 0.4);
+            transition: all 0.2s ease;
+        }
+
+        .markdown-body a:hover {
+            color: #60a5fa !important;
+            border-bottom: 1px solid #60a5fa;
+            background: rgba(59, 130, 246, 0.1);
+            border-radius: 4px;
+            padding: 0 2px;
+        }
+
+        /* Ikon link otomatis setelah tautan referensi */
+        .markdown-body a::after {
+            content: "\f35d"; /* Icon font-awesome external-link */
+            font-family: "Font Awesome 6 Free";
+            font-weight: 900;
+            font-size: 0.7rem;
+            margin-left: 4px;
+            vertical-align: super;
+        }
+
+        body.light-mode .markdown-body a {
+            color: #2563eb !important;
+        }
+        /* ===== CSS UNTUK LOGO SIDEBAR BERPUTAR ===== */
+        .sidebar-logo-spin {
+            width: 20px !important;
+            height: 20px !important;
+            border-radius: 50%;
+            object-fit: cover;
+            animation: spin 1s linear infinite; /* Animasi putar */
+            margin-right: 12px;
         }
     </style>
     </style>
@@ -2015,43 +2130,43 @@
 
                 <div class="modal-body" style="padding: 20px 25px; max-height: 350px; overflow-y: auto;">
 
-                    <div class="feature-item" style="animation: fadeInUp 0.6s ease forwards; animation-delay: 0.1s;">
+                    <div class="feature-item" style="animation: fadeInUp 0.6s ease forwards; animation-delay: 0.1s; background: rgba(239, 68, 68, 0.05); border-color: rgba(239, 68, 68, 0.2);">
+                        <div class="feature-icon-wrapper" style="background: linear-gradient(135deg, #ef4444, #b91c1c);">
+                            <i class="fas fa-atom"></i>
+                        </div>
+                        <div>
+                            <strong style="display: block; font-size: 0.95rem; color: #ef4444; margin-bottom: 3px;">Mode Alpha (Deep Research) 🚀</strong>
+                            <span style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.4;">Agen peneliti cerdas yang mampu menjelajahi internet, mencari jurnal, dan menyusun laporan riset. dapat diekspor dalam format DOCX.</span>
+                        </div>
+                    </div>
+
+                    <div class="feature-item" style="animation: fadeInUp 0.6s ease forwards; animation-delay: 0.2s;">
                         <div class="feature-icon-wrapper" style="background: linear-gradient(135deg, #3b82f6, #1d4ed8);">
                             <i class="fas fa-users"></i>
                         </div>
                         <div>
                             <strong style="display: block; font-size: 0.95rem; color: #3b82f6; margin-bottom: 3px;">SAHAJA Connect</strong>
-                            <span style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.4;">Forum komunitas baru yang dilengkapi dengan fitur diskusi dan komentar.</span>
-                        </div>
-                    </div>
-
-                    <div class="feature-item" style="animation: fadeInUp 0.6s ease forwards; animation-delay: 0.2s;">
-                        <div class="feature-icon-wrapper" style="background: linear-gradient(135deg, #10b981, #059669);">
-                            <i class="fas fa-user-edit"></i>
-                        </div>
-                        <div>
-                            <strong style="display: block; font-size: 0.95rem; color: #10b981; margin-bottom: 3px;">Kustomisasi Profil</strong>
-                            <span style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.4;">Unggah foto profil terbaikmu (maks 2MB) dan sesuaikan nama tampilan.</span>
+                            <span style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.4;">Forum komunitas baru yang dilengkapi dengan fitur diskusi dan komentar antar pengguna.</span>
                         </div>
                     </div>
 
                     <div class="feature-item" style="animation: fadeInUp 0.6s ease forwards; animation-delay: 0.3s;">
-                        <div class="feature-icon-wrapper" style="background: linear-gradient(135deg, #f59e0b, #d97706);">
-                            <i class="fas fa-user-shield"></i>
+                        <div class="feature-icon-wrapper" style="background: linear-gradient(135deg, #10b981, #059669);">
+                            <i class="fas fa-file-word"></i>
                         </div>
                         <div>
-                            <strong style="display: block; font-size: 0.95rem; color: #f59e0b; margin-bottom: 3px;">Kontrol Privasi</strong>
-                            <span style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.4;">Hapus semua obrolan atau akun permanen dengan satu sentuhan klik.</span>
+                            <strong style="display: block; font-size: 0.95rem; color: #10b981; margin-bottom: 3px;">Ekspor DOCX Canggih</strong>
+                            <span style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.4;">Sekarang kamu bisa langsung mengunduh hasil jawaban AI ke dalam file Microsoft Word yang rapi (Khusus Laptop), termasuk hasil riset mendalam.</span>
                         </div>
                     </div>
 
                     <div class="feature-item" style="animation: fadeInUp 0.6s ease forwards; animation-delay: 0.4s;">
                         <div class="feature-icon-wrapper" style="background: linear-gradient(135deg, #8b5cf6, #6d28d9);">
-                            <i class="fas fa-bug"></i>
+                            <i class="fas fa-user-edit"></i>
                         </div>
                         <div>
-                            <strong style="display: block; font-size: 0.95rem; color: #8b5cf6; margin-bottom: 3px;">Perbaikan Bug (DOCX)</strong>
-                            <span style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.4;">Peningkatan stabilitas. Ekspor file Microsoft Word kini berjalan mulus di HP!</span>
+                            <strong style="display: block; font-size: 0.95rem; color: #8b5cf6; margin-bottom: 3px;">Kustomisasi Profil</strong>
+                            <span style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.4;">Personalisasi akunmu dengan foto profil dan nama tampilan baru melalui menu Pengaturan.</span>
                         </div>
                     </div>
                 </div>
@@ -2322,9 +2437,15 @@
                                         <span style="font-size: 0.75rem; color: var(--text-secondary); line-height: 1.3;">Konteks besar dengan Qwen 3 Coder</span>
                                     </div>
                                 </div>
+                                <div class="option-item model-option" style="align-items: flex-start;" onclick="selectModelMode('alpha', 'fa-atom')">
+                                    <i class="fas fa-atom" style="color: #ef4444; margin-top: 4px; width: 20px;"></i>
+                                    <div style="display: flex; flex-direction: column; gap: 2px;">
+                                        <strong style="font-size: 0.95rem; color: var(--text-primary);">Mode Alpha</strong>
+                                        <span style="font-size: 0.75rem; color: var(--text-secondary); line-height: 1.3;">Deep Research Agent (Tavily + Mistral)</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-
                     </div>
 
                     <div class="action-right">
@@ -2470,7 +2591,8 @@
             </div>
             </div>
         </div>
-    </div> <div class="modal-overlay" id="helpModal" style="z-index: 100005;">
+    </div>
+    <div class="modal-overlay" id="helpModal" style="z-index: 100005;">
         <div class="modal-content" style="max-width: 550px; background: var(--sidebar-bg); padding: 25px; border-radius: 12px; border: 1px solid var(--glass-border);">
             <button class="modal-close" onclick="closeCustomModal('helpModal')" style="position: absolute; right: 15px; top: 15px;"><i class="fas fa-times"></i></button>
             <h2 style="font-size: 1.3rem; margin-bottom: 15px; color: var(--accent-color);"><i class="fas fa-question-circle"></i> Bantuan & Umpan Balik</h2>
@@ -2526,6 +2648,17 @@
                 <button id="btnConfirmDanger" class="github-submit-btn" style="background: var(--danger-color);" onclick="executeDangerAction()">Ya, Hapus</button>
             </div>
         </div>
+    </div>
+    <button id="floatingResearchBtn" onclick="toggleResearchPanel()" style="display: none; position: fixed; top: 80px; right: 20px; z-index: 100; background: var(--accent-gradient); color: white; padding: 10px 18px; border-radius: 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.4); font-size: 0.85rem; border: 1px solid rgba(255,255,255,0.2); backdrop-filter: blur(8px); cursor: pointer;">
+        <i class="fas fa-atom fa-spin" style="margin-right: 6px;"></i> Buka Panel Riset
+    </button>
+    <div class="research-panel" id="researchPanel">
+        <div class="research-header">
+            <span><i class="fas fa-atom fa-spin" style="margin-right: 8px;"></i> Deep Research</span>
+            <button onclick="toggleResearchPanel()" class="icon-btn" title="Minimize Panel"><i class="fas fa-compress-alt"></i></button>
+        </div>
+        <div class="research-logs" id="researchLogs">
+            </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -2757,13 +2890,27 @@
         async function sendMessage() {
             if (typeof isRecording !== 'undefined' && isRecording && recognition) { recognition.stop(); forceStopRecordingUI(); }
             const messageInput = chatInput.value.trim();
+
+            // Cegah pengiriman jika kosong
+            if (!messageInput && !extractedFileText && !base64Image && !currentGithubRepo) return;
+
+            if (userSelectedMode === 'alpha' && window.activeForceMode === null) {
+                startDeepResearch(messageInput);
+                chatInput.disabled = false;
+                chatInput.style.height = 'auto';
+                chatInput.value = '';
+                chatInput.focus();
+                return; // STOP! Biarkan Sang Mandor (Deep Research) yang bekerja!
+            }
+            // ========================================================
+
             let finalMessageToSend;
             let displayMessage = messageInput;
 
             if (window.activeForceMode !== null) {
-                if (!lastUserMessage) return; finalMessageToSend = lastUserMessage;
+                if (!lastUserMessage) return;
+                finalMessageToSend = lastUserMessage;
             } else {
-                if (!messageInput && !extractedFileText && !base64Image && !currentGithubRepo) return;
                 if (extractedFileText) {
                     finalMessageToSend = `[Lampiran Dokumen: ${currentFileName}]\n"""\n${extractedFileText}\n"""\n\nInstruksi User: ${messageInput || "Tolong analisis"}`;
                     displayMessage = `📎 [${currentFileName}]\n${messageInput}`;
@@ -2777,8 +2924,26 @@
                     finalMessageToSend = messageInput;
                 }
                 lastUserMessage = finalMessageToSend;
+
                 if (window.activeForceMode === null) {
-                    const welcome = document.getElementById('welcomeScreen'); if (welcome) welcome.style.display = 'none';
+                    // --- JURUS INSTAN SIDEBAR (ICON LINGKARAN) ---
+                    if (!currentSessionId) {
+                        const historyContainer = document.querySelector('.history-container');
+                        const label = historyContainer.querySelector('.history-label');
+                        const tempHtml = `
+                            <div class="history-item-wrapper active" id="temp-session-loading">
+                                <a href="#" class="history-item" style="pointer-events: none;">
+                                    <i class="fas fa-circle-notch fa-spin history-icon" style="color: var(--accent-color);"></i>
+                                    <div class="history-link">
+                                        <span class="history-text text-label">Menyiapkan chat...</span>
+                                    </div>
+                                </a>
+                            </div>`;
+                        if (label) label.insertAdjacentHTML('afterend', tempHtml);
+                    }
+
+                    const welcome = document.getElementById('welcomeScreen');
+                    if (welcome) welcome.style.display = 'none';
                     const msgContainer = document.getElementById('messagesContainer'); if (msgContainer) msgContainer.style.display = 'flex';
                     chatInput.value = ''; chatInput.style.height = 'auto';
                     appendMessage('user', displayMessage); formatAttachmentIcons();
@@ -2789,65 +2954,81 @@
                 message: finalMessageToSend, session_id: currentSessionId, manual_mode: userSelectedMode,
                 max_tokens: document.getElementById('maxTokensInput').value, enable_thinking: document.getElementById('enableThinkingInput').checked
             };
+            if (base64Image) payload.image_data = base64Image;
+            if (extractedFileText) payload.file_name = currentFileName;
+            if (currentGithubRepo) payload.github_repo = currentGithubRepo;
 
-            if (base64Image) payload.image_data = base64Image; if (currentGithubRepo) payload.github_repo = currentGithubRepo; if (window.activeForceMode !== null) payload.force_mode = window.activeForceMode;
-
-            let mode = 'fast';
-            if (window.activeForceMode !== null) mode = window.activeForceMode;
-            else if (userSelectedMode !== 'auto') mode = userSelectedMode;
-            else {
-                let isComplex = detectComplexity(finalMessageToSend);
-                if (extractedFileText) isComplex = true;
-                mode = isComplex ? 'smart' : 'fast';
-
-                // JIKA ADA GAMBAR: Cek apakah prompt-nya rumit. Kalau rumit, tembak ke Mode Cerdas!
-                if (base64Image) {
-                    mode = isComplex ? 'smart' : 'vision';
-                }
-                if (currentGithubRepo) mode = 'github';
-            }
-
-            const loadingId = appendLoadingWithMode(mode); scrollToBottom();
+            currentController = new AbortController();
+            const loadingId = appendLoadingWithMode(userSelectedMode); scrollToBottom();
             if (window.activeForceMode === null) removeFile();
-            if (currentController) currentController.abort(); currentController = new AbortController();
-
-            // JURUS AMAN: Kunci kotak input dan pudarkan tombol kirim saat AI sedang berpikir
-            chatInput.disabled = true;
-            const sendBtn = document.getElementById('sendButton');
-            sendBtn.style.opacity = '0.5';
-            sendBtn.style.pointerEvents = 'none';
 
             try {
-                const response = await fetch("{{ route('chat.send') }}", { method: "POST", headers: { "Content-Type": "application/json", "X-CSRF-TOKEN": csrfToken, "Accept": "application/json" }, body: JSON.stringify(payload), signal: currentController.signal });
-                if (!response.ok) throw new Error(`Server Error: ${response.status}`);
-                const data = await response.json(); if (data.error) throw new Error(data.message);
+                const response = await fetch('/send', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken, 'Accept': 'text/event-stream' },
+                    body: JSON.stringify(payload),
+                    signal: currentController.signal
+                });
 
-                const loadingBubble = document.getElementById(loadingId);
-                if (loadingBubble) {
-                    const aiMessageDiv = document.createElement('div'); aiMessageDiv.className = 'message ai';
-                    let finalModelLabel = '<i class="fas fa-bolt"></i> Mode Cepat (Groq)'; let finalBadgeClass = 'mode-fast'; let extraStyle = ''; const modelUsedStr = (data.model_used || '').toLowerCase();
-                    if (modelUsedStr.includes('vision') || modelUsedStr.includes('gemma')) { finalModelLabel = '<i class="fas fa-eye"></i> Mode Vision'; extraStyle = 'background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3);'; finalBadgeClass = ''; }
-                    else if (modelUsedStr.includes('mistral')) { finalModelLabel = '<i class="fas fa-brain"></i> Mode Cerdas'; finalBadgeClass = 'mode-smart'; }
-                    else if (modelUsedStr.includes('coder') || modelUsedStr.includes('qwen')) { finalModelLabel = '<i class="fas fa-code"></i> Mode Code'; extraStyle = 'background: rgba(168, 85, 247, 0.15); color: #a855f7; border: 1px solid rgba(168, 85, 247, 0.3);'; finalBadgeClass = ''; }
+                if (!currentSessionId) {
+                    const dataRes = await response.clone().json();
 
-                    aiMessageDiv.innerHTML = `<div class="message-avatar ai-avatar-msg" style="background: transparent; padding: 0;"><img src="https://i.ibb.co.com/jZZ0648R/Logo-SAHAJA-AI.png" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;"></div><div class="message-content"><div class="mode-badge ${finalBadgeClass}" style="${extraStyle}">${finalModelLabel}</div><div class="message-bubble markdown-body"></div><div class="ai-actions" style="position: relative; display: flex; gap: 5px; align-items: center;"><button class="action-btn" onclick="copyText(this)"><i class="far fa-copy"></i> Salin</button><div class="export-dropdown-container"><button class="action-btn" onclick="toggleExportMenu(this)"><i class="fas fa-ellipsis-v"></i></button><div class="export-menu" style="display: none; position: absolute; bottom: 100%; left: 0; background: var(--sidebar-bg); border: 1px solid var(--glass-border); border-radius: 8px; padding: 5px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); z-index: 50; width: 140px; margin-bottom: 5px;"><div class="option-item" style="font-size: 0.8rem; padding: 6px 10px;" onclick="exportToDoc(this)"><i class="fas fa-file-word" style="color: #3b82f6;"></i> Unduh DOCS</div></div></div></div></div>`;
-                    loadingBubble.parentNode.replaceChild(aiMessageDiv, loadingBubble);
-                    const bubble = aiMessageDiv.querySelector('.message-bubble'); if (bubble) animateGeminiStyle(bubble, data.ai_response); scrollToBottom();
+                    // ========================================================
+                    // --- JURUS AMPUH RELOAD (SOLUSI ROOM CHAT HILANG) ---
+                    // ========================================================
+                    if (dataRes.session_id) {
+                        // Redirect ke URL chat baru agar sidebar me-render ulang room yang baru dibuat
+                        window.location.href = `/chat/${dataRes.session_id}`;
+                        return;
+                    }
+                    // ========================================================
                 }
-                if (!currentSessionId && data.session_id) { window.history.pushState({}, '', `/chat/${data.session_id}`); currentSessionId = data.session_id; }
-                window.activeForceMode = null;
+
+                if (!response.ok) {
+                    document.getElementById(loadingId).remove();
+                    const errorData = await response.json();
+                    appendMessage('ai', `Error: ${errorData.message || 'Terjadi kesalahan'}`);
+                    return;
+                }
+
+                document.getElementById(loadingId).remove();
+                const aiMessageDiv = appendMessage('ai', '');
+                const rawDiv = aiMessageDiv.querySelector('.ai-raw-data');
+                const renderDiv = aiMessageDiv.querySelector('.ai-rendered-data');
+
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let accumulatedContent = "";
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    const chunk = decoder.decode(value);
+                    const lines = chunk.split('\n');
+                    for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                            const data = line.slice(6);
+                            if (data === '[DONE]') break;
+                            try {
+                                const json = JSON.parse(data);
+                                if (json.content) {
+                                    accumulatedContent += json.content;
+                                    rawDiv.textContent = accumulatedContent;
+                                    renderAIContent(accumulatedContent, renderDiv);
+                                    scrollToBottomSmooth();
+                                }
+                            } catch (e) { console.error("Error parsing stream:", e); }
+                        }
+                    }
+                }
+                formatAttachmentIcons();
+
             } catch (error) {
-                const lBubble = document.getElementById(loadingId);
-                if (lBubble) lBubble.remove();
-                if (error.name !== 'AbortError') showToast("Gagal: " + error.message, "error");
-                window.activeForceMode = null;
-            } finally {
-                // Buka kembali kunci kotak input setelah AI selesai menjawab
-                chatInput.disabled = false;
-                sendBtn.style.opacity = '1';
-                sendBtn.style.pointerEvents = 'auto';
-                chatInput.focus();
-            }
+                if (error.name !== 'AbortError') {
+                    document.getElementById(loadingId).remove();
+                    appendMessage('ai', `Terjadi kesalahan koneksi.`);
+                }
+            } finally { currentController = null; window.activeForceMode = null; chatInput.disabled = false; chatInput.focus(); }
         }
 
         function appendMessage(sender, text) {
@@ -3357,6 +3538,166 @@
                     updateModal.style.opacity = "1";
                     updateModal.style.display = "none";
                 }, 400);
+            }
+        };
+        // ==========================================
+        // SANG MANDOR (VERSI X-RAY ANTI SILENT DEATH)
+        // ==========================================
+        let currentResearchId = null;
+
+        async function startDeepResearch(prompt) {
+            document.getElementById('floatingResearchBtn').style.display = 'none';
+            document.getElementById('researchPanel').classList.add('active');
+            const logsContainer = document.getElementById('researchLogs');
+            logsContainer.innerHTML = '';
+
+            appendResearchLog('Menginisialisasi Agen Alpha...', 'processing');
+
+            try {
+                const res = await fetch('/deep-research/init', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({topic: prompt, session_id: currentSessionId})
+                });
+
+                // JURUS X-RAY: Ambil teks mentah dari server sebelum di-parse jadi JSON!
+                const rawText = await res.text();
+
+                let data;
+                try {
+                    data = JSON.parse(rawText);
+                } catch(err) {
+                    // JIKA GAGAL JADI JSON (LARAVEL MELEMPAR ERROR 500)
+                    console.error("🔥 LARAVEL ERROR KETAHUAN:", rawText);
+                    appendResearchLog('Server Laravel Meledak! Buka Console (F12).', 'error');
+                    alert("ERROR SERVER! Tekan F12 di keyboard, buka tab 'Console' untuk melihat penyakit aslinya!");
+                    return; // Hentikan proses agar tidak mutar-mutar
+                }
+
+                if(data.success) {
+                    currentResearchId = data.research_id;
+
+                    // UPDATE URL JIKA SESSION BARU: Biar kalau refresh nggak balik ke welcome screen
+                    if (!currentSessionId && data.session_id) {
+                    window.history.pushState({}, '', `/chat/${data.session_id}`);
+                    currentSessionId = data.session_id;
+
+                    // HAPUS ITEM SEMENTARA: Biar tidak double saat halaman di-render ulang nanti
+                    const tempItem = document.getElementById('temp-session-loading');
+                    if (tempItem) tempItem.remove();
+                }
+
+                    appendResearchLog('Agen berhasil diaktifkan. Memulai pencarian data...', 'info');
+                    setTimeout(pollResearchStep, 2000);
+                } else {
+                    appendResearchLog('Gagal Inisialisasi: ' + (data.message || 'Server Menolak'), 'error');
+                }
+            } catch (e) {
+                appendResearchLog('Gagal menyambung ke server! Koneksi terputus.', 'error');
+            }
+        }
+
+        async function pollResearchStep() {
+            if(!currentResearchId) return;
+
+            try {
+                const res = await fetch('/deep-research/step', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({research_id: currentResearchId})
+                });
+
+                // JURUS X-RAY UNTUK STEP 2
+                const rawText = await res.text();
+                let data;
+                try {
+                    data = JSON.parse(rawText);
+                } catch(err) {
+                    console.error("🔥 LARAVEL ERROR PADA SAAT PROSES AI:", rawText);
+                    appendResearchLog('Proses terhenti karena Error di Server. Cek Console.', 'error');
+                    return; // Hentikan agar tidak polling abadi
+                }
+
+                const logsContainer = document.getElementById('researchLogs');
+                logsContainer.innerHTML = '';
+                if(data.logs && data.logs.length > 0) {
+                    data.logs.forEach(log => {
+                        logsContainer.innerHTML += `<div class="log-item info"><span style="color: #94a3b8; font-size: 0.75rem; margin-right: 5px;">[${log.time}]</span> ${log.message}</div>`;
+                    });
+                }
+                logsContainer.scrollTop = logsContainer.scrollHeight;
+
+                if(data.status === 'selesai') {
+                    appendResearchLog('Menutup Agen Alpha...', 'success');
+
+                    // SULAP HASILNYA MENJADI CARD CHAT!
+                    const aiMessageDiv = document.createElement('div');
+                    aiMessageDiv.className = 'message ai';
+                    aiMessageDiv.innerHTML = `<div class="message-avatar ai-avatar-msg" style="background: transparent; padding: 0;"><img src="https://i.ibb.co.com/jZZ0648R/Logo-SAHAJA-AI.png" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;"></div><div class="message-content"><div class="mode-badge" style="background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3);"><i class="fas fa-atom"></i> Hasil Deep Research</div><div class="message-bubble markdown-body ai-raw-data" style="display:none;">${data.result}</div><div class="message-bubble markdown-body ai-rendered-data"></div><div class="ai-actions" style="position: relative; display: flex; gap: 5px; align-items: center;"><button class="action-btn" onclick="copyText(this)"><i class="far fa-copy"></i> Salin</button><div class="export-dropdown-container"><button class="action-btn" onclick="toggleExportMenu(this)"><i class="fas fa-ellipsis-v"></i></button><div class="export-menu" style="display: none; position: absolute; bottom: 100%; left: 0; background: var(--sidebar-bg); border: 1px solid var(--glass-border); border-radius: 8px; padding: 5px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); z-index: 50; width: 140px; margin-bottom: 5px;"><div class="option-item" style="font-size: 0.8rem; padding: 6px 10px;" onclick="exportToDoc(this)"><i class="fas fa-file-word" style="color: #3b82f6;"></i> Unduh DOCS</div></div></div></div></div>`;
+
+                    document.getElementById('messagesContainer').appendChild(aiMessageDiv);
+
+                    const rawDiv = aiMessageDiv.querySelector('.ai-raw-data');
+                    const renderDiv = aiMessageDiv.querySelector('.ai-rendered-data');
+                    renderAIContent(rawDiv.textContent.trim(), renderDiv);
+                    scrollToBottomSmooth();
+
+                    // PERBAIKAN: Tutup panel dan hapus tombol melayang secara paksa tanpa fungsi toggle
+                    setTimeout(() => {
+                        document.getElementById('researchPanel').classList.remove('active');
+                        document.getElementById('floatingResearchBtn').style.display = 'none';
+                        currentResearchId = null; // Bersihkan memori agar tombol tidak "nyangkut"
+                    }, 3000);
+                    return;
+
+                } else if (data.status === 'error') {
+                    appendResearchLog('Proses dibatalkan karena error.', 'error');
+
+                    // PERBAIKAN: Tutup juga saat error agar bersih
+                    setTimeout(() => {
+                        document.getElementById('researchPanel').classList.remove('active');
+                        document.getElementById('floatingResearchBtn').style.display = 'none';
+                        currentResearchId = null;
+                    }, 3000);
+                    return;
+                }
+
+                setTimeout(pollResearchStep, 2000);
+            } catch(e) {
+                setTimeout(pollResearchStep, 5000);
+            }
+        }
+
+        function appendResearchLog(text, type = 'info') {
+            const logsContainer = document.getElementById('researchLogs');
+            const icon = type === 'processing' ? '<i class="fas fa-circle-notch fa-spin"></i>' :
+                         (type === 'success' ? '<i class="fas fa-check"></i>' : '<i class="fas fa-info-circle"></i>');
+
+            logsContainer.innerHTML += `<div class="log-item ${type}">${icon} <span style="margin-left: 8px;">${text}</span></div>`;
+            logsContainer.scrollTop = logsContainer.scrollHeight; // Auto scroll ke bawah
+        }
+        // Fungsi untuk Buka/Tutup Panel Riset (Fixed)
+        window.toggleResearchPanel = function() {
+            const panel = document.getElementById('researchPanel');
+            const floatBtn = document.getElementById('floatingResearchBtn');
+
+            if(panel.classList.contains('active')) {
+                // Minimize
+                panel.classList.remove('active');
+                // Selalu munculkan tombol jika riset sedang berjalan atau baru saja mulai
+                floatBtn.style.display = 'block';
+            } else {
+                // Expand
+                panel.classList.add('active');
+                floatBtn.style.display = 'none';
             }
         };
     </script>
