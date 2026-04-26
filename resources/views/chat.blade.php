@@ -2084,22 +2084,27 @@
             margin-right: 12px;
         }
         /* ====================================================== */
-        /* FIX MUTLAK: KOTAK INPUT TERPENDAM DI LAYAR HP          */
+        /* FIX MUTLAK 2.0: KOTAK INPUT & SIDEBAR (ANTI TABRAKAN)  */
         /* ====================================================== */
         @media (max-width: 768px) {
+            /* 1. Jadikan Sidebar Kasta Tertinggi agar tidak tertutup */
+            .sidebar {
+                z-index: 10000 !important;
+            }
+
             .input-container {
-                /* Atur ulang padding agar dipaksa naik */
                 padding-top: 8px !important;
                 padding-right: 12px !important;
                 padding-left: 12px !important;
-                /* Bantalan bawah 25px + Jarak aman dari HP Android/iPhone */
-                padding-bottom: calc(30px + env(safe-area-inset-bottom)) !important;
+                /* Bantalan diubah jadi 45px agar teks peringatan ikut naik */
+                padding-bottom: calc(45px + env(safe-area-inset-bottom)) !important;
                 position: relative !important;
-                z-index: 999 !important;
+                z-index: 99 !important; /* Turunkan dari 999 agar tidak menimpa sidebar */
             }
+
+            /* 3. Beri ruang ekstra untuk list chat di atas kotak input */
             .messages-container {
-                /* Pastikan chat terakhir juga bisa di-scroll sampai atas kotak input */
-                padding-bottom: calc(140px + env(safe-area-inset-bottom)) !important;
+                padding-bottom: calc(160px + env(safe-area-inset-bottom)) !important;
             }
         }
     </style>
@@ -2209,7 +2214,7 @@
         <div class="sidebar-brand">
             <div class="brand-logo-container">
                 <img src="https://i.ibb.co.com/jZZ0648R/Logo-SAHAJA-AI.png" alt="Logo"
-                    style="width: 24px; height: 24px; margin-right: 8px; border-radius: 4px;">
+                    style="width: 24px; height: 24px; margin-right:  ; border-radius: 4px;">
                 <span class="brand-text text-label">SAHAJA AI</span>
             </div>
             <button class="toggle-btn-sidebar" id="sidebarToggleBtn"><i class="fas fa-bars"></i></button>
