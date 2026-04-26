@@ -2083,6 +2083,25 @@
             animation: spin 1s linear infinite; /* Animasi putar */
             margin-right: 12px;
         }
+        /* ====================================================== */
+        /* FIX MUTLAK: KOTAK INPUT TERPENDAM DI LAYAR HP          */
+        /* ====================================================== */
+        @media (max-width: 768px) {
+            .input-container {
+                /* Atur ulang padding agar dipaksa naik */
+                padding-top: 8px !important;
+                padding-right: 12px !important;
+                padding-left: 12px !important;
+                /* Bantalan bawah 25px + Jarak aman dari HP Android/iPhone */
+                padding-bottom: calc(30px + env(safe-area-inset-bottom)) !important;
+                position: relative !important;
+                z-index: 999 !important;
+            }
+            .messages-container {
+                /* Pastikan chat terakhir juga bisa di-scroll sampai atas kotak input */
+                padding-bottom: calc(140px + env(safe-area-inset-bottom)) !important;
+            }
+        }
     </style>
     </style>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
