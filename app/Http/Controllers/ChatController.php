@@ -41,10 +41,11 @@ class ChatController extends Controller
             $userId = Auth::id();
             $maxTokensReq = (int) $request->input('max_tokens', 4096);
             $enableThinkingReq = filter_var($request->input('enable_thinking', false), FILTER_VALIDATE_BOOLEAN);
+            $enableWebSearchReq = filter_var($request->input('web_search', false), FILTER_VALIDATE_BOOLEAN);
 
             // 1. DETEKSI MODE & INPUT
             $isSimple = $this->isSimpleQuery($userMessage);
-            $hasImage = $request->has('image_data') && !empty($request->image_data);
+            $hasImage = $request->has('image_data_array') && !empty($request->image_data_array);
             $hasGithub = $request->has('github_repo') && !empty($request->github_repo);
             $manualMode = $request->input('manual_mode', 'auto');
 
@@ -109,6 +110,13 @@ class ChatController extends Controller
                     $systemPrompt = is_array($configSahaja) ? ($configSahaja['personality'] ?? "Kamu adalah SAHAJA AI.") : ($configSahaja ?? "Kamu adalah SAHAJA AI.");
                     $aturanKode = "\n\nATURAN KODE: Anda WAJIB membungkus kodingan menggunakan Markdown standar (3 backticks). DILARANG KERAS menambahkan simbol apapun sebelum tanda backticks.";
 
+                    if ($enableWebSearchReq && !$hasGithub && !$hasImage) {
+                        $webContext = $this->fetchTavilyContext($userMessage);
+                        if (!empty($webContext)) {
+                            $systemPrompt .= "\n\n[INFORMASI INTERNET TERBARU]\nKamu memiliki akses ke hasil pencarian web berikut untuk membantu menjawab:\n" . $webContext . "\n\nInstruksi: Gunakan informasi di atas jika relevan dengan pertanyaan user. Jawablah secara natural seperti asisten percakapan biasa (JANGAN membuat format laporan formal/riset).";
+                        }
+                    }
+
                     // SUNTIKAN JURUS THINKING MODE DENGAN CoT (Chain of Thought)
                     if ($enableThinkingReq) {
                         $aturanKode .= "\n\n[CRITICAL INSTRUCTION - CHAIN OF THOUGHT]: You MUST use the Chain of Thought (CoT) reasoning process. Sebelum memberikan jawaban akhir, kamu WAJIB memecah
@@ -140,14 +148,19 @@ class ChatController extends Controller
                     // JALUR KHUSUS VISION (Format NVIDIA / OpenAI)
                     if ($hasImage) {
                         $messages[] = ["role" => "system", "content" => $systemPrompt];
-                        $messages[] = [
-                            "role" => "user",
-                            "content" => [
-                                ["type" => "text", "text" => $userMessage ?: "Tolong jelaskan gambar ini secara detail."],
-                                ["type" => "image_url", "image_url" => ["url" => $request->image_data]]
-                            ]
+
+                        $contentArray = [
+                            ["type" => "text", "text" => $userMessage ?: "Tolong analisis gambar-gambar ini secara detail."]
                         ];
+
+                        // Looping menjejali AI dengan kelima gambar sekaligus!
+                        foreach ($request->image_data_array as $imgBase64) {
+                            $contentArray[] = ["type" => "image_url", "image_url" => ["url" => $imgBase64]];
+                        }
+
+                        $messages[] = ["role" => "user", "content" => $contentArray];
                     }
+
                     // JALUR GITHUB
                     elseif ($hasGithub) {
                         $messages[] = ["role" => "system", "content" => "Kamu adalah SAHAJA AI, Senior Software Engineer. Jawablah berdasarkan [DATA REPOSITORY] di bawah. Jika tertulis 'SISTEM ERROR', jelaskan error tersebut.\n" . $aturanKode];
@@ -194,7 +207,10 @@ class ChatController extends Controller
 
             // 5. SIMPAN CHAT
             $dbUserMessage = $userMessage;
-            if ($hasImage) $dbUserMessage = "🖼️ [Gambar Terlampir]\n" . $userMessage;
+            if ($hasImage) {
+                $imgCount = count($request->image_data_array);
+                $dbUserMessage = "🖼️ [{$imgCount} Gambar Terlampir]\n" . $userMessage;
+            }
             else if ($hasGithub) {
                 $repoName = str_replace(['https://github.com/', '.git'], '', rtrim($request->github_repo, '/'));
                 $dbUserMessage = "📦 [GitHub: {$repoName}]\n" . $userMessage;
@@ -229,7 +245,7 @@ class ChatController extends Controller
         return match ($mode) {
             'smart' => [
                 'provider' => 'nvidia',
-                'model'    => env('MODEL_SMART', 'mistralai/mistral-small-4-119b-2603'),
+                'model'    => env('MODEL_SMART', 'mistralai/mistral-medium-3.5-128b'),
                 'endpoint' => env('NVIDIA_ENDPOINT', 'https://integrate.api.nvidia.com/v1/chat/completions'),
                 'key'      => env('NVIDIA_API_KEY'),
                 'timeout'  => 300
@@ -243,7 +259,7 @@ class ChatController extends Controller
             ],
             'coding' => [
                 'provider' => 'nvidia',
-                'model'    => env('MODEL_CODING', 'qwen/qwen2.5-coder-32b-instruct'),
+                'model'    => env('MODEL_CODING', 'qwen/qwen3-coder-480b-a35b-instruct'),
                 'endpoint' => env('NVIDIA_ENDPOINT', 'https://integrate.api.nvidia.com/v1/chat/completions'),
                 'key'      => env('NVIDIA_API_KEY'),
                 'timeout'  => 300
@@ -403,12 +419,12 @@ class ChatController extends Controller
                 $extension = pathinfo($path, PATHINFO_EXTENSION);
                 if (\Illuminate\Support\Str::endsWith($path, '.blade.php')) $extension = 'blade.php';
 
-                // JURUS UPGRADE: Tambahkan ekstensi jsx, ts, tsx, css untuk ekosistem React/Node!
-                if (in_array(strtolower($extension), ['php', 'blade.php', 'js', 'jsx', 'ts', 'tsx', 'css', 'json', 'md'])) {
+
+                if (in_array(strtolower($extension), ['php', 'blade.php', 'js', 'jsx', 'ts', 'tsx', 'css', 'json', 'md', 'kt', 'java', 'xml', 'gradle', 'swift', 'dart', 'yaml'])) {
                     $pathLower = strtolower($path);
                     $treeMap .= "- {$path}\n";
-                    // Tambahkan package.json agar AI tau ini project React
-                    if (in_array($pathLower, ['readme.md', 'routes/web.php', 'composer.json', 'package.json'])) {
+
+                    if (in_array(basename($pathLower), ['readme.md', 'routes/web.php', 'composer.json', 'package.json', 'build.gradle', 'build.gradle.kts', 'androidmanifest.xml', 'pubspec.yaml'])) {
                         $coreFiles[] = $path;
                     }
 
@@ -421,13 +437,13 @@ class ChatController extends Controller
                 }
             }
 
-            if (strlen($treeMap) > 1500) {
-                $treeMap = substr($treeMap, 0, 1500) . "\n... [STRUKTUR LAINNYA DISINGKAT]";
+            if (strlen($treeMap) > 3000) {
+                $treeMap = substr($treeMap, 0, 3000) . "\n... [STRUKTUR LAINNYA DISINGKAT]";
             }
 
             $filesToFetch = array_merge($priorityFiles, $coreFiles);
             $filesToFetch = array_unique($filesToFetch);
-            $filesToFetch = array_slice($filesToFetch, 0, 15);
+            $filesToFetch = array_slice($filesToFetch, 0, 20);
 
             $megaContent = $treeMap . "\n\n📄 KODE DARI FILE YANG RELEVAN:\n\n";
             foreach ($filesToFetch as $filePath) {
@@ -436,8 +452,8 @@ class ChatController extends Controller
 
                 if ($fileContent->successful()) {
                     $content = $fileContent->body();
-                    if (strlen($content) > 15000) {
-                        $content = substr($content, 0, 15000) . "\n... [KODE DIPOTONG UNTUK MENGHEMAT MEMORI]";
+                    if (strlen($content) > 25000) {
+                        $content = substr($content, 0, 25000) . "\n... [KODE DIPOTONG UNTUK MENGHEMAT MEMORI]";
                     }
                     $megaContent .= "--- FILE: {$filePath} ---\n```\n{$content}\n```\n\n";
                 }
@@ -464,5 +480,35 @@ class ChatController extends Controller
             'success' => true,
             'message' => 'Umpan balik berhasil dikirim!'
         ]);
+    }
+    // ==========================================
+    // FUNGSI WEB SEARCH (TAVILY GROUNDING)
+    // ==========================================
+    private function fetchTavilyContext($query)
+    {
+        try {
+            $response = Http::withOptions(['verify' => false, 'timeout' => 10])->post('https://api.tavily.com/search', [
+                'api_key' => env('TAVILY_API_KEY'),
+                'query' => $query,
+                'search_depth' => 'basic',
+                'include_answer' => false,
+                'max_results' => 3, // Ambil 3 artikel teratas
+            ]);
+
+            if ($response->successful()) {
+                $results = $response->json()['results'] ?? [];
+                if (count($results) > 0) {
+                    $context = "REFERENSI WEB REAL-TIME:\n";
+                    foreach ($results as $res) {
+                        $context .= "- " . ($res['title'] ?? 'Artikel') . ": " . ($res['content'] ?? '') . "\n";
+                    }
+                    return $context;
+                }
+            }
+        } catch (\Exception $e) {
+            // Jika Tavily error/timeout, abaikan saja agar AI tetap bisa menjawab normal
+            return "";
+        }
+        return "";
     }
 }

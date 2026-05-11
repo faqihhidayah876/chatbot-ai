@@ -2107,6 +2107,27 @@
                 padding-bottom: calc(160px + env(safe-area-inset-bottom)) !important;
             }
         }
+        /* ===== MULTI-UPLOAD UI ===== */
+        .multi-file-container {
+            display: flex; gap: 10px; overflow-x: auto; padding: 5px 0; margin-bottom: 5px;
+            scrollbar-width: thin; scrollbar-color: var(--accent-color) transparent;
+        }
+        .multi-file-container::-webkit-scrollbar { height: 4px; }
+        .multi-file-container::-webkit-scrollbar-thumb { background: var(--accent-color); border-radius: 10px; }
+        .file-chip {
+            display: flex; align-items: center; gap: 8px; padding: 6px 12px;
+            background: var(--glass-highlight); border: 1px solid var(--glass-border);
+            border-radius: 20px; font-size: 0.8rem; white-space: nowrap; flex-shrink: 0;
+            position: relative; overflow: hidden;
+        }
+        .file-chip .remove-btn {
+            background: rgba(239, 68, 68, 0.2); color: #ef4444; border: none;
+            border-radius: 50%; width: 20px; height: 20px; display: flex;
+            align-items: center; justify-content: center; cursor: pointer;
+        }
+        .file-chip .remove-btn:hover { background: #ef4444; color: white; }
+        .file-chip.loading { opacity: 0.7; pointer-events: none; }
+
     </style>
     </style>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
@@ -2381,17 +2402,9 @@
                     <i class="fas fa-chevron-down"></i>
                 </button>
 
-                <div class="file-preview-container" id="filePreviewContainer">
-                    <i class="fas fa-file-alt" style="color: var(--accent-color);"></i>
-                    <span class="file-name-text" id="fileNameDisplay">document.pdf</span>
-                    <i class="fas fa-times" onclick="removeFile()" title="Hapus File"></i>
-                </div>
+                <div id="multiFileContainer" class="multi-file-container" style="display: none;"></div>
 
-                <input type="file" id="docInput"
-                    accept=".pdf, .docx, application/pdf, application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                    style="display: none;">
-                <input type="file" id="imageInput" accept="image/png, image/jpeg, image/jpg, image/webp"
-                    style="display: none;">
+                <input type="file" id="fileInput" accept=".pdf,image/png,image/jpeg,image/webp" multiple style="display: none;">
 
                 <textarea class="chat-input" id="chatInput" placeholder="Ketik pesan Anda di sini..." rows="1"></textarea>
 
@@ -2597,6 +2610,16 @@
                             <span class="toggle-slider"></span>
                         </label>
                     </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px;">
+                        <div>
+                            <strong style="display: block; font-size: 0.9rem;">Web Search</strong>
+                            <span style="font-size: 0.75rem; color: var(--text-secondary);">AI akan mencari info terbaru dari internet sebelum menjawab.</span>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="enableWebSearchInput">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
                 </div>
 
                 <div id="tab-tentang" class="tab-pane">
@@ -2698,7 +2721,7 @@
         let lastUserMessage = "";
         window.activeForceMode = null;
 
-        let extractedFileText = ""; let base64Image = null; let currentFileName = ""; let currentGithubRepo = "";
+        let attachedFiles = []; let fileIdCounter = 0; let currentGithubRepo = "";
         let pendingAvatarBase64 = null; let targetActionId = null; let targetActionType = '';
 
         const chatInput = document.getElementById('chatInput'); const voiceBtn = document.getElementById('voiceButton');
@@ -2825,8 +2848,16 @@
             } catch(e) { showToast("Gagal menyimpan profil", "error"); }
         }
 
-        document.getElementById('btnUploadDoc')?.addEventListener('click', () => { docInput.click(); attachMenu.classList.remove('show'); });
-        document.getElementById('btnUploadImage')?.addEventListener('click', () => { imageInput.click(); attachMenu.classList.remove('show'); });
+        // Mengarahkan kedua tombol menu ke satu Pintu Input Sakti (fileInput)
+        document.getElementById('btnUploadDoc')?.addEventListener('click', () => {
+            document.getElementById('fileInput').click();
+            document.getElementById('attachMenu').classList.remove('show');
+        });
+
+        document.getElementById('btnUploadImage')?.addEventListener('click', () => {
+            document.getElementById('fileInput').click();
+            document.getElementById('attachMenu').classList.remove('show');
+        });
 
         const githubModal = document.getElementById('githubModal');
         document.getElementById('btnUploadGithub')?.addEventListener('click', () => { attachMenu.classList.remove('show'); githubModal.classList.add('show'); document.getElementById('githubLinkInput').focus(); });
@@ -2845,37 +2876,111 @@
             } else alert('Link GitHub tidak valid!');
         });
 
-        imageInput?.addEventListener('change', (e) => {
-            const file = e.target.files[0]; if (!file) return; removeFile();
-            currentFileName = file.name; filePreviewContainer.style.display = 'flex'; filePreviewContainer.querySelector('i').className = 'fas fa-image'; filePreviewContainer.querySelector('i').style.color = '#4ade80';
-            fileNameDisplay.textContent = "Mengompresi..."; attachBtn.style.display = 'none';
-            const reader = new FileReader(); reader.readAsDataURL(file);
-            reader.onload = event => {
-                const img = new Image(); img.src = event.target.result;
-                img.onload = () => {
-                    const canvas = document.createElement('canvas'); const MAX = 1600; let w = img.width; let h = img.height;
-                    if (w > h && w > MAX) { h *= MAX / w; w = MAX; } else if (h > MAX) { w *= MAX / h; h = MAX; }
-                    canvas.width = w; canvas.height = h; canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-                    base64Image = canvas.toDataURL('image/jpeg', 0.9);
-                    fileNameDisplay.textContent = currentFileName + " (Siap)"; attachBtn.style.display = 'flex'; imageInput.value = '';
+        // ========================================================
+        // ENGINE MULTI-UPLOAD BARU (MAKS 5 FILE)
+        // ========================================================
+
+        // Fungsi helper kompresi gambar dari kodingan lamamu
+        function convertToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = event => {
+                    const img = new Image(); img.src = event.target.result;
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas'); const MAX = 1600; let w = img.width; let h = img.height;
+                        if (w > h && w > MAX) { h *= MAX / w; w = MAX; } else if (h > MAX) { w *= MAX / h; h = MAX; }
+                        canvas.width = w; canvas.height = h; canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                        resolve(canvas.toDataURL('image/jpeg', 0.9));
+                    }
+                    img.onerror = error => reject(error);
+                };
+                reader.onerror = error => reject(error);
+            });
+        }
+
+        document.getElementById('fileInput').addEventListener('change', async function(e) {
+            const files = Array.from(e.target.files);
+            e.target.value = ''; // Reset input agar bisa pilih file yang sama lagi
+
+            if (attachedFiles.length + files.length > 5) {
+                showToast("Batas wajar: Maksimal 5 file dapat diunggah sekaligus!", "error");
+                return;
+            }
+
+            const container = document.getElementById('multiFileContainer');
+            container.style.display = 'flex';
+
+            for (const file of files) {
+                fileIdCounter++;
+                const currentId = fileIdCounter;
+
+                // 1. Munculkan UI Loading Chip
+                const chipHtml = `
+                    <div class="file-chip loading" id="file-chip-${currentId}">
+                        <i class="fas fa-circle-notch fa-spin text-accent" style="color: #3b82f6;"></i>
+                        <span style="max-width: 100px; overflow: hidden; text-overflow: ellipsis;">Memproses...</span>
+                    </div>
+                `;
+                container.insertAdjacentHTML('beforeend', chipHtml);
+
+                // 2. Ekstrak Data File secara Pararel
+                try {
+                    let extractedText = "";
+                    if (file.type === "application/pdf" || file.name.toLowerCase().endsWith('.pdf')) {
+                        extractedText = await extractPdfText(file);
+                        if (extractedText.length > 25000) extractedText = extractedText.substring(0, 25000) + "\n\n[INFO: TEKS DIPOTONG]";
+                        attachedFiles.push({ id: currentId, type: 'pdf', name: file.name, data: extractedText });
+                        updateFileChipUI(currentId, file.name, 'fas fa-file-pdf', '#ef4444');
+                    } else if (file.name.toLowerCase().endsWith('.docx') || file.type.includes('wordprocessingml')) {
+                        extractedText = await extractDocxText(file);
+                        if (extractedText.length > 25000) extractedText = extractedText.substring(0, 25000) + "\n\n[INFO: TEKS DIPOTONG]";
+                        attachedFiles.push({ id: currentId, type: 'pdf', name: file.name, data: extractedText }); // DOCX disamakan tipe pdf (teks dokumen)
+                        updateFileChipUI(currentId, file.name, 'fas fa-file-word', '#3b82f6');
+                    } else if (file.type.startsWith("image/")) {
+                        const base64 = await convertToBase64(file);
+                        attachedFiles.push({ id: currentId, type: 'image', name: file.name, data: base64 });
+                        updateFileChipUI(currentId, file.name, 'fas fa-image', '#10b981');
+                    } else {
+                        throw new Error("Format tidak didukung");
+                    }
+                } catch (err) {
+                    document.getElementById(`file-chip-${currentId}`).remove();
+                    showToast("Gagal memproses " + file.name, "error");
                 }
-            };
+            }
+
+            if(attachedFiles.length === 0) container.style.display = 'none';
         });
 
-        docInput?.addEventListener('change', async (e) => {
-            const file = e.target.files[0]; if (!file) return; removeFile();
-            currentFileName = file.name; filePreviewContainer.style.display = 'flex'; filePreviewContainer.querySelector('i').className = 'fas fa-file-alt'; filePreviewContainer.querySelector('i').style.color = 'var(--accent-color)';
-            fileNameDisplay.textContent = "Mengekstrak..."; attachBtn.style.display = 'none';
-            try {
-                if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) extractedFileText = await extractPdfText(file);
-                else if (file.name.toLowerCase().endsWith('.docx') || file.type.includes('wordprocessingml')) extractedFileText = await extractDocxText(file);
-                else { alert("Format ditolak!"); removeFile(); return; }
-                if (extractedFileText.length > 25000) extractedFileText = extractedFileText.substring(0, 25000) + "\n\n[INFO: TEKS DIPOTONG]";
-                fileNameDisplay.textContent = currentFileName;
-            } catch (err) { alert("Gagal membaca dokumen."); removeFile(); } finally { attachBtn.style.display = 'flex'; docInput.value = ''; }
-        });
+        function updateFileChipUI(id, name, iconClass, color) {
+            const chip = document.getElementById(`file-chip-${id}`);
+            if(chip) {
+                chip.className = 'file-chip';
+                chip.innerHTML = `
+                    <i class="${iconClass}" style="color: ${color};"></i>
+                    <span style="max-width: 100px; overflow: hidden; text-overflow: ellipsis;" title="${name}">${name}</span>
+                    <button class="remove-btn" onclick="removeSpecificFile(${id})"><i class="fas fa-times"></i></button>
+                `;
+            }
+        }
 
-        function removeFile() { extractedFileText = ""; base64Image = null; currentFileName = ""; currentGithubRepo = ""; filePreviewContainer.style.display = 'none'; docInput.value = ''; imageInput.value = ''; }
+        function removeSpecificFile(id) {
+            attachedFiles = attachedFiles.filter(f => f.id !== id);
+            const chip = document.getElementById(`file-chip-${id}`);
+            if (chip) chip.remove();
+            if (attachedFiles.length === 0) document.getElementById('multiFileContainer').style.display = 'none';
+        }
+
+        function removeFile() { // Timpa fungsi removeFile bawaan lama
+            attachedFiles = [];
+            currentGithubRepo = "";
+            const container = document.getElementById('multiFileContainer');
+            if(container) {
+                container.innerHTML = '';
+                container.style.display = 'none';
+            }
+        }
 
         async function extractPdfText(file) {
             const arrayBuffer = await file.arrayBuffer(); const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
@@ -2918,41 +3023,55 @@
             if (typeof isRecording !== 'undefined' && isRecording && recognition) { recognition.stop(); forceStopRecordingUI(); }
             const messageInput = chatInput.value.trim();
 
-            // 1. CEGAH PENGIRIMAN JIKA KOSONG
-            if (!messageInput && !extractedFileText && !base64Image && !currentGithubRepo) return;
+            // 1. KUMPULKAN DATA MULTI-FILE DARI ARRAY
+            let combinedPdfText = "";
+            let base64ImagesArray = [];
+            let pdfCount = 0; let imgCount = 0;
 
-            // ========================================================
-            // 2. JURUS BYPASS MODE ALPHA (DEEP RESEARCH)
-            // ========================================================
+            attachedFiles.forEach(file => {
+                if (file.type === 'pdf') {
+                    combinedPdfText += `[Dokumen ${pdfCount + 1}: ${file.name}]\n"""\n${file.data}\n"""\n\n`;
+                    pdfCount++;
+                } else if (file.type === 'image') {
+                    base64ImagesArray.push(file.data);
+                    imgCount++;
+                }
+            });
+
+            // 2. CEGAH PENGIRIMAN JIKA KOSONG
+            if (!messageInput && attachedFiles.length === 0 && !currentGithubRepo) return;
+
+            // 3. JURUS BYPASS MODE ALPHA (DEEP RESEARCH)
             if (userSelectedMode === 'alpha' && window.activeForceMode === null) {
                 startDeepResearch(messageInput);
                 chatInput.disabled = false;
                 chatInput.style.height = 'auto';
                 chatInput.value = '';
                 chatInput.focus();
-                return; // STOP! Biarkan Sang Mandor yang bekerja!
+                return;
             }
-            // ========================================================
 
-            let finalMessageToSend;
+            // 4. SUSUN PESAN USER BERSERTA LAMPIRANNYA
+            let finalMessageToSend = messageInput;
             let displayMessage = messageInput;
 
             if (window.activeForceMode !== null) {
                 if (!lastUserMessage) return; finalMessageToSend = lastUserMessage;
             } else {
-                if (extractedFileText) {
-                    finalMessageToSend = `[Lampiran Dokumen: ${currentFileName}]\n"""\n${extractedFileText}\n"""\n\nInstruksi User: ${messageInput || "Tolong analisis"}`;
-                    displayMessage = `📎 [${currentFileName}]\n${messageInput}`;
-                } else if (base64Image) {
-                    finalMessageToSend = messageInput || "Jelaskan gambar ini.";
-                    displayMessage = `🖼️ [${currentFileName}]\n${messageInput}`;
-                } else if (currentGithubRepo) {
+                if (combinedPdfText !== "") {
+                    finalMessageToSend = combinedPdfText + `Instruksi User: ${messageInput || "Tolong analisis dokumen di atas."}`;
+                    displayMessage = `📎 [${pdfCount} Dokumen Terlampir]\n${messageInput}`;
+                }
+                if (base64ImagesArray.length > 0) {
+                    if (finalMessageToSend === messageInput) finalMessageToSend = messageInput || "Jelaskan gambar-gambar ini.";
+                    displayMessage = `🖼️ [${imgCount} Gambar Terlampir]\n` + displayMessage;
+                }
+                if (currentGithubRepo) {
                     finalMessageToSend = messageInput || "Analisis kode ini.";
-                    displayMessage = `📦 [GitHub: ${currentFileName}]\n${messageInput}`;
-                } else {
-                    finalMessageToSend = messageInput;
+                    displayMessage = `📦 [GitHub: ${currentFileName || 'Repo'}]\n${messageInput}`;
                 }
                 lastUserMessage = finalMessageToSend;
+
                 if (window.activeForceMode === null) {
                     const welcome = document.getElementById('welcomeScreen'); if (welcome) welcome.style.display = 'none';
                     const msgContainer = document.getElementById('messagesContainer'); if (msgContainer) msgContainer.style.display = 'flex';
@@ -2961,23 +3080,30 @@
                 }
             }
 
+            // 5. SIAPKAN PAYLOAD UNTUK LARAVEL
             const payload = {
-                message: finalMessageToSend, session_id: currentSessionId, manual_mode: userSelectedMode,
-                max_tokens: document.getElementById('maxTokensInput').value, enable_thinking: document.getElementById('enableThinkingInput').checked
+                message: finalMessageToSend,
+                session_id: currentSessionId,
+                manual_mode: userSelectedMode,
+                max_tokens: document.getElementById('maxTokensInput').value,
+                enable_thinking: document.getElementById('enableThinkingInput').checked,
+                web_search: document.getElementById('enableWebSearchInput') ? document.getElementById('enableWebSearchInput').checked : false
             };
 
-            if (base64Image) payload.image_data = base64Image; if (currentGithubRepo) payload.github_repo = currentGithubRepo; if (window.activeForceMode !== null) payload.force_mode = window.activeForceMode;
+            if (base64ImagesArray.length > 0) payload.image_data_array = base64ImagesArray;
+            if (currentGithubRepo) payload.github_repo = currentGithubRepo;
+            if (window.activeForceMode !== null) payload.force_mode = window.activeForceMode;
 
+            // 6. DETEKSI MODE AI OTOMATIS (Cerdas / Cepat / Vision)
             let mode = 'fast';
             if (window.activeForceMode !== null) mode = window.activeForceMode;
             else if (userSelectedMode !== 'auto') mode = userSelectedMode;
             else {
                 let isComplex = detectComplexity(finalMessageToSend);
-                if (extractedFileText) isComplex = true;
+                if (combinedPdfText !== "") isComplex = true;
                 mode = isComplex ? 'smart' : 'fast';
 
-                // JIKA ADA GAMBAR: Cek apakah prompt-nya rumit. Kalau rumit, tembak ke Mode Cerdas!
-                if (base64Image) {
+                if (base64ImagesArray.length > 0) {
                     mode = isComplex ? 'smart' : 'vision';
                 }
                 if (currentGithubRepo) mode = 'github';
@@ -2987,14 +3113,13 @@
             if (window.activeForceMode === null) removeFile();
             if (currentController) currentController.abort(); currentController = new AbortController();
 
-            // JURUS AMAN: Kunci kotak input dan pudarkan tombol kirim saat AI sedang berpikir
             chatInput.disabled = true;
             const sendBtn = document.getElementById('sendButton');
             sendBtn.style.opacity = '0.5';
             sendBtn.style.pointerEvents = 'none';
 
+            // 7. TEMBAK API KE BACKEND LARAVEL
             try {
-                // KEMBALI MENGGUNAKAN ROUTE LAMA YANG STABIL (TANPA STREAMING)
                 const response = await fetch("{{ route('chat.send') }}", { method: "POST", headers: { "Content-Type": "application/json", "X-CSRF-TOKEN": csrfToken, "Accept": "application/json" }, body: JSON.stringify(payload), signal: currentController.signal });
                 if (!response.ok) throw new Error(`Server Error: ${response.status}`);
                 const data = await response.json(); if (data.error) throw new Error(data.message);
@@ -3010,11 +3135,9 @@
                     aiMessageDiv.innerHTML = `<div class="message-avatar ai-avatar-msg" style="background: transparent; padding: 0;"><img src="https://i.ibb.co.com/jZZ0648R/Logo-SAHAJA-AI.png" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;"></div><div class="message-content"><div class="mode-badge ${finalBadgeClass}" style="${extraStyle}">${finalModelLabel}</div><div class="message-bubble markdown-body"></div><div class="ai-actions" style="position: relative; display: flex; gap: 5px; align-items: center;"><button class="action-btn" onclick="copyText(this)"><i class="far fa-copy"></i> Salin</button><div class="export-dropdown-container"><button class="action-btn" onclick="toggleExportMenu(this)"><i class="fas fa-ellipsis-v"></i></button><div class="export-menu" style="display: none; position: absolute; bottom: 100%; left: 0; background: var(--sidebar-bg); border: 1px solid var(--glass-border); border-radius: 8px; padding: 5px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); z-index: 50; width: 140px; margin-bottom: 5px;"><div class="option-item" style="font-size: 0.8rem; padding: 6px 10px;" onclick="exportToDoc(this)"><i class="fas fa-file-word" style="color: #3b82f6;"></i> Unduh DOCS</div></div></div></div></div>`;
                     loadingBubble.parentNode.replaceChild(aiMessageDiv, loadingBubble);
 
-                    // RENDER & ANIMASI TEKS DENGAN SEMPURNA
                     const bubble = aiMessageDiv.querySelector('.message-bubble'); if (bubble) animateGeminiStyle(bubble, data.ai_response); scrollToBottom();
                 }
 
-                // MENGGUNAKAN PUSHSTATE LAMA TANPA REFRESH HALAMAN
                 if (!currentSessionId && data.session_id) { window.history.pushState({}, '', `/chat/${data.session_id}`); currentSessionId = data.session_id; }
                 window.activeForceMode = null;
             } catch (error) {
@@ -3023,7 +3146,6 @@
                 if (error.name !== 'AbortError') showToast("Gagal: " + error.message, "error");
                 window.activeForceMode = null;
             } finally {
-                // Buka kembali kunci kotak input setelah AI selesai menjawab
                 chatInput.disabled = false;
                 sendBtn.style.opacity = '1';
                 sendBtn.style.pointerEvents = 'auto';

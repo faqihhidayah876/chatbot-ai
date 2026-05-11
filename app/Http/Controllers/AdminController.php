@@ -6,7 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\Session;
 use App\Models\Chat;
-use App\Models\Feedback; // 🌟 Panggil model Feedback baru kita
+use App\Models\Feedback;
 use Illuminate\Support\Facades\DB;
 
 class AdminController extends Controller
