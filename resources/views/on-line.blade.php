@@ -794,6 +794,9 @@
                 <i class="fas fa-globe" style="color: var(--accent-color);"></i> <span
                     class="btn-text text-label">SAHAJA Connect</span>
             </a>
+            <a href="{{ route('sahaja-llm.index') }}" class="new-chat-btn" style="background: transparent; border: 1px solid #10b981; color: var(--text-primary); text-decoration: none; justify-content: center; margin-top: 10px;">
+                <i class="fas fa-book-reader" style="color: #10b981;"></i> <span class="btn-text text-label">SAHAJA LLM</span>
+            </a>
         </div>
         <div class="history-container">
             <div class="history-label text-label">Riwayat</div>

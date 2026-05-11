@@ -7,6 +7,7 @@ use App\Http\Controllers\ChatController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\Fase2Controller;
 use App\Http\Controllers\DeepResearchController;
+use App\Http\Controllers\SahajaLlmController;
 
 // 1. Halaman Depan (Welcome)
 Route::get('/', function () {
@@ -38,6 +39,8 @@ Route::middleware('auth')->group(function () {
     Route::delete('/session/{id}/delete', [ChatController::class, 'deleteSession'])->name('session.delete');
     Route::post('/deep-research/init', [DeepResearchController::class, 'initResearch'])->name('deep-research.init');
     Route::post('/deep-research/step', [DeepResearchController::class, 'processStep'])->name('deep-research.step');
+    Route::get('/sahaja-llm', [SahajaLlmController::class, 'index'])->name('sahaja-llm.index');
+    Route::post('/sahaja-llm/upload', [SahajaLlmController::class, 'uploadDocument'])->name('sahaja-llm.upload');
 });
 
 // 5. Khusus Admin
