@@ -65,9 +65,9 @@ class ChatController extends Controller
                 else $activeMode = 'fast';
             }
 
-            if ($activeMode !== 'smart') {
-                $maxTokensReq = 2048; // Hemat token untuk Groq/Vision
-                $enableThinkingReq = false; // Matikan Thinking paksa
+            if ($activeMode === 'vision') {
+                $maxTokensReq = 2048;
+                $enableThinkingReq = false;
             }
 
             $aiConfig = $this->getAiConfiguration($activeMode);
@@ -247,32 +247,32 @@ class ChatController extends Controller
     {
         return match ($mode) {
             'smart' => [
-                'provider' => env('PROVIDER_SMART', 'nvidia'),
+                'provider' => env('PROVIDER_SMART'),
                 'model'    => env('MODEL_SMART'),
                 'endpoint' => env('NVIDIA_ENDPOINT'),
                 'key'      => env('NVIDIA_API_KEY'),
                 'timeout'  => 300
             ],
             'vision' => [
-                'provider' => env('PROVIDER_VISION', 'nvidia'),
+                'provider' => env('PROVIDER_VISION'),
                 'model'    => env('MODEL_VISION'),
                 'endpoint' => env('NVIDIA_ENDPOINT'),
                 'key'      => env('NVIDIA_API_KEY'),
-                'timeout'  => 180
+                'timeout'  => 300
             ],
             'coding' => [
-                'provider' => env('PROVIDER_CODING', 'nvidia'),
+                'provider' => env('PROVIDER_CODING'),
                 'model'    => env('MODEL_CODING'),
                 'endpoint' => env('NVIDIA_ENDPOINT'),
                 'key'      => env('NVIDIA_API_KEY'),
                 'timeout'  => 300
             ],
             default => [
-                'provider' => env('PROVIDER_FAST', 'groq'),
+                'provider' => env('PROVIDER_FAST'),
                 'model'    => env('MODEL_FAST'),
-                'endpoint' => env('GROQ_ENDPOINT'),
-                'key'      => env('GROQ_API_KEY'),
-                'timeout'  => 60
+                'endpoint' => env('NVIDIA_ENDPOINT'),
+                'key'      => env('NVIDIA_API_KEY'),
+                'timeout'  => 300
             ],
         };
     }
