@@ -2868,16 +2868,43 @@
         document.getElementById('submitGithubBtn')?.addEventListener('click', () => {
             const link = document.getElementById('githubLinkInput').value.trim();
             if (link.includes('github.com')) {
-                removeFile();
+                removeFile(); // Bersihkan memori file lain agar fokus ke GitHub
                 const urlParts = link.split('github.com/');
                 if (urlParts.length > 1) {
                     let repoName = urlParts[1].replace('.git', '').split('/').slice(0, 2).join('/');
-                    currentGithubRepo = link; currentFileName = repoName;
-                    filePreviewContainer.style.display = 'flex'; filePreviewContainer.querySelector('i').className = 'fab fa-github'; filePreviewContainer.querySelector('i').style.color = '#a855f7';
-                    fileNameDisplay.textContent = "Repo: " + repoName; githubModal.classList.remove('show');
+                    currentGithubRepo = link;
+                    currentFileName = repoName;
+
+                    // JURUS BARU: Gunakan Container Multi-File yang baru!
+                    const container = document.getElementById('multiFileContainer');
+                    container.style.display = 'flex';
+                    container.innerHTML = `
+                        <div class="file-chip" id="github-chip">
+                            <i class="fab fa-github" style="color: #a855f7;"></i>
+                            <span style="max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${repoName}">Repo: ${repoName}</span>
+                            <button class="remove-btn" onclick="removeGithubRepo()"><i class="fas fa-times"></i></button>
+                        </div>
+                    `;
+
+                    githubModal.classList.remove('show');
+                    document.getElementById('githubLinkInput').value = ''; // Kosongkan input
+                    showToast("Repository berhasil dimuat!", "success");
                 }
-            } else alert('Link GitHub tidak valid!');
+            } else {
+                showToast('Link GitHub tidak valid!', 'error');
+            }
         });
+
+        // FUNGSI BARU: Untuk menghapus tombol silang di chip GitHub
+        window.removeGithubRepo = function() {
+            currentGithubRepo = "";
+            currentFileName = "";
+            const chip = document.getElementById('github-chip');
+            if (chip) chip.remove();
+            if (attachedFiles.length === 0) {
+                document.getElementById('multiFileContainer').style.display = 'none';
+            }
+        };
 
         // ========================================================
         // ENGINE MULTI-UPLOAD BARU (MAKS 5 FILE)
@@ -3143,6 +3170,11 @@
 
                 if (!currentSessionId && data.session_id) { window.history.pushState({}, '', `/chat/${data.session_id}`); currentSessionId = data.session_id; }
                 window.activeForceMode = null;
+
+                // TAMBAHAN WAJIB: RESET GITHUB SETELAH SUKSES TERKIRIM
+                currentGithubRepo = "";
+                currentFileName = "";
+
             } catch (error) {
                 const lBubble = document.getElementById(loadingId);
                 if (lBubble) lBubble.remove();
