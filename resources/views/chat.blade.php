@@ -3198,22 +3198,20 @@
         function renderAIContent(text, containerElement) {
             let rawText = text.replace(/\\\[/g, '$$$$').replace(/\\\]/g, '$$$$').replace(/\\\(/g, '$$').replace(/\\\)/g, '$$');
 
-            // 1. JURUS RAHASIA: TANGKAP TAG <thinking> ATAU <think> DULUAN
+            // 1. TANGKAP TAG THINKING
             const thinkingBlocks = {};
             let thinkingIndex = 0;
-
-            // RegEx ini sudah di-upgrade agar bisa menangkap <think> dan <thinking> sekaligus
             rawText = rawText.replace(/<(?:thinking|think)>([\s\S]*?)<\/(?:thinking|think)>/gi, function(match, innerThinking) {
                 const placeholder = `@@THINKING_BLOCK_${thinkingIndex}@@`;
                 const cleanThinking = innerThinking.trim().replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
                 thinkingBlocks[placeholder] = `
-                <div class="thinking-container" style="margin-bottom: 15px;">
-                    <div class="thinking-header" onclick="this.nextElementSibling.classList.toggle('show'); const icon = this.querySelector('.fa-chevron-right'); if(icon.style.transform === 'rotate(90deg)') { icon.style.transform = 'none'; } else { icon.style.transform = 'rotate(90deg)'; }">
-                        <i class="fas fa-brain"></i> <span style="font-weight: 500;">Alur Berpikir AI</span>
+                <div class="thinking-container" style="margin: 10px 0 20px 0; border: 1px solid var(--glass-border); border-radius: 12px; overflow: hidden; background: rgba(0, 0, 0, 0.2);">
+                    <div class="thinking-header" style="padding: 10px 15px; cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 0.85rem; color: var(--text-secondary); background: rgba(255, 255, 255, 0.05);" onclick="toggleThinking(this)">
+                        <i class="fas fa-brain"></i> <span style="font-weight: 500;">Alur Berpikir SAHAJA AI</span>
                         <i class="fas fa-chevron-right" style="margin-left: auto; transition: 0.2s;"></i>
                     </div>
-                    <div class="thinking-content">${cleanThinking}</div>
+                    <div class="thinking-content" style="display: none; padding: 15px; font-size: 0.85rem; color: var(--text-secondary); border-top: 1px solid var(--glass-border); white-space: pre-wrap; font-style: italic; line-height: 1.6;">${cleanThinking}</div>
                 </div>`;
                 thinkingIndex++;
                 return placeholder;
@@ -3225,18 +3223,39 @@
             rawText = rawText.replace(/\$\$([\s\S]*?)\$\$/g, function(match) { const placeholder = `@@MATH_BLOCK_${mathIndex}@@`; mathBlocks[placeholder] = match; mathIndex++; return placeholder; });
             rawText = rawText.replace(/\$([^$\n]*?)\$/g, function(match) { const placeholder = `@@MATH_INLINE_${mathIndex}@@`; mathBlocks[placeholder] = match; mathIndex++; return placeholder; });
 
-            // 3. UBAH TEKS JADI MARKDOWN (Tabel, Kodingan, dll)
+            // 3. UBAH TEKS JADI MARKDOWN
             let htmlContent = marked.parse(rawText);
 
-            // 4. KEMBALIKAN RUMUS & KOTAK THINKING KE TEMPAT ASALNYA
-            for (const [placeholder, mathText] of Object.entries(mathBlocks)) htmlContent = htmlContent.split(placeholder).join(mathText);
-            for (const [placeholder, thinkText] of Object.entries(thinkingBlocks)) htmlContent = htmlContent.split(placeholder).join(thinkText);
+            // 4. KEMBALIKAN RUMUS MATEMATIKA
+            for (const [placeholder, mathText] of Object.entries(mathBlocks)) {
+                htmlContent = htmlContent.split(placeholder).join(mathText);
+            }
+
+            // 5. KEMBALIKAN KOTAK THINKING (JURUS ANTI-BUG PARAGRAF)
+            for (const [placeholder, thinkText] of Object.entries(thinkingBlocks)) {
+                // Hancurkan tag <p> yang membungkusnya!
+                const pRegex = new RegExp(`<p>\\s*${placeholder}\\s*</p>`, 'g');
+                if (pRegex.test(htmlContent)) {
+                    htmlContent = htmlContent.replace(pRegex, thinkText);
+                } else {
+                    htmlContent = htmlContent.split(placeholder).join(thinkText);
+                }
+            }
 
             containerElement.innerHTML = htmlContent;
 
-            // 5. EKSEKUSI RENDER HIGHLIGHT KODE
+            // 6. EKSEKUSI RENDER HIGHLIGHT KODE & MATEMATIKA
             if (window.renderMathInElement) window.renderMathInElement(containerElement, { delimiters: [{ left: '$$', right: '$$', display: true }, { left: '$', right: '$', display: false }], throwOnError: false });
             containerElement.querySelectorAll('pre code').forEach((block) => { if (window.hljs) hljs.highlightElement(block); });
+        }
+
+        // Fungsi Helper untuk klik buka/tutup (letakkan di luar renderAIContent)
+        function toggleThinking(header) {
+            const content = header.nextElementSibling;
+            const icon = header.querySelector('.fa-chevron-right');
+            const isVisible = content.style.display === 'block';
+            content.style.display = isVisible ? 'none' : 'block';
+            icon.style.transform = isVisible ? 'none' : 'rotate(90deg)';
         }
         function scrollToBottom() { const c = document.getElementById('messagesContainer'); if(c) c.scrollTop = c.scrollHeight; }
         function scrollToBottomSmooth() { const c = document.getElementById('messagesContainer'); if(c) c.scrollTo({ top: c.scrollHeight, behavior: 'smooth' }); }
