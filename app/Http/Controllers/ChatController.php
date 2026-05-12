@@ -240,34 +240,37 @@ class ChatController extends Controller
     // ==========================================
     // FUNGSI ROUTER & API MULTI-ENGINE
     // ==========================================
+    // ==========================================
+    // FUNGSI ROUTER & API MULTI-ENGINE (SECURE)
+    // ==========================================
     private function getAiConfiguration($mode)
     {
         return match ($mode) {
             'smart' => [
-                'provider' => 'nvidia',
-                'model'    => env('MODEL_SMART', 'mistralai/mistral-medium-3.5-128b'),
-                'endpoint' => env('NVIDIA_ENDPOINT', 'https://integrate.api.nvidia.com/v1/chat/completions'),
+                'provider' => env('PROVIDER_SMART', 'nvidia'),
+                'model'    => env('MODEL_SMART'),
+                'endpoint' => env('NVIDIA_ENDPOINT'),
                 'key'      => env('NVIDIA_API_KEY'),
                 'timeout'  => 300
             ],
             'vision' => [
-                'provider' => 'nvidia',
-                'model'    => env('MODEL_VISION', 'google/gemma-4-vision-it'),
-                'endpoint' => env('NVIDIA_ENDPOINT', 'https://integrate.api.nvidia.com/v1/chat/completions'),
+                'provider' => env('PROVIDER_VISION', 'nvidia'),
+                'model'    => env('MODEL_VISION'),
+                'endpoint' => env('NVIDIA_ENDPOINT'),
                 'key'      => env('NVIDIA_API_KEY'),
                 'timeout'  => 180
             ],
             'coding' => [
-                'provider' => 'nvidia',
-                'model'    => env('MODEL_CODING', 'qwen/qwen3-coder-480b-a35b-instruct'),
-                'endpoint' => env('NVIDIA_ENDPOINT', 'https://integrate.api.nvidia.com/v1/chat/completions'),
+                'provider' => env('PROVIDER_CODING', 'nvidia'),
+                'model'    => env('MODEL_CODING'),
+                'endpoint' => env('NVIDIA_ENDPOINT'),
                 'key'      => env('NVIDIA_API_KEY'),
                 'timeout'  => 300
             ],
             default => [
-                'provider' => 'groq',
-                'model'    => env('MODEL_FAST', 'groq/compound'),
-                'endpoint' => env('GROQ_ENDPOINT', 'https://api.groq.com/openai/v1/chat/completions'),
+                'provider' => env('PROVIDER_FAST', 'groq'),
+                'model'    => env('MODEL_FAST'),
+                'endpoint' => env('GROQ_ENDPOINT'),
                 'key'      => env('GROQ_API_KEY'),
                 'timeout'  => 60
             ],

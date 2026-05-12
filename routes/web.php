@@ -41,6 +41,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/deep-research/step', [DeepResearchController::class, 'processStep'])->name('deep-research.step');
     Route::get('/sahaja-llm', [SahajaLlmController::class, 'index'])->name('sahaja-llm.index');
     Route::post('/sahaja-llm/upload', [SahajaLlmController::class, 'uploadDocument'])->name('sahaja-llm.upload');
+    Route::delete('/sahaja-llm/document/{id}', [SahajaLlmController::class, 'deleteDocument'])->name('sahaja-llm.delete');
 });
 
 // 5. Khusus Admin

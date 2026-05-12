@@ -45,4 +45,20 @@ class SahajaLlmController extends Controller
             return response()->json(['success' => false, 'message' => $e->getMessage()]);
         }
     }
+    public function deleteDocument($id)
+    {
+        try {
+            $doc = LlmDocument::findOrFail($id);
+            // Pastikan dokumen ini milik user yang sedang login
+            $workspace = Workspace::where('id', $doc->workspace_id)->where('user_id', Auth::id())->first();
+
+            if ($workspace) {
+                $doc->delete();
+                return response()->json(['success' => true]);
+            }
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()]);
+        }
+    }
 }

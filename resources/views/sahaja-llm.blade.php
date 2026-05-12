@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,25 +8,32 @@
 
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-    <script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    </script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
-    <link rel="icon" <link rel="icon" type="image/png" href="https://i.ibb.co.com/jZZ0648R/Logo-SAHAJA-AI.png">
+    <link rel="icon" type="image/png" href="https://i.ibb.co.com/jZZ0648R/Logo-SAHAJA-AI.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --main-bg: #0a0e17; /* Latar belakang paling gelap */
-            --panel-bg: #151b23; /* Warna panel ala NotebookLM/GitHub Dark */
+            --main-bg: #0a0e17;
+            --panel-bg: #151b23;
             --glass-border: rgba(255, 255, 255, 0.1);
             --glass-hover: rgba(255, 255, 255, 0.05);
             --text-primary: #f1f5f9;
             --text-secondary: #94a3b8;
-            --accent-color: #2563eb; /* Biru SAHAJA */
-            --llm-accent: #10b981; /* Hijau zamrud untuk LLM */
+            --accent-color: #2563eb;
+            --llm-accent: #10b981;
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
 
         body {
             background-color: var(--main-bg);
@@ -46,33 +54,49 @@
             border-bottom: 1px solid var(--glass-border);
             background: var(--main-bg);
             flex-shrink: 0;
+            z-index: 100;
         }
 
-        .header-left, .header-right { display: flex; align-items: center; gap: 15px; }
+        .header-left,
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
 
         .btn-header {
-            background: transparent; color: var(--text-primary); border: 1px solid var(--glass-border);
-            padding: 6px 14px; border-radius: 20px; text-decoration: none; font-size: 0.85rem;
-            display: flex; align-items: center; gap: 8px; cursor: pointer; transition: 0.2s;
+            background: transparent;
+            color: var(--text-primary);
+            border: 1px solid var(--glass-border);
+            padding: 6px 14px;
+            border-radius: 20px;
+            text-decoration: none;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: 0.2s;
         }
-        .btn-header:hover { background: var(--glass-hover); }
-        .btn-header.primary { border-color: var(--text-secondary); }
+
+        .btn-header:hover {
+            background: var(--glass-hover);
+        }
 
         /* ===== GRID LAYOUT (3 PANEL) ===== */
         .llm-workspace {
             display: grid;
-            grid-template-columns: 300px 1fr 300px; /* Panel Kiri, Tengah (Flex), Kanan */
+            grid-template-columns: 300px 1fr 300px;
             gap: 15px;
             padding: 15px;
             height: calc(100vh - 60px);
             overflow: hidden;
         }
 
-        /* Desain Umum Panel */
         .panel {
             background: var(--panel-bg);
             border: 1px solid var(--glass-border);
-            border-radius: 16px; /* Sudut membulat ala NotebookLM */
+            border-radius: 16px;
             display: flex;
             flex-direction: column;
             overflow: hidden;
@@ -86,121 +110,401 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 1px solid transparent;
+            border-bottom: 1px solid var(--glass-border);
         }
 
         /* ===== PANEL KIRI (SUMBER) ===== */
-        .source-content { padding: 0 15px 15px 15px; overflow-y: auto; flex: 1; }
+        .source-content {
+            padding: 15px;
+            overflow-y: auto;
+            flex: 1;
+        }
 
         .btn-add-source {
-            width: 100%; background: transparent; border: 1px solid var(--glass-border);
-            color: var(--text-primary); padding: 12px; border-radius: 12px;
-            font-size: 0.85rem; display: flex; align-items: center; justify-content: center;
-            gap: 8px; cursor: pointer; transition: 0.2s; margin-bottom: 15px;
+            width: 100%;
+            background: transparent;
+            border: 1px dashed var(--llm-accent);
+            color: var(--llm-accent);
+            padding: 12px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: 0.2s;
+            margin-bottom: 20px;
+            font-weight: 600;
         }
-        .btn-add-source:hover { background: var(--glass-hover); }
 
-        .search-source {
-            display: flex; align-items: center; background: rgba(0,0,0,0.3);
-            border: 1px solid var(--glass-border); border-radius: 12px; padding: 10px 15px;
-            gap: 10px; margin-bottom: 30px;
+        .btn-add-source:hover {
+            background: rgba(16, 185, 129, 0.1);
         }
-        .search-source input { background: transparent; border: none; color: white; flex: 1; outline: none; font-size: 0.85rem; }
 
-        .empty-state { text-align: center; color: var(--text-secondary); margin-top: 50px; padding: 0 10px; }
-        .empty-state i { font-size: 2.5rem; margin-bottom: 15px; opacity: 0.5; }
-        .empty-state p { font-size: 0.8rem; line-height: 1.6; }
+        .doc-item {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--glass-border);
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: 0.2s;
+        }
+
+        .doc-item:hover {
+            background: var(--glass-hover);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .empty-state {
+            text-align: center;
+            color: var(--text-secondary);
+            margin-top: 30px;
+            padding: 0 10px;
+        }
+
+        .empty-state i {
+            font-size: 2rem;
+            margin-bottom: 15px;
+            opacity: 0.3;
+        }
+
+        .empty-state p {
+            font-size: 0.8rem;
+            line-height: 1.6;
+        }
 
         /* ===== PANEL TENGAH (CHAT / MAIN) ===== */
-        .chat-content { flex: 1; overflow-y: auto; padding: 40px; display: flex; flex-direction: column; justify-content: center; }
-
-        .greeting-area { text-align: left; max-width: 650px; margin: 0 auto; width: 100%; }
-        .greeting-area h1 { font-size: 2.2rem; margin-bottom: 15px; font-weight: 600; }
-        .greeting-area p { color: var(--text-secondary); font-size: 0.95rem; line-height: 1.6; margin-bottom: 30px; }
-
-        .suggestion-chips { display: flex; flex-direction: column; gap: 10px; }
-        .chip {
-            background: transparent; border: 1px solid var(--glass-border); color: var(--text-primary);
-            padding: 10px 20px; border-radius: 20px; font-size: 0.85rem; cursor: pointer;
-            transition: 0.2s; text-align: left; width: fit-content;
+        /* PERBAIKAN BUG TERPOTONG: Hilangkan justify-content: center di sini! */
+        .chat-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px 40px;
+            display: flex;
+            flex-direction: column;
+            scroll-behavior: smooth;
         }
-        .chip:hover { background: var(--glass-hover); }
 
-        /* Input Area (Tengah Bawah) */
-        .chat-input-wrapper { padding: 20px; background: var(--panel-bg); }
+        .greeting-wrapper {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        .greeting-wrapper h1 {
+            font-size: 1.8rem;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .greeting-wrapper p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            line-height: 1.6;
+            max-width: 500px;
+        }
+
+        /* Area Chat History */
+        #llmChatHistory {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .chat-msg {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            max-width: 90%;
+        }
+
+        .chat-msg.user {
+            align-self: flex-end;
+        }
+
+        .chat-msg.ai {
+            align-self: flex-start;
+        }
+
+        .bubble {
+            padding: 15px 20px;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            border-radius: 16px;
+            word-wrap: break-word;
+        }
+
+        .chat-msg.user .bubble {
+            background: var(--accent-color);
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .chat-msg.ai .bubble {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
+            border-bottom-left-radius: 4px;
+        }
+
+        /* Animasi Text Mulus */
+        .gemini-block {
+            opacity: 0;
+            transform: translateY(15px);
+            transition: all 0.5s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+
+        .gemini-block.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Input Area */
+        .chat-input-wrapper {
+            padding: 15px 20px;
+            background: var(--panel-bg);
+            border-top: 1px solid var(--glass-border);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            /* KUNCI RAHASIA: Memaksa semua isi ke tengah */
+        }
+
         .chat-input-box {
-            background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border);
-            border-radius: 24px; padding: 12px 20px; display: flex; align-items: center; gap: 15px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 10px 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            width: 100%;
+            max-width: 800px;
+            /* Biar ukurannya proporsional di layar besar */
         }
-        .chat-input-box input { flex: 1; background: transparent; border: none; color: white; outline: none; font-size: 0.95rem; }
-        .source-count { font-size: 0.75rem; color: var(--text-secondary); }
+
+        .chat-input-box input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: white;
+            outline: none;
+            font-size: 0.95rem;
+        }
+
+        .source-count {
+            font-size: 0.75rem;
+            color: var(--llm-accent);
+            font-weight: bold;
+            background: rgba(16, 185, 129, 0.1);
+            padding: 4px 10px;
+            border-radius: 12px;
+            white-space: nowrap;
+        }
+
         .btn-send {
-            background: var(--glass-border); color: var(--text-primary); border: none;
-            width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center;
-            justify-content: center; cursor: pointer; transition: 0.2s;
+            background: var(--text-primary);
+            color: var(--main-bg);
+            border: none;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: 0.2s;
+            flex-shrink: 0;
         }
-        .btn-send:hover { background: var(--text-secondary); color: var(--main-bg); }
-        .input-footer { text-align: center; font-size: 0.7rem; color: var(--text-secondary); margin-top: 10px; }
+
+        .btn-send:hover {
+            transform: scale(1.1);
+        }
+
+        .input-footer {
+            text-align: center;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-top: 12px;
+            opacity: 0.7;
+            /* Sedikit dipudarkan agar elegan */
+            font-weight: 500;
+        }
 
         /* ===== PANEL KANAN (STUDIO) ===== */
-        .studio-content { padding: 0 15px 15px 15px; overflow-y: auto; flex: 1; }
-
-        .promo-card {
-            background: linear-gradient(135deg, rgba(37, 99, 235, 0.1), rgba(16, 185, 129, 0.1));
-            border: 1px solid var(--glass-border); border-radius: 12px; padding: 15px;
-            display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;
+        .studio-content {
+            padding: 15px;
+            overflow-y: auto;
+            flex: 1;
         }
-        .promo-card p { font-size: 0.8rem; font-weight: 600; margin-left: 10px; flex: 1; }
-        .promo-card button { background: rgba(255,255,255,0.1); border: none; color: white; padding: 5px 15px; border-radius: 15px; font-size: 0.75rem; cursor: pointer; }
 
-        .studio-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .studio-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
         .studio-btn {
-            background: transparent; border: 1px solid var(--glass-border); border-radius: 12px;
-            padding: 15px 10px; display: flex; flex-direction: column; align-items: flex-start;
-            gap: 10px; color: var(--text-secondary); cursor: pointer; transition: 0.2s; text-align: left;
+            background: transparent;
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 15px 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 10px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: 0.2s;
+            text-align: left;
         }
-        .studio-btn i { font-size: 1.2rem; color: var(--text-primary); }
-        .studio-btn span { font-size: 0.75rem; }
-        .studio-btn:hover { background: var(--glass-hover); color: white; }
+
+        .studio-btn i {
+            font-size: 1.2rem;
+            color: var(--text-primary);
+        }
+
+        .studio-btn span {
+            font-size: 0.75rem;
+        }
+
+        .studio-btn:hover {
+            background: var(--glass-hover);
+            color: white;
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        /* Stylingan Markdown */
+        .markdown-body pre {
+            background: #000;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 10px 0;
+            border: 1px solid var(--glass-border);
+        }
+
+        .markdown-body code {
+            font-family: monospace;
+            color: #60a5fa;
+        }
+
+        .markdown-body ul,
+        .markdown-body ol {
+            margin-left: 20px;
+            margin-bottom: 10px;
+        }
+
+        .markdown-body p {
+            margin-bottom: 10px;
+        }
 
         /* ===== RESPONSIVE KHUSUS MOBILE ===== */
-        .mobile-toggle { display: none; background: transparent; border: none; color: white; font-size: 1.2rem; cursor: pointer; }
+        .mobile-toggle {
+            display: none;
+            background: transparent;
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            color: white;
+            padding: 6px 12px;
+            font-size: 1rem;
+            cursor: pointer;
+        }
 
         @media (max-width: 1024px) {
-            .llm-workspace { grid-template-columns: 280px 1fr; }
-            .studio-panel { position: fixed; right: -100%; top: 60px; height: calc(100vh - 60px); width: 300px; z-index: 1000; transition: 0.3s; border-radius: 0; border-left: 1px solid var(--glass-border); }
-            .studio-panel.show { right: 0; }
-            .btn-studio-toggle { display: flex; }
+            .llm-workspace {
+                grid-template-columns: 280px 1fr;
+            }
+
+            .studio-panel {
+                position: fixed;
+                right: -100%;
+                top: 60px;
+                height: calc(100vh - 60px);
+                width: 300px;
+                z-index: 1000;
+                transition: 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+                border-radius: 0;
+                border-left: 1px solid var(--glass-border);
+            }
+
+            .studio-panel.show {
+                right: 0;
+                box-shadow: -10px 0 30px rgba(0, 0, 0, 0.5);
+            }
+
+            .mobile-toggle {
+                display: block;
+            }
         }
 
         @media (max-width: 768px) {
-            .llm-workspace { grid-template-columns: 1fr; padding: 10px; }
-            .source-panel { position: fixed; left: -100%; top: 60px; height: calc(100vh - 60px); width: 280px; z-index: 1000; transition: 0.3s; border-radius: 0; border-right: 1px solid var(--glass-border); }
-            .source-panel.show { left: 0; }
-            .mobile-toggle { display: block; }
-            .greeting-area h1 { font-size: 1.8rem; }
-            .header-right .btn-header span { display: none; } /* Sembunyikan teks tombol di HP */
+            .llm-workspace {
+                grid-template-columns: 1fr;
+                padding: 0;
+                gap: 0;
+            }
+
+            .panel.chat-panel {
+                border-radius: 0;
+                border: none;
+            }
+
+            .source-panel {
+                position: fixed;
+                left: -100%;
+                top: 60px;
+                height: calc(100vh - 60px);
+                width: 280px;
+                z-index: 1000;
+                transition: 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+                border-radius: 0;
+                border-right: 1px solid var(--glass-border);
+            }
+
+            .source-panel.show {
+                left: 0;
+                box-shadow: 10px 0 30px rgba(0, 0, 0, 0.5);
+            }
+
+            .header-right .btn-header span {
+                display: none;
+            }
+
+            .chat-content {
+                padding: 20px 15px;
+            }
         }
     </style>
 </head>
+
 <body>
 
     <header class="llm-header">
         <div class="header-left">
             <button class="mobile-toggle" onclick="document.getElementById('sourcePanel').classList.toggle('show')">
-                <i class="fas fa-bars"></i>
+                <i class="fas fa-folder"></i>
             </button>
-            <a href="{{ route('chat.index') }}" class="btn-header"><i class="fas fa-arrow-left"></i> <span>Kembali</span></a>
-            <span style="font-weight: 600; font-size: 1.1rem;"><i class="fas fa-book-reader" style="color: var(--llm-accent); margin-right: 5px;"></i> SAHAJA LLM</span>
+            <a href="{{ route('chat.index') }}" class="btn-header"><i class="fas fa-arrow-left"></i>
+                <span>Kembali</span></a>
+            <span style="font-weight: 600; font-size: 1.1rem; margin-left: 10px;"><i class="fas fa-book-reader"
+                    style="color: var(--llm-accent); margin-right: 5px;"></i> SAHAJA LLM</span>
         </div>
         <div class="header-right">
-            <button class="btn-header"><i class="fas fa-chart-line"></i> <span>Analytics</span></button>
-            <button class="btn-header"><i class="fas fa-share-alt"></i> <span>Bagikan</span></button>
-            <button class="btn-header primary"><i class="fas fa-cog"></i> <span>Setelan</span></button>
-            <button class="mobile-toggle btn-studio-toggle" style="display: none;" onclick="document.getElementById('studioPanel').classList.toggle('show')">
+            <button class="mobile-toggle" onclick="document.getElementById('studioPanel').classList.toggle('show')">
                 <i class="fas fa-layer-group"></i>
             </button>
-            <div style="width: 32px; height: 32px; background: var(--accent-color); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold;">
+            <div
+                style="width: 32px; height: 32px; background: var(--accent-color); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.85rem;">
                 {{ strtoupper(substr(Auth::user()->name ?? 'U', 0, 1)) }}
             </div>
         </div>
@@ -210,133 +514,210 @@
 
         <aside class="panel source-panel" id="sourcePanel">
             <div class="panel-header">
-                Sumber
-                <button style="background:transparent; border:none; color:var(--text-secondary); cursor:pointer;"><i class="fas fa-expand-alt"></i></button>
+                File Sumber
+                <button onclick="document.getElementById('sourcePanel').classList.remove('show')"
+                    style="background:transparent; border:none; color:var(--text-secondary); cursor:pointer; display: none;"
+                    class="mobile-close"><i class="fas fa-times"></i></button>
             </div>
             <div class="source-content">
                 <input type="file" id="llmFileInput" accept=".pdf" style="display: none;">
-                <button class="btn-add-source" onclick="document.getElementById('llmFileInput').click()"><i class="fas fa-plus"></i> Tambahkan sumber (PDF)</button>
-                <div id="documentListContainer">
-                    @foreach($documents as $doc)
-                        <div style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; margin-bottom: 10px; font-size: 0.85rem; display: flex; align-items: center; gap: 10px;">
-                            <i class="fas fa-file-pdf" style="color: #ef4444;"></i>
-                            <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ $doc->file_name }}</span>
-                        </div>
-                    @endforeach
-                </div>
-                <div class="search-source">
-                    <i class="fas fa-search" style="color: var(--text-secondary);"></i>
-                    <input type="text" placeholder="Telusuri sumber baru di web">
-                </div>
+                <button class="btn-add-source" onclick="document.getElementById('llmFileInput').click()">
+                    <i class="fas fa-upload"></i> Unggah PDF Baru
+                </button>
 
-                <div class="empty-state">
-                    <i class="fas fa-file-alt"></i>
-                    <p><strong>Sumber yang telah disimpan akan muncul di sini</strong><br><br>
-                    Klik Tambahkan sumber di atas untuk menambahkan PDF, situs, teks, video, atau file audio.</p>
+                <div id="documentListContainer">
+                    @forelse($documents as $doc)
+                        <div class="doc-item" id="doc-{{ $doc->id }}">
+                            <div style="display: flex; align-items: center; gap: 10px; overflow: hidden; flex: 1;">
+                                <i class="fas fa-file-pdf" style="color: #ef4444; font-size: 1.2rem;"></i>
+                                <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"
+                                    title="{{ $doc->file_name }}">{{ $doc->file_name }}</span>
+                            </div>
+                            <button onclick="deleteDocument({{ $doc->id }})"
+                                style="background: transparent; border: none; color: var(--text-secondary); cursor: pointer; padding: 5px; margin-left: 5px;"
+                                title="Hapus file">
+                                <i class="fas fa-times hover-danger" onmouseover="this.style.color='#ef4444'"
+                                    onmouseout="this.style.color='var(--text-secondary)'"></i>
+                            </button>
+                        </div>
+                    @empty
+                        <div class="empty-state">
+                            <i class="fas fa-folder-open"></i>
+                            <p><strong>Belum ada sumber</strong><br>Unggah file PDF materi Anda untuk mulai berdiskusi.
+                            </p>
+                        </div>
+                    @endforelse
                 </div>
             </div>
         </aside>
 
-        <main class="panel chat-panel">
-            <div class="chat-content">
-                <div class="greeting-area">
-                    <h1>👋 Mari mulai membuat notebook...</h1>
-                    <p>Dengan notebook ini, Anda dapat mulai memahami, membuat, atau mengembangkan hal baru. Anda dapat meminta bantuan saya untuk memulai atau langsung menambahkan sumber Anda sendiri.</p>
+        <main class="panel chat-panel" onclick="closeMobiles()">
+            <div class="chat-content" id="centerChatContent">
 
-                    <strong style="display: block; font-size: 0.9rem; margin-bottom: 15px;">Apa yang ingin Anda lakukan dengan notebook ini?</strong>
+                <div class="greeting-wrapper" id="welcomeGreeting">
 
-                    <div class="suggestion-chips">
-                        <button class="chip">Memulai project</button>
-                        <button class="chip">Mempelajari atau memahami sesuatu</button>
-                        <button class="chip">Membuat ringkasan, laporan, slide presentasi, dll.</button>
-                        <button class="chip">Lainnya...</button>
-                    </div>
+                    <img src="https://i.ibb.co.com/jZZ0648R/Logo-SAHAJA-AI.png" alt="Logo SAHAJA AI"
+                        class="welcome-logo-img">
+
+                    <h1>Halo! Saya Pakar Dokumen Anda.</h1>
+                    <p>Unggah modul/PDF di sebelah kiri, lalu gunakan menu <b>Studio</b> di kanan untuk merangkum, atau
+                        tanyakan langsung di kotak bawah!</p>
                 </div>
+
+                <div id="llmChatHistory"></div>
+
             </div>
 
             <div class="chat-input-wrapper">
                 <div class="chat-input-box">
-                    <input type="text" id="llmChatInput" placeholder="Tanyakan isi dokumen ..." onkeydown="if(event.key==='Enter') sendLlmChat()">
+                    <input type="text" id="llmChatInput" placeholder="Tanyakan isi dokumen ..."
+                        onkeydown="if(event.key==='Enter') sendLlmChat()">
                     <span class="source-count">{{ count($documents) }} sumber</span>
-                    <button class="btn-send" onclick="sendLlmChat()"><i class="fas fa-arrow-up"></i></button>
+                    <button class="btn-send" onclick="sendLlmChat()" id="btnSendChat"><i
+                            class="fas fa-arrow-up"></i></button>
                 </div>
-                <div class="input-footer">SAHAJA LLM mungkin tidak akurat, jadi periksa kembali responsnya.</div>
+                <div class="input-footer">SAHAJA LLM dapat berhalusinasi, harap verifikasi fakta penting.</div>
             </div>
         </main>
 
         <aside class="panel studio-panel" id="studioPanel">
             <div class="panel-header">
-                Studio
-                <button style="background:transparent; border:none; color:var(--text-secondary); cursor:pointer;"><i class="fas fa-expand-alt"></i></button>
+                Studio Generator
+                <button onclick="document.getElementById('studioPanel').classList.remove('show')"
+                    style="background:transparent; border:none; color:var(--text-secondary); cursor:pointer; display: none;"
+                    class="mobile-close"><i class="fas fa-times"></i></button>
             </div>
             <div class="studio-content">
-
-                <div class="promo-card">
-                    <i class="fas fa-magic" style="color: #60a5fa;"></i>
-                    <p>Coba penyesuaian Peta Pikiran baru</p>
-                    <button>Coba</button>
-                </div>
-
                 <div class="studio-grid">
-                    <button class="studio-btn" onclick="generateStudio('ringkasan')"><i class="fas fa-align-left"></i> <span>Ringkasan...</span></button>
-                    <button class="studio-btn" onclick="generateStudio('slide')"><i class="fas fa-tv"></i> <span>Slide Presentasi...</span></button>
-                    <button class="studio-btn" onclick="generateStudio('laporan')"><i class="fas fa-file-alt"></i> <span>Laporan Singkat</span></button>
-                    <button class="studio-btn" onclick="generateStudio('mindmap')"><i class="fas fa-project-diagram"></i> <span>Peta Pikiran</span></button>
-                    <button class="studio-btn" onclick="generateStudio('kuis')"><i class="fas fa-question-circle"></i> <span>Kuis (5 Soal)</span></button>
-                    <button class="studio-btn" onclick="generateStudio('tabel')"><i class="fas fa-table"></i> <span>Tabel Data Ekstrak</span></button>
+                    <button class="studio-btn"
+                        onclick="generateStudio('Ringkasan', 'Buatkan ringkasan lengkap dan mudah dipahami dari semua dokumen ini.')"><i
+                            class="fas fa-align-left"></i> <span>Ringkasan</span></button>
+                    <button class="studio-btn"
+                        onclick="generateStudio('Struktur Presentasi', 'Susun kerangka materi presentasi (Slide 1, Slide 2, dst) berdasarkan dokumen ini.')"><i
+                            class="fas fa-tv"></i> <span>Slide...</span></button>
+                    <button class="studio-btn"
+                        onclick="generateStudio('Laporan Analisis', 'Susun laporan terstruktur (Latar Belakang, Isi Utama, Kesimpulan) dari dokumen ini.')"><i
+                            class="fas fa-file-alt"></i> <span>Laporan</span></button>
+                    <button class="studio-btn"
+                        onclick="generateStudio('Peta Pikiran', 'Buatkan kerangka Peta Pikiran (Mind Map) hierarkis dari konsep utama dokumen ini.')"><i
+                            class="fas fa-project-diagram"></i> <span>Peta Pikiran</span></button>
+                    <button class="studio-btn"
+                        onclick="generateStudio('Kuis & Ujian', 'Buatkan 5 soal pilihan ganda yang menantang beserta kunci jawaban dari dokumen ini.')"><i
+                            class="fas fa-question-circle"></i> <span>Kuis</span></button>
+                    <button class="studio-btn"
+                        onclick="generateStudio('Ekstrak Tabel', 'Ekstrak data-data penting atau perbandingan konsep dari dokumen ini ke dalam format Tabel Markdown.')"><i
+                            class="fas fa-table"></i> <span>Tabel Data</span></button>
                 </div>
-
-                <div class="empty-state" style="margin-top: 30px;">
-                    <i class="fas fa-magic" style="font-size: 1.5rem;"></i>
-                    <p style="font-size: 0.75rem; margin-top: 10px;">Output studio akan disimpan di sini. Setelah menambahkan sumber, klik untuk menambahkan Ringkasan, Laporan, atau Peta Pikiran.</p>
-                </div>
-
-            </div>
-
-            <div style="position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); width: 90%;">
-                <button style="width: 100%; background: white; color: black; border: none; padding: 12px; border-radius: 24px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.5);">
-                    <i class="fas fa-edit"></i> Tambahkan catatan
-                </button>
             </div>
         </aside>
+
     </div>
 
     <script>
         const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
         const workspaceId = {{ $workspace->id }};
 
-        // Kumpulkan semua teks dari database yang sudah dirender di halaman
         let allDocumentText = ``;
-        @foreach($documents as $doc)
+        @foreach ($documents as $doc)
             allDocumentText += `[File: {{ $doc->file_name }}]\n{{ $doc->content }}\n\n`;
         @endforeach
 
-        // ==========================================
-        // FITUR TOAST NOTIFICATION (PENGGANTI ALERT)
-        // ==========================================
+        // Helper Tutup Panel di HP
+        function closeMobiles() {
+            if (window.innerWidth <= 1024) {
+                document.getElementById('sourcePanel').classList.remove('show');
+                document.getElementById('studioPanel').classList.remove('show');
+            }
+        }
+
+        // Atur tombol close X muncul di HP
+        if (window.innerWidth <= 1024) document.querySelectorAll('.mobile-close').forEach(b => b.style.display = 'block');
+
+        // FITUR TOAST NOTIFICATION
         function showToast(message, type = 'info') {
             let container = document.getElementById('toast-container');
             if (!container) {
-                container = document.createElement('div'); container.id = 'toast-container';
-                container.style.cssText = 'position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 100000; display: flex; flex-direction: column; gap: 10px; pointer-events: none;';
+                container = document.createElement('div');
+                container.id = 'toast-container';
+                container.style.cssText =
+                    'position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 100000; display: flex; flex-direction: column; gap: 10px; pointer-events: none;';
                 document.body.appendChild(container);
-
-                // Tambahkan animasi CSS
                 const style = document.createElement('style');
-                style.innerHTML = `@keyframes slideDownLLM { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }`;
+                style.innerHTML =
+                    `@keyframes slideDownLLM { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }`;
                 document.head.appendChild(style);
             }
             const toast = document.createElement('div');
             const icon = type === 'success' ? 'check-circle' : (type === 'error' ? 'exclamation-circle' : 'info-circle');
             const color = type === 'success' ? '#10b981' : (type === 'error' ? '#ef4444' : '#3b82f6');
-            toast.style.cssText = `background: rgba(30, 41, 59, 0.95); color: white; padding: 12px 24px; border-radius: 12px; font-size: 0.9rem; display: flex; align-items: center; gap: 10px; animation: slideDownLLM 0.3s ease forwards; backdrop-filter: blur(8px); border-left: 4px solid ${color}; box-shadow: 0 10px 25px rgba(0,0,0,0.3);`;
+            toast.style.cssText =
+                `background: rgba(30, 41, 59, 0.95); color: white; padding: 12px 24px; border-radius: 12px; font-size: 0.9rem; display: flex; align-items: center; gap: 10px; animation: slideDownLLM 0.3s ease forwards; backdrop-filter: blur(8px); border-left: 4px solid ${color}; box-shadow: 0 10px 25px rgba(0,0,0,0.3);`;
             toast.innerHTML = `<i class="fas fa-${icon}"></i> <span>${message}</span>`;
             container.appendChild(toast);
-            setTimeout(() => { toast.style.opacity = '0'; toast.style.transition = 'opacity 0.3s'; setTimeout(() => toast.remove(), 300); }, 3000);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transition = 'opacity 0.3s';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        function scrollToBottom() {
+            const c = document.getElementById('centerChatContent');
+            if (c) c.scrollTop = c.scrollHeight;
+        }
+
+        // FUNGSI ANIMASI KETIK (RENDER BLOCK BY BLOCK)
+        function animateResponse(element, htmlContent) {
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = htmlContent;
+            element.innerHTML = '';
+
+            Array.from(tempDiv.children).forEach(child => {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'gemini-block';
+                wrapper.appendChild(child);
+                element.appendChild(wrapper);
+            });
+
+            let delay = 0;
+            element.querySelectorAll('.gemini-block').forEach((block) => {
+                setTimeout(() => {
+                    block.classList.add('show');
+                    scrollToBottom();
+                }, delay);
+                delay += 150;
+            });
         }
 
         // ==========================================
-        // 1. ENGINE UPLOAD & EKSTRAK PDF (UPGRADED)
+        // 1. FITUR DELETE DOCUMENT
+        // ==========================================
+        async function deleteDocument(id) {
+            if (!confirm("Yakin ingin menghapus dokumen ini dari sumber?")) return;
+            showToast("Menghapus...", "info");
+            try {
+                const res = await fetch(`/sahaja-llm/document/${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        "X-CSRF-TOKEN": csrfToken,
+                        "Accept": "application/json"
+                    }
+                });
+                const data = await res.json();
+                if (data.success) {
+                    document.getElementById(`doc-${id}`).remove();
+                    showToast("Dokumen dihapus!", "success");
+                    setTimeout(() => location.reload(), 1000); // Reload agar memori teks bersih
+                } else {
+                    showToast("Gagal menghapus", "error");
+                }
+            } catch (e) {
+                showToast("Terjadi kesalahan jaringan", "error");
+            }
+        }
+
+        // ==========================================
+        // 2. ENGINE UPLOAD & EKSTRAK PDF
         // ==========================================
         document.getElementById('llmFileInput').addEventListener('change', async function(e) {
             const file = e.target.files[0];
@@ -345,11 +726,11 @@
             showToast("Membaca PDF: " + file.name + "...", "info");
 
             try {
-                // Ekstrak teks pakai PDF.js
                 const arrayBuffer = await file.arrayBuffer();
-                const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+                const pdf = await pdfjsLib.getDocument({
+                    data: arrayBuffer
+                }).promise;
                 let text = "";
-                // Batasi max 25 halaman agar server tidak meledak
                 const maxPages = Math.min(pdf.numPages, 25);
                 for (let i = 1; i <= maxPages; i++) {
                     const page = await pdf.getPage(i);
@@ -357,73 +738,75 @@
                     text += content.items.map(item => item.str).join(" ") + "\n";
                 }
 
-                // JURUS ANTI ERROR LARAVEL: Cek apakah teks kosong!
                 if (text.trim() === "") {
-                    showToast("Gagal: PDF kosong atau merupakan hasil scan (tanpa teks).", "error");
-                    e.target.value = ''; // Reset input
+                    showToast("Gagal: PDF kosong / hasil scan gambar.", "error");
+                    e.target.value = '';
                     return;
                 }
 
-                // Potong jika terlalu besar (Chunking Lite) - Maks 25rb karakter
                 if (text.length > 25000) text = text.substring(0, 25000) + "\n\n[INFO: TEKS DIPOTONG]";
 
-                // Kirim ke Backend untuk disimpan permanen
                 const response = await fetch("{{ route('sahaja-llm.upload') }}", {
                     method: "POST",
-                    headers: { "Content-Type": "application/json", "X-CSRF-TOKEN": csrfToken },
-                    body: JSON.stringify({ workspace_id: workspaceId, file_name: file.name, content: text })
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRF-TOKEN": csrfToken
+                    },
+                    body: JSON.stringify({
+                        workspace_id: workspaceId,
+                        file_name: file.name,
+                        content: text
+                    })
                 });
 
                 const data = await response.json();
-                if(data.success) {
+                if (data.success) {
                     showToast("Sukses mengunggah dokumen!", "success");
-                    setTimeout(() => { location.reload(); }, 1500); // Beri jeda sedikit sebelum refresh
+                    setTimeout(() => location.reload(), 1500);
                 } else {
-                    showToast("Gagal menyimpan ke database: " + data.message, "error");
+                    showToast("Gagal menyimpan ke database", "error");
                 }
             } catch (err) {
-                showToast("Error membaca PDF: " + err.message, "error");
+                showToast("Error membaca PDF", "error");
             }
-            e.target.value = ''; // Reset input
+            e.target.value = '';
         });
 
         // ==========================================
-        // 2. ENGINE STUDIO (DYNAMIC PROMPT INJECTION)
+        // 3. ENGINE CHAT & STUDIO
         // ==========================================
-        async function generateStudio(type) {
-            if (allDocumentText.trim() === "") {
-                showToast("Harap unggah minimal 1 PDF terlebih dahulu di panel Sumber!", "error");
-                return;
-            }
+        async function processAI(messageStr, mode = 'coding') {
+            const history = document.getElementById('llmChatHistory');
+            const welcome = document.getElementById('welcomeGreeting');
+            if (welcome) welcome.style.display = 'none';
 
-            // Siapkan Instruksi Rahasia berdasarkan tombol yang diklik
-            let secretPrompt = "";
-            if(type === 'ringkasan') secretPrompt = "Buatkan ringkasan komprehensif dari dokumen ini.";
-            if(type === 'kuis') secretPrompt = "Buatkan 5 soal pilihan ganda beserta kunci jawabannya berdasarkan dokumen ini.";
-            if(type === 'laporan') secretPrompt = "Susun laporan terstruktur (Latar Belakang, Isi, Kesimpulan) dari dokumen ini.";
-            if(type === 'mindmap') secretPrompt = "Buatkan kerangka Peta Pikiran (Mind Map) menggunakan format bullet points dari dokumen ini.";
-            if(type === 'slide') secretPrompt = "Buatkan struktur materi presentasi (Slide 1, Slide 2, dst) yang siap dipindahkan ke PowerPoint dari dokumen ini.";
-            if(type === 'tabel') secretPrompt = "Ekstrak data-data penting, angka, atau fakta dari dokumen ini ke dalam format Tabel Markdown.";
+            // Munculkan chat user
+            const isStudio = messageStr.startsWith("Buatkan"); // Deteksi kalau dari tombol Studio
+            const displayUserMsg = isStudio ? `<b>[Perintah Studio]</b> ${messageStr}` : messageStr;
 
-            const finalPayload = `[SUMBER PENGETAHUAN DARI WORKSPACE]\n"""\n${allDocumentText}\n"""\n\nInstruksi AI: ${secretPrompt}`;
+            history.innerHTML += `<div class="chat-msg user"><div class="bubble">${displayUserMsg}</div></div>`;
 
-            // Hapus layar ucapan selamat datang, ganti dengan UI loading
-            document.querySelector('.greeting-area').innerHTML = `
-                <div id="aiResponseArea" style="background: rgba(0,0,0,0.4); border: 1px solid var(--glass-border); border-radius: 16px; padding: 25px; min-height: 300px;">
-                    <h3 style="color: var(--accent-color); margin-bottom: 15px;"><i class="fas fa-magic fa-spin"></i> Menghasilkan ${type}...</h3>
-                    <div class="markdown-body" id="aiResultText">Mohon tunggu, AI sedang membaca dan menyusun...</div>
-                </div>
-            `;
+            // Munculkan Loading AI
+            const loadingId = 'loading-' + Date.now();
+            history.innerHTML +=
+                `<div class="chat-msg ai" id="${loadingId}"><div class="bubble" style="color: var(--llm-accent);"><i class="fas fa-circle-notch fa-spin"></i> SAHAJA sedang memproses dokumen...</div></div>`;
+            scrollToBottom();
 
-            // Tembak ke API Chat yang sudah ada sebelumnya!
+            const finalPayload =
+                `[REFERENSI DOKUMEN]\n"""\n${allDocumentText}\n"""\n\nPertanyaan/Instruksi User: ${messageStr}`;
+
             try {
                 const response = await fetch("{{ route('chat.send') }}", {
                     method: "POST",
-                    headers: { "Content-Type": "application/json", "X-CSRF-TOKEN": csrfToken, "Accept": "application/json" },
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRF-TOKEN": csrfToken,
+                        "Accept": "application/json"
+                    },
                     body: JSON.stringify({
                         message: finalPayload,
                         session_id: null,
-                        manual_mode: 'coding',
+                        manual_mode: mode, // Qwen untuk ngebut
                         enable_thinking: false
                     })
                 });
@@ -431,76 +814,38 @@
                 const data = await response.json();
                 if (data.error) throw new Error(data.message);
 
-                // Render hasil Markdown-nya ke layar tengah
-                document.getElementById('aiResultText').innerHTML = marked.parse(data.ai_response);
+                // Ganti Kotak Loading dengan Kotak Hasil
+                const loadingBox = document.getElementById(loadingId);
+                loadingBox.innerHTML = `<div class="bubble markdown-body" id="result-${loadingId}"></div>`;
+
+                // Terapkan Animasi
+                const resultBox = document.getElementById(`result-${loadingId}`);
+                animateResponse(resultBox, marked.parse(data.ai_response));
+
             } catch (error) {
-                document.getElementById('aiResultText').innerHTML = `<span style="color:#ef4444;">Terjadi Kesalahan: ${error.message}</span>`;
+                document.getElementById(loadingId).innerHTML =
+                    `<div class="bubble" style="color:#ef4444;"><i class="fas fa-exclamation-triangle"></i> Terjadi Kesalahan: ${error.message}</div>`;
             }
         }
-        // ==========================================
-        // 3. ENGINE CHAT LLM (CHAT DI TENGAH)
-        // ==========================================
-        async function sendLlmChat() {
+
+        // Trigger Tombol Studio
+        function generateStudio(title, prompt) {
+            if (allDocumentText.trim() === "") return showToast("Unggah dokumen terlebih dahulu!", "error");
+            closeMobiles(); // Tutup panel kanan di HP
+            processAI(`Buatkan ${title}.\n\nInstruksi: ${prompt}`);
+        }
+
+        // Trigger Input Bawah
+        function sendLlmChat() {
             const input = document.getElementById('llmChatInput');
             const message = input.value.trim();
             if (!message) return;
-            if (allDocumentText.trim() === "") {
-                showToast("Unggah dokumen dulu bosku!", "error");
-                return;
-            }
+            if (allDocumentText.trim() === "") return showToast("Unggah dokumen terlebih dahulu!", "error");
 
             input.value = "";
-            input.disabled = true;
-
-            // UI Loading di area tengah
-            const greetingArea = document.querySelector('.greeting-area');
-            if (!document.getElementById('aiResponseArea')) {
-                greetingArea.innerHTML = `
-                    <div id="aiResponseArea" style="background: rgba(0,0,0,0.4); border: 1px solid var(--glass-border); border-radius: 16px; padding: 25px; min-height: 300px; display: flex; flex-direction: column; gap: 15px;">
-                        <div id="llmChatHistory" style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; margin-bottom: 10px;"></div>
-                    </div>
-                `;
-            }
-
-            const history = document.getElementById('llmChatHistory');
-            history.innerHTML += `<div style="align-self: flex-end; background: var(--accent-color); padding: 10px 15px; border-radius: 15px 15px 0 15px; max-width: 80%; font-size: 0.9rem;">${message}</div>`;
-
-            const loadingDiv = document.createElement('div');
-            loadingDiv.style.cssText = "align-self: flex-start; color: var(--llm-accent); font-size: 0.85rem;";
-            loadingDiv.innerHTML = `<i class="fas fa-circle-notch fa-spin"></i> SAHAJA sedang membaca...`;
-            history.appendChild(loadingDiv);
-
-            const finalPayload = `[REFERENSI DOKUMEN]\n"""\n${allDocumentText}\n"""\n\nPertanyaan User: ${message}`;
-
-            try {
-                const response = await fetch("{{ route('chat.send') }}", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json", "X-CSRF-TOKEN": csrfToken, "Accept": "application/json" },
-                    body: JSON.stringify({
-                        message: finalPayload,
-                        session_id: null,
-                        manual_mode: 'coding', // Kita ganti ke Qwen (Coding) agar lebih ngebut baca teks besar!
-                        enable_thinking: false // Matikan thinking agar tidak timeout
-                    })
-                });
-
-                const data = await response.json();
-                loadingDiv.remove();
-
-                if (data.error) throw new Error(data.message);
-
-                history.innerHTML += `
-                    <div style="align-self: flex-start; background: rgba(255,255,255,0.05); padding: 15px; border-radius: 15px 15px 15px 0; max-width: 90%; font-size: 0.9rem; border: 1px solid var(--glass-border);" class="markdown-body">
-                        ${marked.parse(data.ai_response)}
-                    </div>
-                `;
-            } catch (error) {
-                loadingDiv.innerHTML = `<span style="color:#ef4444;">Error: ${error.message}</span>`;
-            } finally {
-                input.disabled = false;
-                input.focus();
-            }
+            processAI(message);
         }
     </script>
 </body>
+
 </html>
