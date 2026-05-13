@@ -441,10 +441,30 @@ async function sendMessage() {
         const loadingBubble = document.getElementById(loadingId);
         if (loadingBubble) {
             const aiMessageDiv = document.createElement('div'); aiMessageDiv.className = 'message ai';
-            let finalModelLabel = '<i class="fas fa-bolt"></i> Mode Cepat (Groq)'; let finalBadgeClass = 'mode-fast'; let extraStyle = ''; const modelUsedStr = (data.model_used || '').toLowerCase();
-            if (modelUsedStr.includes('vision') || modelUsedStr.includes('gemma')) { finalModelLabel = '<i class="fas fa-eye"></i> Mode Vision'; extraStyle = 'background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3);'; finalBadgeClass = ''; }
-            else if (modelUsedStr.includes('mistral')) { finalModelLabel = '<i class="fas fa-brain"></i> Mode Cerdas'; finalBadgeClass = 'mode-smart'; }
-            else if (modelUsedStr.includes('coder') || modelUsedStr.includes('qwen')) { finalModelLabel = '<i class="fas fa-code"></i> Mode Code'; extraStyle = 'background: rgba(168, 85, 247, 0.15); color: #a855f7; border: 1px solid rgba(168, 85, 247, 0.3);'; finalBadgeClass = ''; }
+            let finalModelLabel = '<i class="fas fa-bolt"></i> Mode Cepat';
+                    let finalBadgeClass = 'mode-fast';
+                    let extraStyle = '';
+                    const modelUsedStr = (data.model_used || '').toLowerCase();
+
+                    if (modelUsedStr.includes('vision') || modelUsedStr.includes('gemma')) {
+                        finalModelLabel = '<i class="fas fa-eye"></i> Mode Vision';
+                        extraStyle = 'background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3);';
+                        finalBadgeClass = '';
+                    }
+                    else if (modelUsedStr.includes('coder') || modelUsedStr.includes('qwen')) {
+                        finalModelLabel = '<i class="fas fa-code"></i> Mode Code';
+                        extraStyle = 'background: rgba(168, 85, 247, 0.15); color: #a855f7; border: 1px solid rgba(168, 85, 247, 0.3);';
+                        finalBadgeClass = '';
+                    }
+                    // JURUS PEMBEDA MISTRAL: Cek apakah ini versi Medium/128B (Cerdas) atau Small/119B (Cepat)
+                    else if (modelUsedStr.includes('medium') || modelUsedStr.includes('128b')) {
+                        finalModelLabel = '<i class="fas fa-brain"></i> Mode Cerdas';
+                        finalBadgeClass = 'mode-smart';
+                    }
+                    else if (modelUsedStr.includes('small') || modelUsedStr.includes('119b')) {
+                        finalModelLabel = '<i class="fas fa-bolt"></i> Mode Cepat';
+                        finalBadgeClass = 'mode-fast';
+                    }
 
             aiMessageDiv.innerHTML = `<div class="message-avatar ai-avatar-msg" style="background: transparent; padding: 0;"><img src="https://i.ibb.co.com/jZZ0648R/Logo-SAHAJA-AI.png" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;"></div><div class="message-content"><div class="mode-badge ${finalBadgeClass}" style="${extraStyle}">${finalModelLabel}</div><div class="message-bubble markdown-body"></div><div class="ai-actions" style="position: relative; display: flex; gap: 5px; align-items: center;"><button class="action-btn" onclick="copyText(this)"><i class="far fa-copy"></i> Salin</button><div class="export-dropdown-container"><button class="action-btn" onclick="toggleExportMenu(this)"><i class="fas fa-ellipsis-v"></i></button><div class="export-menu" style="display: none; position: absolute; bottom: 100%; left: 0; background: var(--sidebar-bg); border: 1px solid var(--glass-border); border-radius: 8px; padding: 5px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); z-index: 50; width: 140px; margin-bottom: 5px;"><div class="option-item" style="font-size: 0.8rem; padding: 6px 10px;" onclick="exportToDoc(this)"><i class="fas fa-file-word" style="color: #3b82f6;"></i> Unduh DOCS</div></div></div></div></div>`;
             loadingBubble.parentNode.replaceChild(aiMessageDiv, loadingBubble);
