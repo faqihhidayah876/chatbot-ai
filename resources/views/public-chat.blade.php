@@ -594,14 +594,33 @@
                     <div class="message-avatar user-avatar-msg"><i class="fas fa-user"></i></div>
                     <div class="message-content">
                         @php
-                            // FILTER KHUSUS PDF: Menyembunyikan teks panjang dari layar
                             $displayMsg = $chat->user_message;
-                            if (strpos($displayMsg, '[Lampiran Dokumen: ') === 0) {
-                                preg_match('/\[Lampiran Dokumen: (.*?)\]/', $displayMsg, $match);
-                                $fName = $match[1] ?? 'Dokumen';
+
+                            // FILTER 1: PDF CHAT BIASA
+                            if (preg_match('/\[Dokumen \d+: (.*?)\]\n"""\n.*?\n"""\n\n/s', $displayMsg, $match)) {
                                 $pos = strrpos($displayMsg, 'Instruksi User: ');
                                 $inst = $pos !== false ? trim(substr($displayMsg, $pos + 16)) : '';
-                                $displayMsg = '📎 [' . $fName . "]\n" . $inst;
+                                $displayMsg = '📎 [' . $match[1] . "]\n" . $inst;
+                            }
+                            // FILTER 2: [BARU!] TEKS DARI SAHAJA LLM WORKSPACE
+                            elseif (strpos($displayMsg, '[REFERENSI DOKUMEN]') !== false) {
+                                preg_match_all('/\[File: (.*?)\]/', $displayMsg, $fileMatches);
+                                $fileNames = !empty($fileMatches[1]) ? implode(', ', $fileMatches[1]) : 'Dokumen Workspace';
+
+                                $pos = strpos($displayMsg, 'Pertanyaan/Instruksi User: ');
+                                $inst = $pos !== false ? trim(substr($displayMsg, $pos + 27)) : '';
+                                $inst = strip_tags($inst);
+
+                                $displayMsg = '📎 [' . $fileNames . "]\n" . $inst;
+                            }
+                            // FILTER 3: GITHUB (Sebagai pelengkap)
+                            elseif (strpos($displayMsg, '📦 [GitHub:') === 0) {
+                                if (preg_match('/(📦 \[GitHub: .*?\]).*?\[PERTANYAAN USER\]: (.*)/s', $displayMsg, $match)) {
+                                    $displayMsg = $match[1] . "\n\n" . trim($match[2]);
+                                } else {
+                                    $lines = explode("\n", $displayMsg);
+                                    $displayMsg = $lines[0] . "\n\n" . end($lines);
+                                }
                             }
                         @endphp
                         <div class="message-bubble">{{ $displayMsg }}</div>
@@ -644,196 +663,191 @@
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     <script>
-        marked.setOptions({
-            sanitize: true,
-            breaks: true,
-            gfm: true
-        });
+        marked.setOptions({ sanitize: false, breaks: true, gfm: true });
+        mermaid.initialize({ startOnLoad: false, theme: 'dark' });
 
         document.addEventListener('DOMContentLoaded', () => {
             document.querySelectorAll('.message.ai').forEach(el => {
-                // PERBAIKAN 1: Panggil nama class yang benar sesuai HTML di atas
                 const rawDiv = el.querySelector('.ai-raw-data');
                 const renderDiv = el.querySelector('.ai-rendered-data');
 
                 if (rawDiv && renderDiv) {
-                    const rawText = rawDiv.textContent.trim();
-                    // Gunakan fungsi pintar yang baru kita buat
+                    // Render Markdown, Rumus, dan Thinking
                     renderAIContent(rawDiv.textContent.trim(), renderDiv);
 
-                    // PERBAIKAN EXTRA: Panggil fungsi render Mermaid (Diagram) agar jalan di Public Chat
-                    if (typeof processMermaidDiagrams === 'function') {
+                    // Proses Diagram Mermaid (Diberi delay sedikit agar DOM siap)
+                    setTimeout(() => {
                         processMermaidDiagrams(renderDiv);
-                    }
+                    }, 100);
                 }
             });
         });
+
         // ==========================================
-        // FUNGSI SALIN TEKS (JALUR GANDA - ANTI MACET DI HP)
+        // 1. MESIN RENDER AI (MARKDOWN + THINKING + MATH)
+        // ==========================================
+        function renderAIContent(text, containerElement) {
+            let rawText = text.replace(/\\\[/g, '$$$$').replace(/\\\]/g, '$$$$').replace(/\\\(/g, '$$').replace(/\\\)/g, '$$');
+
+            // Tangkap Tag Thinking
+            const thinkingBlocks = {};
+            let thinkingIndex = 0;
+            rawText = rawText.replace(/<(?:thinking|think|reasoning)>([\s\S]*?)<\/(?:thinking|think|reasoning)>/gi, function(match, inner) {
+                const placeholder = `@@THINK_BLOCK_${thinkingIndex}@@`;
+                thinkingBlocks[placeholder] = `
+                <div class="thinking-container">
+                    <div class="thinking-header" onclick="this.nextElementSibling.classList.toggle('show'); const i = this.querySelector('.fa-chevron-right'); i.style.transform = i.style.transform === 'rotate(90deg)' ? 'none' : 'rotate(90deg)';">
+                        <i class="fas fa-brain"></i> <span style="font-weight: 500;">Alur Berpikir AI</span>
+                        <i class="fas fa-chevron-right" style="margin-left: auto; transition: 0.2s;"></i>
+                    </div>
+                    <div class="thinking-content">${inner.trim().replace(/</g, "&lt;").replace(/>/g, "&gt;")}</div>
+                </div>`;
+                thinkingIndex++;
+                return placeholder;
+            });
+
+            // Tangkap Rumus Matematika
+            const mathBlocks = {};
+            let mathIndex = 0;
+            rawText = rawText.replace(/\$\$([\s\S]*?)\$\$/g, function(match) { const placeholder = `@@MATH_BLOCK_${mathIndex}@@`; mathBlocks[placeholder] = match; mathIndex++; return placeholder; });
+            rawText = rawText.replace(/\$([^$\n]*?)\$/g, function(match) { const placeholder = `@@MATH_INLINE_${mathIndex}@@`; mathBlocks[placeholder] = match; mathIndex++; return placeholder; });
+
+            let htmlContent = marked.parse(rawText);
+
+            // Kembalikan Matematika
+            for (const [key, val] of Object.entries(mathBlocks)) {
+                htmlContent = htmlContent.split(key).join(val);
+            }
+
+            // Kembalikan Thinking (Jurus Anti-Paragraf)
+            for (const [key, val] of Object.entries(thinkingBlocks)) {
+                const pRegex = new RegExp(`<p>\\s*${key}\\s*</p>`, 'g');
+                if (pRegex.test(htmlContent)) {
+                    htmlContent = htmlContent.replace(pRegex, val);
+                } else {
+                    htmlContent = htmlContent.split(key).join(val);
+                }
+            }
+
+            containerElement.innerHTML = htmlContent;
+
+            // Syntax Highlighting & Render Math
+            if (window.renderMathInElement) window.renderMathInElement(containerElement, { delimiters: [{ left: '$$', right: '$$', display: true }, { left: '$', right: '$', display: false }], throwOnError: false });
+            containerElement.querySelectorAll('pre code').forEach((block) => { if (window.hljs) hljs.highlightElement(block); });
+        }
+
+        // ==========================================
+        // 2. MESIN DIAGRAM MERMAID
+        // ==========================================
+        async function processMermaidDiagrams(container) {
+            const mermaidBlocks = container.querySelectorAll('code.language-mermaid');
+            if(mermaidBlocks.length === 0) return;
+
+            for (let i = 0; i < mermaidBlocks.length; i++) {
+                const codeBlock = mermaidBlocks[i];
+                const preBlock = codeBlock.parentElement;
+                if(preBlock.classList.contains('mermaid-processed')) continue;
+                preBlock.classList.add('mermaid-processed');
+
+                let rawCode = codeBlock.textContent || codeBlock.innerText;
+                rawCode = rawCode.replace(/\u00A0/g, ' ').replace(/^mermaid\s*/i, '').replace(/```/g, '').trim();
+
+                const uniqueId = 'mermaid-' + Date.now() + '-' + i;
+                const wrapper = document.createElement('div');
+                wrapper.className = 'mermaid-wrapper';
+                wrapper.innerHTML = `
+                    <div class="mermaid-header">
+                        <div class="mermaid-tabs">
+                            <button class="mermaid-tab active" onclick="switchMermaid('${uniqueId}', 'diagram', this)">Visual Diagram</button>
+                            <button class="mermaid-tab" onclick="switchMermaid('${uniqueId}', 'code', this)">Source Code</button>
+                        </div>
+                    </div>
+                    <div id="${uniqueId}-diagram" class="mermaid-content">
+                        <div style="color: var(--accent-color); padding: 20px;"><i class="fas fa-spinner fa-spin"></i> Memuat diagram...</div>
+                    </div>
+                    <div id="${uniqueId}-code" class="mermaid-code"><pre><code class="language-mermaid">${rawCode}</code></pre></div>
+                `;
+                preBlock.replaceWith(wrapper);
+
+                try {
+                    const { svg } = await mermaid.render(uniqueId + '-svg', rawCode);
+                    document.getElementById(uniqueId + '-diagram').innerHTML = svg;
+                } catch (e) {
+                    document.getElementById(uniqueId + '-diagram').innerHTML = `<div style="color: #ef4444; padding: 15px;">❌ Gagal memuat diagram. Cek Source Code.</div>`;
+                }
+            }
+        }
+
+        window.switchMermaid = function(id, mode, btn) {
+            const wrapper = btn.closest('.mermaid-wrapper');
+            wrapper.querySelectorAll('.mermaid-tab').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            document.getElementById(id + '-diagram').style.display = mode === 'diagram' ? 'block' : 'none';
+            document.getElementById(id + '-code').style.display = mode === 'code' ? 'block' : 'none';
+        };
+
+        // ==========================================
+        // 3. FUNGSI COPY TEXT (HP & LAPTOP)
         // ==========================================
         window.copyText = function(btn) {
             try {
-                // 1. Ambil elemen teks
                 const messageDiv = btn.closest('.message-content');
                 if (!messageDiv) return;
-
                 const rawData = messageDiv.querySelector('.ai-raw-data');
                 if (!rawData) return;
-
                 const textToCopy = (rawData.textContent || rawData.innerText).trim();
                 if (!textToCopy) return;
 
-                // 2. Fungsi Animasi Berhasil
                 const showSuccess = () => {
                     const originalHTML = btn.innerHTML;
                     btn.innerHTML = '<i class="fas fa-check"></i> Tersalin';
-                    btn.style.color = '#10b981';
-                    btn.style.borderColor = '#10b981';
-                    setTimeout(() => {
-                        btn.innerHTML = originalHTML;
-                        btn.style.color = '';
-                        btn.style.borderColor = '';
-                    }, 2000);
+                    btn.style.color = '#10b981'; btn.style.borderColor = '#10b981';
+                    setTimeout(() => { btn.innerHTML = originalHTML; btn.style.color = ''; btn.style.borderColor = ''; }, 2000);
                 };
 
-                // 3. JURUS 1: Coba pakai Clipboard API Modern (Untuk Laptop / Browser Modern)
                 if (navigator.clipboard && window.isSecureContext) {
-                    navigator.clipboard.writeText(textToCopy)
-                        .then(() => showSuccess())
-                        .catch(() => fallbackCopyTextToClipboard(textToCopy, showSuccess));
+                    navigator.clipboard.writeText(textToCopy).then(() => showSuccess()).catch(() => fallbackCopyTextToClipboard(textToCopy, showSuccess));
                 } else {
-                    // JURUS 2: Kalau ditolak (Webview WA/IG/HP Lama), pakai mode jadul
                     fallbackCopyTextToClipboard(textToCopy, showSuccess);
                 }
-            } catch (error) {
-                console.error("Error copy: ", error);
-                alert("Gagal menyalin teks. Silakan salin manual.");
-            }
+            } catch (error) { alert("Gagal menyalin teks."); }
         };
 
-        // FUNGSI BANTUAN (JURUS 2)
         function fallbackCopyTextToClipboard(text, successCallback) {
             const textArea = document.createElement("textarea");
             textArea.value = text;
-
-            // Sembunyikan textarea agar layar tidak berkedip/geser
-            textArea.style.position = "fixed";
-            textArea.style.top = "0";
-            textArea.style.left = "0";
-            textArea.style.width = "2em";
-            textArea.style.height = "2em";
-            textArea.style.padding = "0";
-            textArea.style.border = "none";
-            textArea.style.outline = "none";
-            textArea.style.boxShadow = "none";
-            textArea.style.background = "transparent";
-
+            textArea.style.cssText = "position: fixed; top: 0; left: 0; width: 2em; height: 2em; padding: 0; border: none; outline: none; boxShadow: none; background: transparent;";
             document.body.appendChild(textArea);
-            textArea.focus();
-            textArea.select();
-
-            try {
-                const successful = document.execCommand('copy');
-                if (successful) {
-                    successCallback();
-                } else {
-                    console.error('Fallback: Gagal copy');
-                    alert("Browser tidak mendukung fitur salin. Silakan salin manual.");
-                }
-            } catch (err) {
-                console.error('Fallback Error', err);
-            }
-
+            textArea.focus(); textArea.select();
+            try { if (document.execCommand('copy')) successCallback(); } catch (err) { alert("Salin manual."); }
             document.body.removeChild(textArea);
         }
 
         // ==========================================
-        // FUNGSI EKSPOR DOCX (SUPPORT HP & RAPI)
+        // 4. FUNGSI EKSPOR DOCX
         // ==========================================
         window.exportToDoc = function(btn) {
             const originalContainer = btn.closest('.message-content').querySelector('.ai-rendered-data');
             if (!originalContainer) return;
-
-            // Gunakan mesin pembersih agar tidak berantakan
             const printDiv = prepareExportContent(originalContainer);
-
-            const contentHTML = `
-            <!DOCTYPE html>
-            <html>
-            <head><meta charset="UTF-8"><style>
-                body { font-family: 'Times New Roman', serif; line-height: 1.6; color: #000; }
-                table { border-collapse: collapse; width: 100%; }
-                table, th, td { border: 1px solid black; padding: 8px; }
-                pre { background: #f4f4f4; padding: 10px; border: 1px solid #ccc; }
-            </style></head>
-            <body>
-                <h2 style="color: #2563eb;">SAHAJA AI Export</h2>
-                <hr>${printDiv.innerHTML}
-            </body>
-            </html>`;
-
+            const contentHTML = `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>body { font-family: 'Times New Roman', serif; line-height: 1.6; color: #000; } table { border-collapse: collapse; width: 100%; } table, th, td { border: 1px solid black; padding: 8px; } pre { background: #f4f4f4; padding: 10px; border: 1px solid #ccc; }</style></head><body><h2 style="color: #2563eb;">SAHAJA AI Export</h2><hr>${printDiv.innerHTML}</body></html>`;
             try {
-                // Merakit file .docx asli menggunakan library
                 const converted = htmlDocx.asBlob(contentHTML);
                 const link = document.createElement('a');
                 link.href = URL.createObjectURL(converted);
                 link.download = 'SAHAJA_AI_' + Date.now() + '.docx';
                 link.click();
-            } catch (e) {
-                console.error("Gagal Ekspor:", e);
-            }
+            } catch (e) { console.error("Gagal Ekspor:", e); }
         };
 
-        // ==========================================
-        // MESIN PEMBERSIH KONTEN EKSPOR
-        // ==========================================
         function prepareExportContent(container) {
             const printDiv = document.createElement('div');
             printDiv.innerHTML = container.innerHTML;
-            // Buang elemen yang tidak perlu di Word
             printDiv.querySelectorAll('.thinking-container, .mermaid-wrapper, button, i').forEach(el => el.remove());
             return printDiv;
         }
 
-        // ==========================================
-        // MESIN RENDER AI (MARKDOWN + THINKING)
-        // ==========================================
-        function renderAIContent(text, containerElement) {
-            let rawText = text.replace(/\\\[/g, '$$$$').replace(/\\\]/g, '$$$$').replace(/\\\(/g, '$$').replace(/\\\)/g,
-                '$$');
-
-            // Tangkap Tag Thinking
-            const thinkingBlocks = {};
-            let thinkingIndex = 0;
-            rawText = rawText.replace(/<(?:thinking|think)>([\s\S]*?)<\/(?:thinking|think)>/gi, function(match, inner) {
-                const placeholder = `@@THINK_BLOCK_${thinkingIndex}@@`;
-                thinkingBlocks[placeholder] = `
-            <div class="thinking-container">
-                <div class="thinking-header" onclick="this.nextElementSibling.classList.toggle('show')">
-                    <i class="fas fa-brain"></i> Alur Berpikir AI
-                </div>
-                <div class="thinking-content">${inner.trim()}</div>
-            </div>`;
-                thinkingIndex++;
-                return placeholder;
-            });
-
-            let htmlContent = marked.parse(rawText);
-
-            // Kembalikan Thinking
-            for (const [key, val] of Object.entries(thinkingBlocks)) {
-                htmlContent = htmlContent.split(key).join(val);
-            }
-
-            containerElement.innerHTML = htmlContent;
-
-            // Syntax Highlighting
-            containerElement.querySelectorAll('pre code').forEach((block) => {
-                if (window.hljs) hljs.highlightElement(block);
-            });
-        }
-
-        // Fungsi Dropdown
+        // Fungsi Dropdown Export
         window.toggleExportMenu = function(btn) {
             const menu = btn.nextElementSibling;
             const isShowing = menu.style.display === 'block';

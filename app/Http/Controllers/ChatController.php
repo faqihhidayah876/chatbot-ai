@@ -173,9 +173,11 @@ class ChatController extends Controller
                         if ($sessionId) {
                             $allChats = Chat::where('session_id', $sessionId)->orderBy('created_at', 'asc')->get();
                             if ($allChats->count() > 0) {
-                                foreach ($allChats->slice(-4) as $chat) {
+                                foreach ($allChats->slice(-12) as $chat) {
                                     $cleanUserMsg = preg_replace('/🖼️ \[Gambar Terlampir\]\n/', '', $chat->user_message);
                                     $cleanUserMsg = preg_replace('/📦 \[GitHub: .*\]\n/', '', $cleanUserMsg);
+                                    $cleanUserMsg = preg_replace('/\[Dokumen \d+: .*?\]\n"""\n.*?\n"""\n\n/s', '[Dokumen Terlampir]', $cleanUserMsg);
+                                    $cleanUserMsg = preg_replace('/\[REFERENSI DOKUMEN\]\n"""\n.*?\n"""\n\n/s', "📎 [Dokumen Workspace SAHAJA LLM]\n", $cleanUserMsg);
                                     $messages[] = ["role" => "user", "content" => $cleanUserMsg];
                                     $messages[] = ["role" => "assistant", "content" => $chat->ai_response];
                                 }

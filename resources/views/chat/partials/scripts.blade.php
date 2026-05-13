@@ -473,22 +473,50 @@ async function sendMessage() {
 }
 
 function appendMessage(sender, text) {
-    const messageDiv = document.createElement('div'); messageDiv.classList.add('message', sender);
-    let safeText = text; if (sender === 'user') safeText = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-    const avatarHtml = sender === 'user' ? `<div class="message-avatar"><img src="{{ Auth::user()->avatar ?? 'https://ui-avatars.com/api/?name='.urlencode(Auth::user()->name).'&background=2563eb&color=fff' }}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;"></div>` : `<div class="message-avatar ai-avatar-msg"><i class="fas fa-robot"></i></div>`;
+    const messageDiv = document.createElement('div');
+    messageDiv.classList.add('message', sender);
+
+    let safeText = text;
+    if (sender === 'user') safeText = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+    // FIX: Pastikan avatar AI dan User konsisten menggunakan desain baru!
+    const avatarHtml = sender === 'user'
+        ? `<div class="message-avatar user-avatar-msg" style="padding:0; overflow:hidden;"><img src="{{ Auth::user()->avatar ?? 'https://ui-avatars.com/api/?name='.urlencode(Auth::user()->name).'&background=2563eb&color=fff' }}" style="width: 100%; height: 100%; object-fit: cover;"></div>`
+        : `<div class="message-avatar ai-avatar-msg" style="background: transparent; padding: 0; border: 1px solid var(--glass-border); overflow:hidden;"><img src="https://i.ibb.co.com/jZZ0648R/Logo-SAHAJA-AI.png" alt="AI" style="width: 100%; height: 100%; object-fit: cover;"></div>`;
+
     messageDiv.innerHTML = `${avatarHtml}<div class="message-content"><div class="message-bubble">${safeText}</div></div>`;
-    document.getElementById('messagesContainer').appendChild(messageDiv); scrollToBottom();
+    document.getElementById('messagesContainer').appendChild(messageDiv);
+    scrollToBottom();
 }
 
 function appendLoadingWithMode(mode) {
-    const id = 'loading-' + Date.now(); const div = document.createElement('div'); div.id = id; div.className = 'message ai';
+    const id = 'loading-' + Date.now();
+    const div = document.createElement('div');
+    div.id = id;
+    div.className = 'message ai';
+
     let badgeHtml = ''; let textHtml = '';
     if (mode === 'vision') { badgeHtml = `<div class="mode-badge" style="background: rgba(16, 185, 129, 0.15); color: #10b981;"><i class="fas fa-eye"></i> Mode Vision</div>`; textHtml = `<span class="typing-text">Menganalisis...</span>`; }
     else if (mode === 'github' || mode === 'coding') { badgeHtml = `<div class="mode-badge" style="background: rgba(168, 85, 247, 0.15); color: #a855f7;"><i class="fas fa-code"></i> Mode Code</div>`; textHtml = `<span class="typing-text">Menganalisis...</span>`; }
     else if (mode === 'smart') { badgeHtml = `<div class="mode-badge mode-smart"><i class="fas fa-brain"></i> Mode Cerdas</div>`; textHtml = `<span class="typing-text">Bernalar... <button class="switch-btn" onclick="switchToFastMode()">[Beralih ke Cepat]</button></span>`; }
     else { badgeHtml = `<div class="mode-badge mode-fast"><i class="fas fa-bolt"></i> Mode Cepat</div>`; textHtml = `<span class="typing-text">Berpikir... <button class="switch-btn" style="color:#d4a017;" onclick="switchToMode('smart')">[Beralih ke Cerdas]</button></span>`; }
-    div.innerHTML = `<div class="message-avatar ai-avatar-msg"><i class="fas fa-robot"></i></div><div class="message-content">${badgeHtml}<div class="message-bubble"><div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>${textHtml}</div></div></div>`;
-    document.getElementById('messagesContainer').appendChild(div); return id;
+
+    // FIX: Ganti icon robot dengan Logo SAHAJA AI
+    div.innerHTML = `
+        <div class="message-avatar ai-avatar-msg" style="background: transparent; padding: 0; border: 1px solid var(--glass-border); overflow:hidden;">
+            <img src="https://i.ibb.co.com/jZZ0648R/Logo-SAHAJA-AI.png" alt="AI" style="width: 100%; height: 100%; object-fit: cover;">
+        </div>
+        <div class="message-content">
+            ${badgeHtml}
+            <div class="message-bubble">
+                <div class="typing-indicator">
+                    <div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>${textHtml}
+                </div>
+            </div>
+        </div>`;
+
+    document.getElementById('messagesContainer').appendChild(div);
+    return id;
 }
 
 // ==========================================

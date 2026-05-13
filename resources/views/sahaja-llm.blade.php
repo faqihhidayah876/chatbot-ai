@@ -480,10 +480,78 @@
                 display: none;
             }
 
+            /* 🔥 FIX HEADER MELUBER 🔥 */
+            .llm-header {
+                padding: 0 10px;
+            }
+            .header-left span {
+                font-size: 0.95rem !important;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                max-width: 140px;
+            }
+
+            /* 🔥 FIX KOTAK INPUT TENGGELAM 🔥 */
             .chat-content {
-                padding: 20px 15px;
+                padding: 15px 10px;
+                padding-bottom: 110px; /* Jauhkan riwayat chat dari kotak input */
+            }
+
+            .chat-input-wrapper {
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                padding: 10px;
+                /* Tambahan safe-area untuk support layar iPhone/Android modern */
+                padding-bottom: calc(10px + env(safe-area-inset-bottom));
+                background: var(--main-bg);
+                border-top: 1px solid var(--glass-border);
+                z-index: 100;
+            }
+
+            .chat-input-box {
+                flex-wrap: nowrap;
+                gap: 8px;
+                width: 100%;
+                border-radius: 20px;
+                padding: 8px 12px;
+            }
+
+            /* Sembunyikan label sumber di HP agar area ketik lebih luas */
+            .source-count {
+                display: none;
             }
         }
+        /* ===== MODAL KONFIRMASI CUSTOM ===== */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(5px);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 100000; opacity: 0; visibility: hidden; transition: 0.3s ease;
+        }
+        .modal-overlay.show { opacity: 1; visibility: visible; }
+
+        .modal-content {
+            background: var(--panel-bg); border: 1px solid var(--glass-border);
+            border-radius: 20px; padding: 25px; width: 90%; max-width: 400px;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.5); text-align: center;
+            transform: translateY(20px); transition: 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+        .modal-overlay.show .modal-content { transform: translateY(0); }
+
+        .btn-cancel {
+            background: transparent; border: 1px solid var(--glass-border); color: var(--text-primary);
+            padding: 8px 16px; border-radius: 8px; cursor: pointer; transition: 0.2s; font-weight: 500; flex: 1;
+        }
+        .btn-cancel:hover { background: var(--glass-hover); }
+
+        .btn-danger {
+            background: #ef4444; border: none; color: white;
+            padding: 8px 16px; border-radius: 8px; cursor: pointer; transition: 0.2s; font-weight: 500; flex: 1;
+        }
+        .btn-danger:hover { background: #dc2626; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3); }
     </style>
 </head>
 
@@ -533,7 +601,7 @@
                                 <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"
                                     title="{{ $doc->file_name }}">{{ $doc->file_name }}</span>
                             </div>
-                            <button onclick="deleteDocument({{ $doc->id }})"
+                            <button onclick="confirmDelete({{ $doc->id }})"
                                 style="background: transparent; border: none; color: var(--text-secondary); cursor: pointer; padding: 5px; margin-left: 5px;"
                                 title="Hapus file">
                                 <i class="fas fa-times hover-danger" onmouseover="this.style.color='#ef4444'"
@@ -610,7 +678,21 @@
                 </div>
             </div>
         </aside>
-
+        <div class="modal-overlay" id="confirmDangerModal">
+        <div class="modal-content">
+            <div style="font-size: 3.5rem; color: #ef4444; margin-bottom: 10px;">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <h2 style="font-size: 1.3rem; margin-bottom: 10px; color: var(--text-primary); font-weight: 600;">Hapus Dokumen?</h2>
+            <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 25px; line-height: 1.5;">
+                Apakah Anda yakin ingin menghapus file ini dari sumber SAHAJA LLM?
+            </p>
+            <div style="display: flex; gap: 12px; justify-content: center;">
+                <button class="btn-cancel" onclick="closeConfirmModal()">Batal</button>
+                <button class="btn-danger" id="btnConfirmDelete">Ya, Hapus</button>
+            </div>
+        </div>
+    </div>
     </div>
 
     <script>
@@ -690,31 +772,55 @@
         }
 
         // ==========================================
-        // 1. FITUR DELETE DOCUMENT
+        // 1. FITUR DELETE DOCUMENT (WITH CUSTOM MODAL)
         // ==========================================
-        async function deleteDocument(id) {
-            if (!confirm("Yakin ingin menghapus dokumen ini dari sumber?")) return;
-            showToast("Menghapus...", "info");
+        let documentIdToDelete = null;
+
+        function confirmDelete(id) {
+            documentIdToDelete = id;
+            document.getElementById('confirmDangerModal').classList.add('show');
+        }
+
+        function closeConfirmModal() {
+            documentIdToDelete = null;
+            document.getElementById('confirmDangerModal').classList.remove('show');
+        }
+
+        document.getElementById('btnConfirmDelete').addEventListener('click', async function() {
+            if (!documentIdToDelete) return;
+
+            const id = documentIdToDelete;
+            closeConfirmModal(); // Tutup modalnya dulu
+            showToast("Menghapus dokumen...", "info");
+
             try {
                 const res = await fetch(`/sahaja-llm/document/${id}`, {
                     method: 'DELETE',
-                    headers: {
-                        "X-CSRF-TOKEN": csrfToken,
-                        "Accept": "application/json"
-                    }
+                    headers: { "X-CSRF-TOKEN": csrfToken, "Accept": "application/json" }
                 });
                 const data = await res.json();
+
                 if (data.success) {
-                    document.getElementById(`doc-${id}`).remove();
-                    showToast("Dokumen dihapus!", "success");
-                    setTimeout(() => location.reload(), 1000); // Reload agar memori teks bersih
+                    const docElement = document.getElementById(`doc-${id}`);
+                    if (docElement) docElement.remove();
+
+                    showToast("Dokumen berhasil dihapus!", "success");
+
+                    // Update jumlah sumber di kotak input
+                    const countElements = document.querySelectorAll('.source-count');
+                    countElements.forEach(el => {
+                        let currentCount = parseInt(el.innerText);
+                        if(currentCount > 0) el.innerText = (currentCount - 1) + " sumber";
+                    });
+
+                    setTimeout(() => location.reload(), 1000);
                 } else {
                     showToast("Gagal menghapus", "error");
                 }
             } catch (e) {
                 showToast("Terjadi kesalahan jaringan", "error");
             }
-        }
+        });
 
         // ==========================================
         // 2. ENGINE UPLOAD & EKSTRAK PDF
