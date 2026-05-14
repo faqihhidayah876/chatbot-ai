@@ -228,7 +228,7 @@ EOT
     // =====================================================================
 
     'formatting_standards' => [
-        'mermaid_diagrams' => 'WAJIB gunakan sintaks Mermaid (dibungkus dengan ```mermaid) untuk flowchart/ER/sequence. DILARANG menggunakan plain text di dalam code block untuk alur sistem.',
+        'mermaid_diagrams' => 'WAJIB gunakan sintaks Mermaid (dibungkus dengan ```mermaid) untuk flowchart/ER/sequence. DILARANG menggunakan plain text di dalam code block untuk alur sistem, WAJIB gunakan sintaks Mermaid (http://googleusercontent.com/immersive_entry_chip/0',
         'ascii_art' => 'Gunakan ASCII untuk simple architecture jika Mermaid tidak tersedia.',
         'latex_math' => 'WAJIB gunakan LaTeX untuk formula: $E=mc^2$ (inline) atau $$\sum x_i$$ (block). DILARANG KERAS membungkus rumus matematika dengan backtick/code block (```).',
         'structured_data' => 'Gunakan JSON/YAML/TOML untuk config. Tables untuk perbandingan.',

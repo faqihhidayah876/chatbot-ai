@@ -873,7 +873,11 @@ window.exportToDoc = function(btn) {
 
 // ====================fungsi mermaid======================== //
 // 1. Inisialisasi Tema Mermaid agar cocok dengan SAHAJA AI
-mermaid.initialize({ startOnLoad: false, theme: 'dark' });
+        mermaid.initialize({
+            startOnLoad: false,
+            theme: 'dark',
+            suppressErrorRendering: true
+        });
 
 // 2. Fungsi Menyulap Teks Code Menjadi Visual Diagram (ANTI ERROR / ANTI BOM)
 async function processMermaidDiagrams(container) {
@@ -925,19 +929,22 @@ async function processMermaidDiagrams(container) {
         wrapper.querySelector('.language-mermaid').textContent = rawCode;
         preBlock.replaceWith(wrapper);
 
-        try {
-            // RENDER DIAGRAM SATU PER SATU SECARA AMAN
-            const { svg } = await mermaid.render(uniqueId + '-svg', rawCode);
-            document.getElementById(uniqueId + '-diagram').innerHTML = svg;
-        } catch (e) {
-            console.error("Mermaid Render Error:", e);
-            // Kalau AI ngasih kodingan error, tampilkan pesan rapi, BUKAN logo bom!
-            document.getElementById(uniqueId + '-diagram').innerHTML = `
-                <div style="color: #ef4444; padding: 15px; border: 1px dashed #ef4444; border-radius: 8px; text-align: left;">
-                    <i class="fas fa-exclamation-triangle"></i> <b>Diagram Gagal Digambar</b><br>
-                    <span style="font-size: 0.85rem; color: var(--text-secondary);">Sintaks diagram dari AI tidak valid. Klik tab <b>Source Code</b> untuk melihat kodenya.</span>
-                </div>
-            `;
+    try {
+        const { svg } = await mermaid.render(uniqueId + '-svg', rawCode);
+        document.getElementById(uniqueId + '-diagram').innerHTML = svg;
+    } catch (e) {
+        // Sapu ranjau: Hapus elemen SVG error yang terlanjur terlempar ke DOM
+        const errorElement = document.getElementById(uniqueId + '-svg');
+        const dErrorElement = document.getElementById('d' + uniqueId + '-svg');
+        if (errorElement) errorElement.remove();
+        if (dErrorElement) dErrorElement.remove();
+
+        // Tampilkan UI Error Custom kita
+        document.getElementById(uniqueId + '-diagram').innerHTML = `
+            <div style="color: #ef4444; padding: 15px; border: 1px dashed #ef4444; border-radius: 8px; margin: 10px;">
+                <div style="font-weight: bold; margin-bottom: 5px;"><i class="fas fa-exclamation-triangle"></i> Diagram Gagal Digambar</div>
+                Sintaks diagram dari AI tidak valid. Klik tab <b>Source Code</b> untuk melihat kodenya.
+            </div>`;
         }
     }
 }

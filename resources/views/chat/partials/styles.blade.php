@@ -685,18 +685,47 @@ body.light-mode .attach-menu {
     margin-bottom: 16px;
 }
 
-.markdown-body p {
-    margin-bottom: 16px;
-    white-space: normal; /* FIX: Ganti pre-wrap jadi normal agar natural membungkus baris */
+.markdown-body p,
+.markdown-body li {
+    margin-bottom: 12px;
+    white-space: normal !important;
+    line-height: 1.6;
     word-wrap: break-word;
+}
+
+.markdown-body > * {
+    margin-bottom: 12px;
+}
+
+.markdown-body *:last-child {
+    margin-bottom: 0;
 }
 
 .markdown-body h1,
 .markdown-body h2,
-.markdown-body h3 {
-    font-weight: 600;
-    margin-top: 24px;
-    margin-bottom: 12px;
+.markdown-body h3,
+.markdown-body h4,
+.markdown-body h5,
+.markdown-body h6 {
+    font-weight: 700; /* Ditebalkan sedikit agar lebih tegas */
+    margin-top: 1.5rem;
+    margin-bottom: 0.75rem;
+    color: var(--text-primary);
+    line-height: 1.3;
+}
+
+.markdown-body h1 { font-size: 1.6rem; }
+.markdown-body h2 { font-size: 1.4rem; }
+.markdown-body h3 { font-size: 1.25rem; }
+
+.markdown-body h4 { font-size: 1.1rem; }
+.markdown-body h5 { font-size: 1rem; }
+.markdown-body h6 { font-size: 0.95rem; color: var(--text-secondary); }
+
+
+.markdown-body p strong,
+.markdown-body li strong {
+    font-weight: 700;
     color: var(--text-primary);
 }
 

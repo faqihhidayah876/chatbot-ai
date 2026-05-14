@@ -664,7 +664,11 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     <script>
         marked.setOptions({ sanitize: false, breaks: true, gfm: true });
-        mermaid.initialize({ startOnLoad: false, theme: 'dark' });
+        mermaid.initialize({
+            startOnLoad: false,
+            theme: 'dark',
+            suppressErrorRendering: true
+        });
 
         document.addEventListener('DOMContentLoaded', () => {
             document.querySelectorAll('.message.ai').forEach(el => {
@@ -773,7 +777,18 @@
                     const { svg } = await mermaid.render(uniqueId + '-svg', rawCode);
                     document.getElementById(uniqueId + '-diagram').innerHTML = svg;
                 } catch (e) {
-                    document.getElementById(uniqueId + '-diagram').innerHTML = `<div style="color: #ef4444; padding: 15px;">❌ Gagal memuat diagram. Cek Source Code.</div>`;
+                    // Sapu ranjau: Hapus elemen SVG error yang terlanjur terlempar ke DOM
+                    const errorElement = document.getElementById(uniqueId + '-svg');
+                    const dErrorElement = document.getElementById('d' + uniqueId + '-svg');
+                    if (errorElement) errorElement.remove();
+                    if (dErrorElement) dErrorElement.remove();
+
+                    // Tampilkan UI Error Custom kita
+                    document.getElementById(uniqueId + '-diagram').innerHTML = `
+                        <div style="color: #ef4444; padding: 15px; border: 1px dashed #ef4444; border-radius: 8px; margin: 10px;">
+                            <div style="font-weight: bold; margin-bottom: 5px;"><i class="fas fa-exclamation-triangle"></i> Diagram Gagal Digambar</div>
+                            Sintaks diagram dari AI tidak valid. Klik tab <b>Source Code</b> untuk melihat kodenya.
+                        </div>`;
                 }
             }
         }
