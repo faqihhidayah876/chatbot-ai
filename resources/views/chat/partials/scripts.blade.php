@@ -1061,37 +1061,60 @@ window.closeOnboardModal = function() {
         }, 400);
     }
 };
-// ==========================================
-// SANG MANDOR (VERSI X-RAY ANTI SILENT DEATH)
-// ==========================================
+// ====================================================================
+// 🌟 MANDOR AGEN ALPHA (IN-CHAT DEEP RESEARCH OVERHAUL) 🌟
+// ====================================================================
 let currentResearchId = null;
+let currentResearchBubbleId = null; // ID Penjaga posisi gelembung chat rahasia
 
 async function startDeepResearch(prompt) {
-    const floatBtn = document.getElementById('floatingResearchBtn');
-    if (floatBtn) floatBtn.style.display = 'none';
+    // 1. Amankan Tampilan Layar Utama (Buka Ruang Obrolan jika dari Welcome Screen)
+    const welcome = document.getElementById('welcomeScreen'); if (welcome) welcome.style.display = 'none';
+    const msgContainer = document.getElementById('messagesContainer'); if (msgContainer) msgContainer.style.display = 'flex';
 
-    const panel = document.getElementById('researchPanel');
-    if (panel) panel.classList.add('active');
+    // 2. Tampilkan pertanyaan User secara alami di room chat
+    appendMessage('user', prompt);
 
-    const logsContainer = document.getElementById('researchLogs');
-    if (logsContainer) {
-        logsContainer.innerHTML = '';
-    } else {
-        showToast("UI Panel Riset belum dipasang di HTML!", "error");
-        chatInput.disabled = false;
-        return; // Hentikan jika HTML tidak ada!
-    }
+    // 3. Bangun ID unik untuk gelembung riset ini
+    currentResearchBubbleId = 'research-' + Date.now();
+
+    // 4. Suntikkan Gelembung AI Khusus ke dalam room chat bergaya Kotak "Alur Berpikir" Live!
+    const aiMessageDiv = document.createElement('div');
+    aiMessageDiv.className = 'message ai';
+    aiMessageDiv.id = currentResearchBubbleId;
+    aiMessageDiv.innerHTML = `
+        <div class="message-avatar ai-avatar-msg" style="background: transparent; padding: 0; border: 1px solid var(--glass-border); overflow:hidden;">
+            <img src="https://i.ibb.co.com/jZZ0648R/Logo-SAHAJA-AI.png" alt="AI" style="width: 100%; height: 100%; object-fit: cover;">
+        </div>
+        <div class="message-content">
+            <div class="mode-badge" style="background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3);">
+                <i class="fas fa-atom fa-spin-slow"></i> Agen Alpha (Deep Research)
+            </div>
+            <div class="message-bubble markdown-body" style="background: transparent; border: none; padding: 0; box-shadow: none;">
+                <div class="thinking-container" style="margin: 10px 0; border: 1px solid var(--glass-border); border-radius: 12px; overflow: hidden; background: rgba(0, 0, 0, 0.2);">
+                    <div class="thinking-header" style="padding: 10px 15px; display: flex; align-items: center; gap: 10px; font-size: 0.85rem; color: #ef4444; background: rgba(255, 255, 255, 0.05);">
+                        <i class="fas fa-circle-notch fa-spin"></i> <span style="font-weight: 500;">Agen Alpha Sedang Melakukan Riset...</span>
+                    </div>
+                    <div class="research-live-logs" style="padding: 15px; font-size: 0.85rem; color: var(--text-secondary); display: flex; flex-direction: column; gap: 8px; font-family: monospace;">
+                        </div>
+                </div>
+            </div>
+        </div>
+    `;
+    document.getElementById('messagesContainer').appendChild(aiMessageDiv);
+    scrollToBottom();
+
+    // 5. Kunci Input & Tombol Kirim biar user tidak melakukan double-spam
+    chatInput.disabled = true;
+    const sendBtn = document.getElementById('sendButton');
+    if (sendBtn) { sendBtn.style.opacity = '0.5'; sendBtn.style.pointerEvents = 'none'; }
 
     appendResearchLog('Menginisialisasi Agen Alpha...', 'processing');
 
     try {
         const res = await fetch('/deep-research/init', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': csrfToken,
-                'Accept': 'application/json'
-            },
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' },
             body: JSON.stringify({topic: prompt, session_id: currentSessionId})
         });
 
@@ -1099,7 +1122,8 @@ async function startDeepResearch(prompt) {
         let data;
         try { data = JSON.parse(rawText); } catch(err) {
             console.error("🔥 LARAVEL ERROR KETAHUAN:", rawText);
-            appendResearchLog('Server Laravel Meledak! Buka Console (F12).', 'error');
+            appendResearchLog('Server Laravel Meledak! Gagal memuat inisialisasi.', 'error');
+            resetAlphaInputState();
             return;
         }
 
@@ -1108,85 +1132,103 @@ async function startDeepResearch(prompt) {
             if (!currentSessionId && data.session_id) {
                 window.history.pushState({}, '', `/chat/${data.session_id}`);
                 currentSessionId = data.session_id;
-                const tempItem = document.getElementById('temp-session-loading');
-                if (tempItem) tempItem.remove();
             }
             appendResearchLog('Agen berhasil diaktifkan. Memulai pencarian data...', 'info');
             setTimeout(pollResearchStep, 2000);
         } else {
             appendResearchLog('Gagal Inisialisasi: ' + (data.message || 'Server Menolak'), 'error');
+            resetAlphaInputState();
         }
     } catch (e) {
         appendResearchLog('Gagal menyambung ke server! Koneksi terputus.', 'error');
+        resetAlphaInputState();
     }
 }
 
 async function pollResearchStep() {
-    if(!currentResearchId) return;
+    if(!currentResearchId || !currentResearchBubbleId) return;
 
     try {
         const res = await fetch('/deep-research/step', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': csrfToken,
-                'Accept': 'application/json'
-            },
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' },
             body: JSON.stringify({research_id: currentResearchId})
         });
 
-        // JURUS X-RAY UNTUK STEP 2
         const rawText = await res.text();
         let data;
-        try {
-            data = JSON.parse(rawText);
-        } catch(err) {
-            console.error("🔥 LARAVEL ERROR PADA SAAT PROSES AI:", rawText);
-            appendResearchLog('Proses terhenti karena Error di Server. Cek Console.', 'error');
-            return; // Hentikan agar tidak polling abadi
+        try { data = JSON.parse(rawText); } catch(err) {
+            console.error("🔥 LARAVEL ERROR PROSES AI:", rawText);
+            appendResearchLog('Proses terhenti karena Fatal Error di Server.', 'error');
+            resetAlphaInputState();
+            return;
         }
 
-        const logsContainer = document.getElementById('researchLogs');
-        logsContainer.innerHTML = '';
-        if(data.logs && data.logs.length > 0) {
-            data.logs.forEach(log => {
-                logsContainer.innerHTML += `<div class="log-item info"><span style="color: #94a3b8; font-size: 0.75rem; margin-right: 5px;">[${log.time}]</span> ${log.message}</div>`;
-            });
+        // Ambil penampung log live di dalam gelembung obrolan
+        const bubble = document.getElementById(currentResearchBubbleId);
+        if (bubble && data.logs) {
+            const logsContainer = bubble.querySelector('.research-live-logs');
+            if (logsContainer) {
+                logsContainer.innerHTML = '';
+                data.logs.forEach(log => {
+                    logsContainer.innerHTML += `<div class="log-item info"><span style="color: #94a3b8; font-size: 0.75rem; margin-right: 5px;">[${log.time}]</span> ${log.message}</div>`;
+                });
+                scrollToBottom();
+            }
         }
-        logsContainer.scrollTop = logsContainer.scrollHeight;
 
         if(data.status === 'selesai') {
             appendResearchLog('Menutup Agen Alpha...', 'success');
 
-            // SULAP HASILNYA MENJADI CARD CHAT!
-            const aiMessageDiv = document.createElement('div');
-            aiMessageDiv.className = 'message ai';
-            aiMessageDiv.innerHTML = `<div class="message-avatar ai-avatar-msg" style="background: transparent; padding: 0;"><img src="https://i.ibb.co.com/jZZ0648R/Logo-SAHAJA-AI.png" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;"></div><div class="message-content"><div class="mode-badge" style="background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3);"><i class="fas fa-atom"></i> Hasil Deep Research</div><div class="message-bubble markdown-body ai-raw-data" style="display:none;">${data.result}</div><div class="message-bubble markdown-body ai-rendered-data"></div><div class="ai-actions" style="position: relative; display: flex; gap: 5px; align-items: center;"><button class="action-btn" onclick="copyText(this)"><i class="far fa-copy"></i> Salin</button><div class="export-dropdown-container"><button class="action-btn" onclick="toggleExportMenu(this)"><i class="fas fa-ellipsis-v"></i></button><div class="export-menu" style="display: none; position: absolute; bottom: 100%; left: 0; background: var(--sidebar-bg); border: 1px solid var(--glass-border); border-radius: 8px; padding: 5px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); z-index: 50; width: 140px; margin-bottom: 5px;"><div class="option-item" style="font-size: 0.8rem; padding: 6px 10px;" onclick="exportToDoc(this)"><i class="fas fa-file-word" style="color: #3b82f6;"></i> Unduh DOCS</div></div></div></div></div>`;
+            if (bubble) {
+                const contentContainer = bubble.querySelector('.message-content');
+                const liveLogsHtml = bubble.querySelector('.research-live-logs').innerHTML;
 
-            document.getElementById('messagesContainer').appendChild(aiMessageDiv);
+                // SULAP DENGAN SAKTI: Ubah loading menjadi Kotak Pemikiran yang bisa ditutup/buka (Collapsible) + Cetak Markdown Utama!
+                contentContainer.innerHTML = `
+                    <div class="mode-badge" style="background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3);">
+                        <i class="fas fa-atom"></i> Hasil Deep Research
+                    </div>
 
-            const rawDiv = aiMessageDiv.querySelector('.ai-raw-data');
-            const renderDiv = aiMessageDiv.querySelector('.ai-rendered-data');
-            renderAIContent(rawDiv.textContent.trim(), renderDiv);
-            scrollToBottomSmooth();
+                    <div class="thinking-container" style="margin: 10px 0 20px 0; border: 1px solid var(--glass-border); border-radius: 12px; overflow: hidden; background: rgba(0, 0, 0, 0.2);">
+                        <div class="thinking-header" style="padding: 10px 15px; cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 0.85rem; color: var(--text-secondary); background: rgba(255, 255, 255, 0.05);" onclick="toggleThinking(this)">
+                            <i class="fas fa-brain"></i> <span style="font-weight: 500;">Alur Berpikir SAHAJA AI (Riset Agen Alpha)</span>
+                            <i class="fas fa-chevron-right" style="margin-left: auto; transition: 0.2s;"></i>
+                        </div>
+                        <div class="thinking-content" style="display: none; padding: 15px; font-size: 0.85rem; color: var(--text-secondary); border-top: 1px solid var(--glass-border); white-space: pre-wrap; font-style: italic; line-height: 1.6;">${liveLogsHtml.replace(/<div class="log-item[^>]*>/g, '').replace(/<\/div>/g, '\n').trim()}</div>
+                    </div>
 
-            // PERBAIKAN: Tutup panel dan hapus tombol melayang secara paksa tanpa fungsi toggle
-            setTimeout(() => {
-                document.getElementById('researchPanel').classList.remove('active');
-                document.getElementById('floatingResearchBtn').style.display = 'none';
-                currentResearchId = null; // Bersihkan memori agar tombol tidak "nyangkut"
-            }, 3000);
+                    <div class="message-bubble markdown-body ai-raw-data" style="display:none;">${data.result}</div>
+                    <div class="message-bubble markdown-body ai-rendered-data"></div>
+
+                    <div class="ai-actions" style="position: relative; display: flex; gap: 5px; align-items: center;">
+                        <button class="action-btn" onclick="copyText(this)"><i class="far fa-copy"></i> Salin</button>
+                        <div class="export-dropdown-container">
+                            <button class="action-btn" onclick="toggleExportMenu(this)"><i class="fas fa-ellipsis-v"></i></button>
+                            <div class="export-menu" style="display: none; position: absolute; bottom: 100%; left: 0; background: var(--sidebar-bg); border: 1px solid var(--glass-border); border-radius: 8px; padding: 5px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); z-index: 50; width: 140px; margin-bottom: 5px;">
+                                <div class="option-item" style="font-size: 0.8rem; padding: 6px 10px;" onclick="exportToDoc(this)"><i class="fas fa-file-word" style="color: #3b82f6;"></i> Unduh DOCS</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                // Panggil Mesin Render Markdown & KaTeX untuk menampilkan laporan Ultra HD
+                const rawDiv = contentContainer.querySelector('.ai-raw-data');
+                const renderDiv = contentContainer.querySelector('.ai-rendered-data');
+                renderAIContent(rawDiv.textContent.trim(), renderDiv);
+                scrollToBottomSmooth();
+            }
+
+            currentResearchId = null;
+            currentResearchBubbleId = null;
+            resetAlphaInputState();
             return;
 
         } else if (data.status === 'error') {
-            appendResearchLog('Proses dibatalkan karena error.', 'error');
-
-            // PERBAIKAN: Tutup juga saat error agar bersih
-            setTimeout(() => {
-                document.getElementById('researchPanel').classList.remove('active');
-                document.getElementById('floatingResearchBtn').style.display = 'none';
-                currentResearchId = null;
-            }, 3000);
+            appendResearchLog('Proses riset dibatalkan karena kesalahan teknis.', 'error');
+            currentResearchId = null;
+            currentResearchBubbleId = null;
+            resetAlphaInputState();
             return;
         }
 
@@ -1197,15 +1239,27 @@ async function pollResearchStep() {
 }
 
 function appendResearchLog(text, type = 'info') {
-    const logsContainer = document.getElementById('researchLogs');
-    if (!logsContainer) return; // FIX: Cegah error jika elemen tidak ada
+    if (!currentResearchBubbleId) return;
+    const bubble = document.getElementById(currentResearchBubbleId);
+    if (!bubble) return;
+    const logsContainer = bubble.querySelector('.research-live-logs');
+    if (!logsContainer) return;
 
     const icon = type === 'processing' ? '<i class="fas fa-circle-notch fa-spin"></i>' :
-                 (type === 'success' ? '<i class="fas fa-check"></i>' : '<i class="fas fa-info-circle"></i>');
+                 (type === 'success' ? '<i class="fas fa-check"></i>' :
+                 (type === 'error' ? '<i class="fas fa-exclamation-triangle"></i>' : '<i class="fas fa-info-circle"></i>'));
 
     logsContainer.innerHTML += `<div class="log-item ${type}">${icon} <span style="margin-left: 8px;">${text}</span></div>`;
-    logsContainer.scrollTop = logsContainer.scrollHeight;
+    scrollToBottomSmooth();
 }
+
+function resetAlphaInputState() {
+    chatInput.disabled = false;
+    const sendBtn = document.getElementById('sendButton');
+    if (sendBtn) { sendBtn.style.opacity = '1'; sendBtn.style.pointerEvents = 'auto'; }
+    chatInput.focus();
+}
+
 // Fungsi untuk Buka/Tutup Panel Riset (Fixed)
 window.toggleResearchPanel = function() {
     const panel = document.getElementById('researchPanel');

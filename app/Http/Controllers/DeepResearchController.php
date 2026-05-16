@@ -117,20 +117,32 @@ class DeepResearchController extends Controller
 
                 $response = Http::withHeaders([
                     'Authorization' => 'Bearer ' . env('NVIDIA_API_KEY'),
-                    'Content-Type' => 'application/json'
+                    'Content-Type' => 'application/json',
+                    'Accept' => 'application/json'
                 ])->withoutVerifying()->timeout(150)->post($endpointAlpha, [
                     'model' => $modelAlpha,
                     'messages' => [['role' => 'user', 'content' => $systemPrompt]],
-                    'max_tokens' => 4096,
+                    'max_tokens' => 4000, // FIX: Turunkan sedikit dari 4096 agar aman dari limit batas akhir model
                     'temperature' => 0.5
                 ]);
 
-                $aiData = $response->json();
-                $finalMarkdown = $aiData['choices'][0]['message']['content'] ?? 'Gagal memproses data AI.';
+                // ==========================================================
+                // 🚨 JURUS X-RAY ANTI SILENT DEATH (TANGKAP ERROR NVIDIA)
+                // ==========================================================
+                if (!$response->successful()) {
+                    // Jika NVIDIA menolak (Error 400/500), lempar pesan aslinya ke Log!
+                    throw new \Exception("NVIDIA API Error: " . $response->body());
+                }
 
-                // ==========================================================
-                // JURUS SAPU JAGAT: Bersihkan backtick jika AI masih ngeyel
-                // ==========================================================
+                $aiData = $response->json();
+
+                // Pastikan format NVIDIA sesuai ekspektasi
+                if (!isset($aiData['choices'][0]['message']['content'])) {
+                    throw new \Exception("Format respons aneh dari NVIDIA: " . json_encode($aiData));
+                }
+
+                $finalMarkdown = $aiData['choices'][0]['message']['content'];
+
                 $finalMarkdown = trim($finalMarkdown);
                 $finalMarkdown = preg_replace('/^```markdown\s*/i', '', $finalMarkdown);
                 $finalMarkdown = preg_replace('/^```\s*/', '', $finalMarkdown);
@@ -143,7 +155,6 @@ class DeepResearchController extends Controller
                     'session_id' => $research->session_id,
                     'user_message' => "Deep Research: " . $research->topic,
                     'ai_response' => $finalMarkdown,
-                    // Format otomatis dinamis mengikuti konfigurasi .env aktif
                     'model_used' => $modelAlpha . ' (' . strtoupper($providerAlpha) . ')'
                 ]);
 
