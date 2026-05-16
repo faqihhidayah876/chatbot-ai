@@ -173,11 +173,34 @@ class ChatController extends Controller
                         if ($sessionId) {
                             $allChats = Chat::where('session_id', $sessionId)->orderBy('created_at', 'asc')->get();
                             if ($allChats->count() > 0) {
-                                foreach ($allChats->slice(-12) as $chat) {
+                                $recentChats = $allChats->slice(-4);
+                                $olderChats = $allChats->slice(-14, 14);
+                                $stopWords = ['dan', 'atau', 'yang', 'di', 'ke', 'dari', 'ini', 'itu', 'untuk', 'dengan', 'apakah', 'bagaimana', 'buatkan', 'tolong', 'saya', 'kamu', 'anda'];
+                                $userWords = array_diff(str_word_count(strtolower($userMessage), 1), $stopWords);
+
+                                foreach ($olderChats as $chat) {
+                                    $chatWords = str_word_count(strtolower($chat->user_message . ' ' . $chat->ai_response), 1);
+                                    $intersection = array_intersect($userWords, $chatWords);
+
+                                    // Jika ada minimal 2 kata kunci yang sama, masukkan ke memori!
+                                    if (count($intersection) >= 2) {
+                                        $cleanUserMsg = preg_replace('/🖼️ \[Gambar Terlampir\]\n/', '', $chat->user_message);
+                                        $cleanUserMsg = preg_replace('/📦 \[GitHub: .*\]\n/', '', $cleanUserMsg);
+                                        $cleanUserMsg = preg_replace('/\[Dokumen \d+: .*?\]\n"""\n.*?\n"""\n\n/s', '[Dokumen Terlampir]', $cleanUserMsg);
+                                        $cleanUserMsg = preg_replace('/\[REFERENSI DOKUMEN\]\n"""\n.*?\n"""\n\n/s', "📎 [Dokumen Workspace SAHAJA LLM]\n", $cleanUserMsg);
+
+                                        $messages[] = ["role" => "user", "content" => "[Konteks Relevan Masa Lalu]: " . $cleanUserMsg];
+                                        $messages[] = ["role" => "assistant", "content" => $chat->ai_response];
+                                    }
+                                }
+
+                                // 5. Masukkan 2 obrolan terbaru secara utuh
+                                foreach ($recentChats as $chat) {
                                     $cleanUserMsg = preg_replace('/🖼️ \[Gambar Terlampir\]\n/', '', $chat->user_message);
                                     $cleanUserMsg = preg_replace('/📦 \[GitHub: .*\]\n/', '', $cleanUserMsg);
                                     $cleanUserMsg = preg_replace('/\[Dokumen \d+: .*?\]\n"""\n.*?\n"""\n\n/s', '[Dokumen Terlampir]', $cleanUserMsg);
                                     $cleanUserMsg = preg_replace('/\[REFERENSI DOKUMEN\]\n"""\n.*?\n"""\n\n/s', "📎 [Dokumen Workspace SAHAJA LLM]\n", $cleanUserMsg);
+
                                     $messages[] = ["role" => "user", "content" => $cleanUserMsg];
                                     $messages[] = ["role" => "assistant", "content" => $chat->ai_response];
                                 }
@@ -251,6 +274,13 @@ class ChatController extends Controller
             'smart' => [
                 'provider' => env('PROVIDER_SMART'),
                 'model'    => env('MODEL_SMART'),
+                'endpoint' => env('NVIDIA_ENDPOINT'),
+                'key'      => env('NVIDIA_API_KEY'),
+                'timeout'  => 300
+            ],
+            'alpha' => [
+                'provider' => env('PROVIDER_ALPHA'),
+                'model'    => env('MODEL_ALPHA'),
                 'endpoint' => env('NVIDIA_ENDPOINT'),
                 'key'      => env('NVIDIA_API_KEY'),
                 'timeout'  => 300
@@ -457,8 +487,8 @@ class ChatController extends Controller
 
                 if ($fileContent->successful()) {
                     $content = $fileContent->body();
-                    if (strlen($content) > 25000) {
-                        $content = substr($content, 0, 25000) . "\n... [KODE DIPOTONG UNTUK MENGHEMAT MEMORI]";
+                    if (strlen($content) > 45000) {
+                        $content = substr($content, 0, 45000) . "\n... [KODE DIPOTONG UNTUK MENGHEMAT MEMORI]";
                     }
                     $megaContent .= "--- FILE: {$filePath} ---\n```\n{$content}\n```\n\n";
                 }
@@ -497,7 +527,7 @@ class ChatController extends Controller
                 'query' => $query,
                 'search_depth' => 'basic',
                 'include_answer' => false,
-                'max_results' => 3, // Ambil 3 artikel teratas
+                'max_results' => 5,
             ]);
 
             if ($response->successful()) {

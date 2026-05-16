@@ -79,7 +79,7 @@ class DeepResearchController extends Controller
                 }
 
                 Cache::put('alpha_context_' . $research->id, $context, 3600);
-                $logs[] = ['time' => now()->timezone('Asia/Jakarta')->format('H:i:s'), 'message' => 'Berhasil mengekstrak sumber data terpercaya.'];
+                $logs[] = ['time' => now()->timezone('Asia/Jakarta')->format('H:i:s'), 'message' => 'Berhasil mengekstrak data, memproses jawaban...'];
                 $research->update(['logs' => $logs]);
 
             } catch (\Exception $e) {
@@ -90,7 +90,7 @@ class DeepResearchController extends Controller
         }
 
         elseif ($research->status === 'mencari_data') {
-            $logs[] = ['time' => now()->timezone('Asia/Jakarta')->format('H:i:s'), 'message' => 'Membangun logika penalaran dengan model Mistral...'];
+            $logs[] = ['time' => now()->timezone('Asia/Jakarta')->format('H:i:s'), 'message' => 'Membangun logika penalaran dengan mode Alpha...'];
             $research->update(['status' => 'menganalisis', 'logs' => $logs]);
 
             try {
@@ -111,13 +111,17 @@ class DeepResearchController extends Controller
                 DATA WEB UNTUK DIOLAH:
                 " . $context;
 
+                $modelAlpha = env('MODEL_ALPHA');
+                $endpointAlpha = env('NVIDIA_ENDPOINT');
+                $providerAlpha = env('PROVIDER_ALPHA');
+
                 $response = Http::withHeaders([
                     'Authorization' => 'Bearer ' . env('NVIDIA_API_KEY'),
                     'Content-Type' => 'application/json'
-                ])->withoutVerifying()->timeout(120)->post('https://integrate.api.nvidia.com/v1/chat/completions', [
-                    'model' => 'mistralai/mistral-small-4-119b-2603',
+                ])->withoutVerifying()->timeout(150)->post($endpointAlpha, [
+                    'model' => $modelAlpha,
                     'messages' => [['role' => 'user', 'content' => $systemPrompt]],
-                    'max_tokens' => 4000,
+                    'max_tokens' => 4096,
                     'temperature' => 0.5
                 ]);
 
@@ -128,18 +132,19 @@ class DeepResearchController extends Controller
                 // JURUS SAPU JAGAT: Bersihkan backtick jika AI masih ngeyel
                 // ==========================================================
                 $finalMarkdown = trim($finalMarkdown);
-                $finalMarkdown = preg_replace('/^```markdown\s*/i', '', $finalMarkdown); // Hapus awalan ```markdown
-                $finalMarkdown = preg_replace('/^```\s*/', '', $finalMarkdown);          // Hapus awalan ``` (jika ada)
-                $finalMarkdown = preg_replace('/```\s*$/', '', $finalMarkdown);          // Hapus akhiran ```
+                $finalMarkdown = preg_replace('/^```markdown\s*/i', '', $finalMarkdown);
+                $finalMarkdown = preg_replace('/^```\s*/', '', $finalMarkdown);
+                $finalMarkdown = preg_replace('/```\s*$/', '', $finalMarkdown);
                 $finalMarkdown = trim($finalMarkdown);
                 // ==========================================================
 
-                // JURUS PAMUNGKAS: Simpan hasil akhir ke tabel CHATS agar tidak hilang saat refresh!
+                // JURUS PAMUNGKAS: Simpan hasil akhir ke tabel CHATS dengan label dinamis
                 Chat::create([
                     'session_id' => $research->session_id,
                     'user_message' => "Deep Research: " . $research->topic,
                     'ai_response' => $finalMarkdown,
-                    'model_used' => 'mistralai/mistral-small-4-119b-2603'
+                    // Format otomatis dinamis mengikuti konfigurasi .env aktif
+                    'model_used' => $modelAlpha . ' (' . strtoupper($providerAlpha) . ')'
                 ]);
 
                 $logs[] = ['time' => now()->timezone('Asia/Jakarta')->format('H:i:s'), 'message' => 'Analisis selesai. Laporan disimpan ke riwayat chat.'];

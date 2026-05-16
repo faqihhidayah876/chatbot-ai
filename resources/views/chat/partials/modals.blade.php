@@ -167,14 +167,6 @@
             <div id="tab-data" class="tab-pane">
                 <h3 style="margin-bottom: 20px;">Data</h3>
 
-                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--glass-border); padding-bottom: 15px; margin-bottom: 15px;">
-                    <div>
-                        <strong style="display: block;">Tautan yang dibagikan</strong>
-                        <span style="font-size: 0.8rem; color: var(--text-secondary);">Kelola percakapan yang Anda bagikan.</span>
-                    </div>
-                    <button class="github-submit-btn" style="background: transparent; color: var(--text-primary); border: 1px solid var(--glass-border);">Kelola</button>
-                </div>
-
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <div>
                         <strong style="display: block;">Hapus semua obrolan</strong>
@@ -300,3 +292,27 @@
         </div>
     </div>
 </div>
+
+{{-- MODAL / PANEL DEEP RESEARCH (AGEN ALPHA) --}}
+<div id="floatingResearchBtn" style="display: none; position: fixed; bottom: 80px; right: 20px; z-index: 99; background: var(--accent-gradient); color: white; padding: 12px 20px; border-radius: 30px; cursor: pointer; box-shadow: 0 4px 15px rgba(37, 99, 235, 0.4);" onclick="toggleResearchPanel()">
+    <i class="fas fa-atom fa-spin-slow"></i> Agen Alpha Aktif
+</div>
+
+<div id="researchPanel" class="research-panel" style="position: fixed; top: 0; right: -400px; width: 350px; height: 100vh; background: var(--sidebar-bg); border-left: 1px solid var(--glass-border); z-index: 100000; transition: 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); display: flex; flex-direction: column; box-shadow: -5px 0 25px rgba(0,0,0,0.5);">
+    <div style="padding: 20px; border-bottom: 1px solid var(--glass-border); display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.2);">
+        <h3 style="margin: 0; color: #ef4444; font-size: 1.1rem;"><i class="fas fa-atom"></i> Agen Alpha</h3>
+        <button onclick="toggleResearchPanel()" style="background: transparent; border: none; color: var(--text-secondary); cursor: pointer; font-size: 1.2rem;"><i class="fas fa-times"></i></button>
+    </div>
+    <div id="researchLogs" style="flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; font-size: 0.85rem; font-family: monospace;">
+        </div>
+</div>
+
+<style>
+    #researchPanel.active { right: 0 !important; }
+    .log-item { padding: 12px; border-radius: 8px; background: rgba(255,255,255,0.05); border-left: 3px solid #3b82f6; line-height: 1.5; }
+    .log-item.processing { border-color: #f59e0b; color: #fcd34d; background: rgba(245, 158, 11, 0.1); }
+    .log-item.success { border-color: #10b981; color: #6ee7b7; background: rgba(16, 185, 129, 0.1); }
+    .log-item.error { border-color: #ef4444; color: #fca5a5; background: rgba(239, 68, 68, 0.1); }
+    .log-item.info { border-color: #3b82f6; color: #93c5fd; }
+    .fa-spin-slow { animation: fa-spin 3s infinite linear; }
+</style>

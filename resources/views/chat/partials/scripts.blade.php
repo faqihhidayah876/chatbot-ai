@@ -394,14 +394,19 @@ async function sendMessage() {
         }
     }
 
-    // 5. SIAPKAN PAYLOAD UNTUK LARAVEL
+    // 5. SIAPKAN PAYLOAD UNTUK LARAVEL (ANTI-GAGAL)
+    const maxTokensEl = document.getElementById('maxTokensInput');
+    const thinkingEl = document.getElementById('enableThinkingInput');
+    const webSearchEl = document.getElementById('enableWebSearchInput');
+
     const payload = {
         message: finalMessageToSend,
         session_id: currentSessionId,
         manual_mode: userSelectedMode,
-        max_tokens: document.getElementById('maxTokensInput').value,
-        enable_thinking: document.getElementById('enableThinkingInput').checked,
-        web_search: document.getElementById('enableWebSearchInput') ? document.getElementById('enableWebSearchInput').checked : false
+        // FIX: Pastikan dikonversi menjadi angka murni (integer) dan boolean tulen (true/false)
+        max_tokens: maxTokensEl ? parseInt(maxTokensEl.value) : 4096,
+        enable_thinking: thinkingEl ? thinkingEl.checked : false,
+        web_search: webSearchEl ? webSearchEl.checked : false
     };
 
     if (base64ImagesArray.length > 0) payload.image_data_array = base64ImagesArray;
@@ -562,10 +567,11 @@ function animateGeminiStyle(element, markdownText) {
 function renderAIContent(text, containerElement) {
     let rawText = text.replace(/\\\[/g, '$$$$').replace(/\\\]/g, '$$$$').replace(/\\\(/g, '$$').replace(/\\\)/g, '$$');
 
-    // 1. TANGKAP TAG THINKING
+    // 1. TANGKAP TAG THINKING & REASONING
     const thinkingBlocks = {};
     let thinkingIndex = 0;
-    rawText = rawText.replace(/<(?:thinking|think)>([\s\S]*?)<\/(?:thinking|think)>/gi, function(match, innerThinking) {
+
+    rawText = rawText.replace(/<(?:thinking|think|reasoning)>([\s\S]*?)<\/(?:thinking|think|reasoning)>/gi, function(match, innerThinking) {
         const placeholder = `@@THINKING_BLOCK_${thinkingIndex}@@`;
         const cleanThinking = innerThinking.trim().replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
@@ -1061,10 +1067,20 @@ window.closeOnboardModal = function() {
 let currentResearchId = null;
 
 async function startDeepResearch(prompt) {
-    document.getElementById('floatingResearchBtn').style.display = 'none';
-    document.getElementById('researchPanel').classList.add('active');
+    const floatBtn = document.getElementById('floatingResearchBtn');
+    if (floatBtn) floatBtn.style.display = 'none';
+
+    const panel = document.getElementById('researchPanel');
+    if (panel) panel.classList.add('active');
+
     const logsContainer = document.getElementById('researchLogs');
-    logsContainer.innerHTML = '';
+    if (logsContainer) {
+        logsContainer.innerHTML = '';
+    } else {
+        showToast("UI Panel Riset belum dipasang di HTML!", "error");
+        chatInput.disabled = false;
+        return; // Hentikan jika HTML tidak ada!
+    }
 
     appendResearchLog('Menginisialisasi Agen Alpha...', 'processing');
 
@@ -1079,33 +1095,22 @@ async function startDeepResearch(prompt) {
             body: JSON.stringify({topic: prompt, session_id: currentSessionId})
         });
 
-        // JURUS X-RAY: Ambil teks mentah dari server sebelum di-parse jadi JSON!
         const rawText = await res.text();
-
         let data;
-        try {
-            data = JSON.parse(rawText);
-        } catch(err) {
-            // JIKA GAGAL JADI JSON (LARAVEL MELEMPAR ERROR 500)
+        try { data = JSON.parse(rawText); } catch(err) {
             console.error("🔥 LARAVEL ERROR KETAHUAN:", rawText);
             appendResearchLog('Server Laravel Meledak! Buka Console (F12).', 'error');
-            alert("ERROR SERVER! Tekan F12 di keyboard, buka tab 'Console' untuk melihat penyakit aslinya!");
-            return; // Hentikan proses agar tidak mutar-mutar
+            return;
         }
 
         if(data.success) {
             currentResearchId = data.research_id;
-
-            // UPDATE URL JIKA SESSION BARU: Biar kalau refresh nggak balik ke welcome screen
             if (!currentSessionId && data.session_id) {
                 window.history.pushState({}, '', `/chat/${data.session_id}`);
                 currentSessionId = data.session_id;
-
-                // HAPUS ITEM SEMENTARA: Biar tidak double saat halaman di-render ulang nanti
                 const tempItem = document.getElementById('temp-session-loading');
                 if (tempItem) tempItem.remove();
             }
-
             appendResearchLog('Agen berhasil diaktifkan. Memulai pencarian data...', 'info');
             setTimeout(pollResearchStep, 2000);
         } else {
@@ -1193,11 +1198,13 @@ async function pollResearchStep() {
 
 function appendResearchLog(text, type = 'info') {
     const logsContainer = document.getElementById('researchLogs');
+    if (!logsContainer) return; // FIX: Cegah error jika elemen tidak ada
+
     const icon = type === 'processing' ? '<i class="fas fa-circle-notch fa-spin"></i>' :
                  (type === 'success' ? '<i class="fas fa-check"></i>' : '<i class="fas fa-info-circle"></i>');
 
     logsContainer.innerHTML += `<div class="log-item ${type}">${icon} <span style="margin-left: 8px;">${text}</span></div>`;
-    logsContainer.scrollTop = logsContainer.scrollHeight; // Auto scroll ke bawah
+    logsContainer.scrollTop = logsContainer.scrollHeight;
 }
 // Fungsi untuk Buka/Tutup Panel Riset (Fixed)
 window.toggleResearchPanel = function() {
