@@ -52,6 +52,7 @@ class DeepResearchController extends Controller
 
     public function processStep(Request $request)
     {
+        set_time_limit(300);
         $research = DeepResearch::findOrFail($request->research_id);
         $logs = $research->logs ?? [];
 
@@ -122,7 +123,7 @@ class DeepResearchController extends Controller
                 ])->withoutVerifying()->timeout(150)->post($endpointAlpha, [
                     'model' => $modelAlpha,
                     'messages' => [['role' => 'user', 'content' => $systemPrompt]],
-                    'max_tokens' => 4000, // FIX: Turunkan sedikit dari 4096 agar aman dari limit batas akhir model
+                    'max_tokens' => 4000, 
                     'temperature' => 0.5
                 ]);
 
