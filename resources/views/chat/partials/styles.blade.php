@@ -2128,3 +2128,39 @@ body.light-mode .markdown-body a {
 }
 .file-chip .remove-btn:hover { background: #ef4444; color: white; }
 .file-chip.loading { opacity: 0.7; pointer-events: none; }
+
+/* ========================================== */
+/* PERBAIKAN LIST (BULLET POINTS & ANGKA)     */
+/* ========================================== */
+.markdown-body ul {
+    list-style-type: disc !important;
+    padding-left: 24px !important;
+    margin-bottom: 12px;
+}
+
+.markdown-body ol {
+    list-style-type: decimal !important;
+    padding-left: 24px !important;
+    margin-bottom: 12px;
+}
+
+.markdown-body li {
+    margin-bottom: 6px;
+    display: list-item !important; /* Paksa browser memunculkan peluru */
+    line-height: 1.6;
+}
+
+/* 🌟 JURUS ANTI SPASI PANJANG DI DALAM LIST (LOOSE LIST FIX) 🌟 */
+.markdown-body li p {
+    margin-bottom: 0 !important;
+    display: inline !important; /* Paksa tag <p> di dalam list menjadi teks biasa agar tidak enter! */
+}
+
+/* Jika ada List di dalam List (Nested List) */
+.markdown-body ul ul,
+.markdown-body ol ul,
+.markdown-body ul ol,
+.markdown-body ol ol {
+    margin-top: 6px;
+    margin-bottom: 0; /* Hindari spasi ganda */
+}

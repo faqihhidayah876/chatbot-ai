@@ -123,7 +123,7 @@ class DeepResearchController extends Controller
                 ])->withoutVerifying()->timeout(150)->post($endpointAlpha, [
                     'model' => $modelAlpha,
                     'messages' => [['role' => 'user', 'content' => $systemPrompt]],
-                    'max_tokens' => 4000, 
+                    'max_tokens' => 4000,
                     'temperature' => 0.5
                 ]);
 

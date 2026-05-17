@@ -1,4 +1,11 @@
 const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+// Pengaturan Wajib Marked.js (GitHub Flavored Markdown)
+if (typeof marked !== 'undefined') {
+    marked.setOptions({
+        gfm: true,
+        breaks: true
+    });
+}
 let currentSessionId = "{{ $currentSession ? $currentSession->id : '' }}";
 let currentController = null;
 let lastUserMessage = "";
