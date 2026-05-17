@@ -386,14 +386,13 @@ async function sendMessage() {
             // JURUS ANTI-HACKER: Bersihkan input user agar tidak bisa disisipi script virus
             const safeInput = messageInput.replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
+            // Tampilan UI lebih rapi dan padat
             displayMessage = `
-                <div style="display: inline-block; text-align: left; width: fit-content; max-width: 100%;">
-                    <div style="display: flex; align-items: center; gap: 8px;">
-                        <i class="fas fa-paint-brush" style="color: #f43f5e; font-size: 0.9rem;"></i>
-                        <span style="color: rgba(255, 255, 255, 0.9); font-size: 0.9rem; font-weight: 500;">Menulis Deskripsi:</span>
-                    </div>
-                    <div style="margin-top: 5px; padding-left: 24px; font-style: italic; color: white; word-break: break-word;">${safeInput}</div>
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 6px;">
+                    <i class="fas fa-paint-brush" style="color: #f43f5e; font-size: 0.9rem;"></i>
+                    <span style="color: rgba(255, 255, 255, 0.95); font-size: 0.85rem; font-weight: 600;">Meminta Gambar:</span>
                 </div>
+                <div style="font-style: italic; color: white; word-break: break-word; line-height: 1.4;">"${safeInput}"</div>
             `;
             isImagenHtml = true; // Tandai bahwa pesan ini mengandung HTML
         } else {
@@ -423,11 +422,16 @@ async function sendMessage() {
             appendMessage('user', isImagenHtml ? 'Memproses UI...' : displayMessage);
 
             if (isImagenHtml) {
-                // Cari bubble user yang barusan dicetak, lalu ubah paksa jadi HTML
                 const userBubbles = document.querySelectorAll('.message.user .message-bubble');
                 if (userBubbles.length > 0) {
                     const lastUserBubble = userBubbles[userBubbles.length - 1];
                     lastUserBubble.innerHTML = displayMessage;
+
+                    // 🌟 JURUS SAKTI: Paksa "kulit" gelembung biru agar menyusut mengikuti teks!
+                    lastUserBubble.style.display = 'inline-block';
+                    lastUserBubble.style.width = 'fit-content';
+                    lastUserBubble.style.minWidth = '150px';
+                    lastUserBubble.style.maxWidth = '85%';
                 }
             }
 
