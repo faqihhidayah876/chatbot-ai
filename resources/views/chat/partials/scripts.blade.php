@@ -375,28 +375,14 @@ async function sendMessage() {
     // 4. SUSUN PESAN USER BERSERTA LAMPIRANNYA
     let finalMessageToSend = messageInput;
     let displayMessage = messageInput;
-    let isImagenHtml = false; //
 
     if (window.activeForceMode !== null) {
         if (!lastUserMessage) return; finalMessageToSend = lastUserMessage;
     } else {
         if (userSelectedMode === 'imagen') {
             finalMessageToSend = '/imagen ' + messageInput;
-
-            // JURUS ANTI-HACKER: Bersihkan input user agar tidak bisa disisipi script virus
-            const safeInput = messageInput.replace(/</g, "&lt;").replace(/>/g, "&gt;");
-
-            // Tampilan UI lebih rapi dan padat
-            displayMessage = `
-                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 6px;">
-                    <i class="fas fa-paint-brush" style="color: #f43f5e; font-size: 0.9rem;"></i>
-                    <span style="color: rgba(255, 255, 255, 0.95); font-size: 0.85rem; font-weight: 600;">Meminta Gambar:</span>
-                </div>
-                <div style="font-style: italic; color: white; word-break: break-word; line-height: 1.4;">"${safeInput}"</div>
-            `;
-            isImagenHtml = true; // Tandai bahwa pesan ini mengandung HTML
+            displayMessage = messageInput;
         } else {
-            // Mode Chat Normal
             if (combinedPdfText !== "") {
                 finalMessageToSend = combinedPdfText + `Instruksi User: ${messageInput || "Tolong analisis dokumen di atas."}`;
                 displayMessage = `📎 [${pdfCount} Dokumen Terlampir]\n${messageInput}`;
@@ -418,23 +404,8 @@ async function sendMessage() {
             const msgContainer = document.getElementById('messagesContainer'); if (msgContainer) msgContainer.style.display = 'flex';
             chatInput.value = ''; chatInput.style.height = 'auto';
 
-            // 🌟 JURUS SAKTI MANIPULASI DOM: Cetak dulu, lalu suntik HTML-nya!
-            appendMessage('user', isImagenHtml ? 'Memproses UI...' : displayMessage);
-
-            if (isImagenHtml) {
-                const userBubbles = document.querySelectorAll('.message.user .message-bubble');
-                if (userBubbles.length > 0) {
-                    const lastUserBubble = userBubbles[userBubbles.length - 1];
-                    lastUserBubble.innerHTML = displayMessage;
-
-                    // 🌟 JURUS SAKTI: Paksa "kulit" gelembung biru agar menyusut mengikuti teks!
-                    lastUserBubble.style.display = 'inline-block';
-                    lastUserBubble.style.width = 'fit-content';
-                    lastUserBubble.style.minWidth = '150px';
-                    lastUserBubble.style.maxWidth = '85%';
-                }
-            }
-
+            // 🌟 Cetak pesan normal, langsung rapi dan fit-content bawaan sistem
+            appendMessage('user', displayMessage);
             formatAttachmentIcons();
         }
     }
