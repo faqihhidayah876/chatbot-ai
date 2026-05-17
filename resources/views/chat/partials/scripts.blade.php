@@ -387,11 +387,13 @@ async function sendMessage() {
             const safeInput = messageInput.replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
             displayMessage = `
-                <div style="display:flex; align-items:center; gap:8px;">
-                    <i class="fas fa-paint-brush" style="color:#f43f5e; font-size:0.9rem;"></i>
-                    <span style="color:var(--text-secondary); font-size:0.9rem; font-weight:500;">Menulis Deskripsi:</span>
+                <div style="display: inline-block; text-align: left; width: fit-content; max-width: 100%;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <i class="fas fa-paint-brush" style="color: #f43f5e; font-size: 0.9rem;"></i>
+                        <span style="color: rgba(255, 255, 255, 0.9); font-size: 0.9rem; font-weight: 500;">Menulis Deskripsi:</span>
+                    </div>
+                    <div style="margin-top: 5px; padding-left: 24px; font-style: italic; color: white; word-break: break-word;">${safeInput}</div>
                 </div>
-                <div style="margin-top:5px; padding-left:24px; font-style:italic; color:white;">${safeInput}</div>
             `;
             isImagenHtml = true; // Tandai bahwa pesan ini mengandung HTML
         } else {
