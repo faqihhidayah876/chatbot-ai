@@ -372,23 +372,28 @@ async function sendMessage() {
         return;
     }
 
-    // 4. SUSUN PESAN USER BERSERTA LAMPIRANNYA (🔥 PERBAIKAN IMAGEN UX)
+    // 4. SUSUN PESAN USER BERSERTA LAMPIRANNYA
     let finalMessageToSend = messageInput;
     let displayMessage = messageInput;
+    let isImagenHtml = false; //
 
     if (window.activeForceMode !== null) {
         if (!lastUserMessage) return; finalMessageToSend = lastUserMessage;
     } else {
-        // 🌟 JURUS SUNTIKAN RAHASIA UNTUK MODE GAMBAR 🌟
         if (userSelectedMode === 'imagen') {
             finalMessageToSend = '/imagen ' + messageInput;
+
+            // JURUS ANTI-HACKER: Bersihkan input user agar tidak bisa disisipi script virus
+            const safeInput = messageInput.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
             displayMessage = `
                 <div style="display:flex; align-items:center; gap:8px;">
                     <i class="fas fa-paint-brush" style="color:#f43f5e; font-size:0.9rem;"></i>
                     <span style="color:var(--text-secondary); font-size:0.9rem; font-weight:500;">Menulis Deskripsi:</span>
                 </div>
-                <div style="margin-top:5px; padding-left:24px; font-style:italic; color:var(--text-primary);">${messageInput}</div>
+                <div style="margin-top:5px; padding-left:24px; font-style:italic; color:white;">${safeInput}</div>
             `;
+            isImagenHtml = true; // Tandai bahwa pesan ini mengandung HTML
         } else {
             // Mode Chat Normal
             if (combinedPdfText !== "") {
@@ -411,7 +416,20 @@ async function sendMessage() {
             const welcome = document.getElementById('welcomeScreen'); if (welcome) welcome.style.display = 'none';
             const msgContainer = document.getElementById('messagesContainer'); if (msgContainer) msgContainer.style.display = 'flex';
             chatInput.value = ''; chatInput.style.height = 'auto';
-            appendMessage('user', displayMessage); formatAttachmentIcons();
+
+            // 🌟 JURUS SAKTI MANIPULASI DOM: Cetak dulu, lalu suntik HTML-nya!
+            appendMessage('user', isImagenHtml ? 'Memproses UI...' : displayMessage);
+
+            if (isImagenHtml) {
+                // Cari bubble user yang barusan dicetak, lalu ubah paksa jadi HTML
+                const userBubbles = document.querySelectorAll('.message.user .message-bubble');
+                if (userBubbles.length > 0) {
+                    const lastUserBubble = userBubbles[userBubbles.length - 1];
+                    lastUserBubble.innerHTML = displayMessage;
+                }
+            }
+
+            formatAttachmentIcons();
         }
     }
 
@@ -655,8 +673,10 @@ function renderAIContent(text, containerElement) {
     const styleTag = document.createElement('style');
     styleTag.textContent = `
         .markdown-body img {
+            width: 100% !important;
             max-width: 400px !important;
             height: auto !important;
+            box-sizing: border-box !important;
             border-radius: 12px !important;
             box-shadow: 0 8px 25px rgba(0,0,0,0.3) !important;
             margin: 15px auto !important;
@@ -669,7 +689,8 @@ function renderAIContent(text, containerElement) {
         .imagen-download-btn {
             background: #1e293b; color: #f1f5f9; border: 1px solid var(--glass-border);
             padding: 7px 15px; border-radius: 20px; font-size: 0.8rem;
-            font-weight: 500; cursor: pointer; transition: 0.2s;
+            font-weight: 500; cursor: pointer;
+            display: inline-flex; align-items: center; gap: 8px; text-decoration: none !important;
         }
     `;
     containerElement.appendChild(styleTag);
