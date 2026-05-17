@@ -33,14 +33,18 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 Route::middleware('auth')->group(function () {
     Route::get('/chat', [ChatController::class, 'index'])->name('chat.index');
     Route::get('/chat/{id}', [ChatController::class, 'index'])->name('chat.show');
-    Route::post('/send', [ChatController::class, 'sendMessage'])->name('chat.send');
     Route::get('/new', [ChatController::class, 'newChat'])->name('chat.new');
+    Route::get('/sahaja-llm', [SahajaLlmController::class, 'index'])->name('sahaja-llm.index');
+
+    Route::middleware('throttle:30,1')->group(function () {
+        Route::post('/send', [ChatController::class, 'sendMessage'])->name('chat.send');
+        Route::post('/deep-research/init', [DeepResearchController::class, 'initResearch'])->name('deep-research.init');
+        Route::post('/deep-research/step', [DeepResearchController::class, 'processStep'])->name('deep-research.step');
+        Route::post('/sahaja-llm/upload', [SahajaLlmController::class, 'uploadDocument'])->name('sahaja-llm.upload');
+    });
+
     Route::put('/session/{id}/rename', [ChatController::class, 'renameSession'])->name('session.rename');
     Route::delete('/session/{id}/delete', [ChatController::class, 'deleteSession'])->name('session.delete');
-    Route::post('/deep-research/init', [DeepResearchController::class, 'initResearch'])->name('deep-research.init');
-    Route::post('/deep-research/step', [DeepResearchController::class, 'processStep'])->name('deep-research.step');
-    Route::get('/sahaja-llm', [SahajaLlmController::class, 'index'])->name('sahaja-llm.index');
-    Route::post('/sahaja-llm/upload', [SahajaLlmController::class, 'uploadDocument'])->name('sahaja-llm.upload');
     Route::delete('/sahaja-llm/document/{id}', [SahajaLlmController::class, 'deleteDocument'])->name('sahaja-llm.delete');
 });
 
@@ -48,8 +52,6 @@ Route::middleware('auth')->group(function () {
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [AdminController::class, 'index'])->name('dashboard');
     Route::delete('/user/{id}', [AdminController::class, 'deleteUser'])->name('deleteUser');
-
-    // PERBAIKAN DI SINI: URL jadi '/user/{id}/chats' dan name jadi 'clearChats'
     Route::delete('/user/{id}/chats', [AdminController::class, 'clearUserChats'])->name('clearChats');
 });
 

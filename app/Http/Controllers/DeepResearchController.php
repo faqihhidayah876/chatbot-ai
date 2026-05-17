@@ -54,6 +54,13 @@ class DeepResearchController extends Controller
     {
         set_time_limit(300);
         $research = DeepResearch::findOrFail($request->research_id);
+        $cekKepemilikan = \App\Models\Session::where('id', $research->session_id)
+                            ->where('user_id', \Illuminate\Support\Facades\Auth::id())
+                            ->first();
+
+        if (!$cekKepemilikan) {
+            abort(403, 'Akses Ditolak: Terdeteksi Percobaan Manipulasi Data!');
+        }
         $logs = $research->logs ?? [];
 
         if ($research->status === 'inisialisasi') {

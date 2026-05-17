@@ -7,7 +7,8 @@
 
         <div id="multiFileContainer" class="multi-file-container" style="display: none;"></div>
 
-        <input type="file" id="fileInput" accept=".pdf,image/png,image/jpeg,image/webp" multiple style="display: none;">
+        <input type="file" id="fileInput" accept=".pdf,image/png,image/jpeg,image/webp" multiple
+            style="display: none;">
 
         <textarea class="chat-input" id="chatInput" placeholder="Ketik pesan Anda di sini..." rows="1"></textarea>
 
@@ -33,8 +34,7 @@
                 </div>
 
                 <div style="position: relative;">
-                    <button type="button" class="icon-action-btn" id="modelSelectButton"
-                        title="Pilih Model AI">
+                    <button type="button" class="icon-action-btn" id="modelSelectButton" title="Pilih Model AI">
                         <i class="fas fa-magic" id="currentModelIcon"></i>
                     </button>
 
@@ -45,7 +45,8 @@
                             <i class="fas fa-magic" style="color: #3b82f6; margin-top: 4px; width: 20px;"></i>
                             <div style="display: flex; flex-direction: column; gap: 2px;">
                                 <strong style="font-size: 0.95rem; color: var(--text-primary);">Mode Otomatis</strong>
-                                <span style="font-size: 0.75rem; color: var(--text-secondary); line-height: 1.3;">Sistem menentukan berdasarkan prompt anda</span>
+                                <span style="font-size: 0.75rem; color: var(--text-secondary); line-height: 1.3;">Sistem
+                                    menentukan berdasarkan prompt anda</span>
                             </div>
                         </div>
                         <div class="option-item model-option" style="align-items: flex-start;"
@@ -53,7 +54,8 @@
                             <i class="fas fa-bolt" style="color: #f59e0b; margin-top: 4px; width: 20px;"></i>
                             <div style="display: flex; flex-direction: column; gap: 2px;">
                                 <strong style="font-size: 0.95rem; color: var(--text-primary);">Mode Cepat</strong>
-                                <span style="font-size: 0.75rem; color: var(--text-secondary); line-height: 1.3;">Cepat & akurat dengan Mistral Small 4</span>
+                                <span style="font-size: 0.75rem; color: var(--text-secondary); line-height: 1.3;">Cepat
+                                    & akurat dengan Mistral Small 4</span>
                             </div>
                         </div>
                         <div class="option-item model-option" style="align-items: flex-start;"
@@ -61,7 +63,9 @@
                             <i class="fas fa-brain" style="color: #ec4899; margin-top: 4px; width: 20px;"></i>
                             <div style="display: flex; flex-direction: column; gap: 2px;">
                                 <strong style="font-size: 0.95rem; color: var(--text-primary);">Mode Cerdas</strong>
-                                <span style="font-size: 0.75rem; color: var(--text-secondary); line-height: 1.3;">Bernalar tajam dengan Mistral 119B</span>
+                                <span
+                                    style="font-size: 0.75rem; color: var(--text-secondary); line-height: 1.3;">Bernalar
+                                    tajam dengan Mistral 119B</span>
                             </div>
                         </div>
                         <div class="option-item model-option" style="align-items: flex-start;"
@@ -69,7 +73,9 @@
                             <i class="fas fa-eye" style="color: #10b981; margin-top: 4px; width: 20px;"></i>
                             <div style="display: flex; flex-direction: column; gap: 2px;">
                                 <strong style="font-size: 0.95rem; color: var(--text-primary);">Mode Vision</strong>
-                                <span style="font-size: 0.75rem; color: var(--text-secondary); line-height: 1.3;">Menganalisa gambar dengan Gemma 4</span>
+                                <span
+                                    style="font-size: 0.75rem; color: var(--text-secondary); line-height: 1.3;">Menganalisa
+                                    gambar dengan Gemma 4</span>
                             </div>
                         </div>
                         <div class="option-item model-option" style="align-items: flex-start;"
@@ -77,14 +83,28 @@
                             <i class="fas fa-code" style="color: #a855f7; margin-top: 4px; width: 20px;"></i>
                             <div style="display: flex; flex-direction: column; gap: 2px;">
                                 <strong style="font-size: 0.95rem; color: var(--text-primary);">Mode Coding</strong>
-                                <span style="font-size: 0.75rem; color: var(--text-secondary); line-height: 1.3;">Konteks besar dengan Qwen 3 Coder</span>
+                                <span
+                                    style="font-size: 0.75rem; color: var(--text-secondary); line-height: 1.3;">Konteks
+                                    besar dengan Qwen 3 Coder</span>
                             </div>
                         </div>
-                        <div class="option-item model-option" style="align-items: flex-start;" onclick="selectModelMode('alpha', 'fa-atom')">
+                        <div class="option-item model-option" style="align-items: flex-start;"
+                            onclick="selectModelMode('alpha', 'fa-atom')">
                             <i class="fas fa-atom" style="color: #ef4444; margin-top: 4px; width: 20px;"></i>
                             <div style="display: flex; flex-direction: column; gap: 2px;">
                                 <strong style="font-size: 0.95rem; color: var(--text-primary);">Mode Alpha</strong>
-                                <span style="font-size: 0.75rem; color: var(--text-secondary); line-height: 1.3;">Deep Research Agent (Tavily + Mistral)</span>
+                                <span style="font-size: 0.75rem; color: var(--text-secondary); line-height: 1.3;">Deep
+                                    Research Agent (Tavily + Mistral)</span>
+                            </div>
+                        </div>
+                        <div class="option-item model-option" style="align-items: flex-start;"
+                            onclick="selectModelMode('imagen', 'fa-paint-brush')">
+                            <i class="fas fa-paint-brush" style="color: #f43f5e; margin-top: 4px; width: 20px;"></i>
+                            <div style="display: flex; flex-direction: column; gap: 2px;">
+                                <strong style="font-size: 0.95rem; color: var(--text-primary);">Sahaja Imagen</strong>
+                                <span
+                                    style="font-size: 0.75rem; color: var(--text-secondary); line-height: 1.3;">Generator
+                                    Gambar AI (Stable Diffusion)</span>
                             </div>
                         </div>
                     </div>

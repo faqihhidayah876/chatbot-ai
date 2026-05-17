@@ -372,25 +372,39 @@ async function sendMessage() {
         return;
     }
 
-    // 4. SUSUN PESAN USER BERSERTA LAMPIRANNYA
+    // 4. SUSUN PESAN USER BERSERTA LAMPIRANNYA (🔥 PERBAIKAN IMAGEN UX)
     let finalMessageToSend = messageInput;
     let displayMessage = messageInput;
 
     if (window.activeForceMode !== null) {
         if (!lastUserMessage) return; finalMessageToSend = lastUserMessage;
     } else {
-        if (combinedPdfText !== "") {
-            finalMessageToSend = combinedPdfText + `Instruksi User: ${messageInput || "Tolong analisis dokumen di atas."}`;
-            displayMessage = `📎 [${pdfCount} Dokumen Terlampir]\n${messageInput}`;
+        // 🌟 JURUS SUNTIKAN RAHASIA UNTUK MODE GAMBAR 🌟
+        if (userSelectedMode === 'imagen') {
+            finalMessageToSend = '/imagen ' + messageInput;
+            displayMessage = `
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <i class="fas fa-paint-brush" style="color:#f43f5e; font-size:0.9rem;"></i>
+                    <span style="color:var(--text-secondary); font-size:0.9rem; font-weight:500;">Menulis Deskripsi:</span>
+                </div>
+                <div style="margin-top:5px; padding-left:24px; font-style:italic; color:var(--text-primary);">${messageInput}</div>
+            `;
+        } else {
+            // Mode Chat Normal
+            if (combinedPdfText !== "") {
+                finalMessageToSend = combinedPdfText + `Instruksi User: ${messageInput || "Tolong analisis dokumen di atas."}`;
+                displayMessage = `📎 [${pdfCount} Dokumen Terlampir]\n${messageInput}`;
+            }
+            if (base64ImagesArray.length > 0) {
+                if (finalMessageToSend === messageInput) finalMessageToSend = messageInput || "Jelaskan gambar-gambar ini.";
+                displayMessage = `🖼️ [${imgCount} Gambar Terlampir]\n` + displayMessage;
+            }
+            if (currentGithubRepo) {
+                finalMessageToSend = messageInput || "Analisis kode ini.";
+                displayMessage = `📦 [GitHub: ${currentFileName || 'Repo'}]\n${messageInput}`;
+            }
         }
-        if (base64ImagesArray.length > 0) {
-            if (finalMessageToSend === messageInput) finalMessageToSend = messageInput || "Jelaskan gambar-gambar ini.";
-            displayMessage = `🖼️ [${imgCount} Gambar Terlampir]\n` + displayMessage;
-        }
-        if (currentGithubRepo) {
-            finalMessageToSend = messageInput || "Analisis kode ini.";
-            displayMessage = `📦 [GitHub: ${currentFileName || 'Repo'}]\n${messageInput}`;
-        }
+
         lastUserMessage = finalMessageToSend;
 
         if (window.activeForceMode === null) {
@@ -410,7 +424,6 @@ async function sendMessage() {
         message: finalMessageToSend,
         session_id: currentSessionId,
         manual_mode: userSelectedMode,
-        // FIX: Pastikan dikonversi menjadi angka murni (integer) dan boolean tulen (true/false)
         max_tokens: maxTokensEl ? parseInt(maxTokensEl.value) : 4096,
         enable_thinking: thinkingEl ? thinkingEl.checked : false,
         web_search: webSearchEl ? webSearchEl.checked : false
@@ -420,7 +433,7 @@ async function sendMessage() {
     if (currentGithubRepo) payload.github_repo = currentGithubRepo;
     if (window.activeForceMode !== null) payload.force_mode = window.activeForceMode;
 
-    // 6. DETEKSI MODE AI OTOMATIS (Cerdas / Cepat / Vision)
+    // 6. DETEKSI MODE AI OTOMATIS
     let mode = 'fast';
     if (window.activeForceMode !== null) mode = window.activeForceMode;
     else if (userSelectedMode !== 'auto') mode = userSelectedMode;
@@ -454,29 +467,34 @@ async function sendMessage() {
         if (loadingBubble) {
             const aiMessageDiv = document.createElement('div'); aiMessageDiv.className = 'message ai';
             let finalModelLabel = '<i class="fas fa-bolt"></i> Mode Cepat';
-                    let finalBadgeClass = 'mode-fast';
-                    let extraStyle = '';
-                    const modelUsedStr = (data.model_used || '').toLowerCase();
+            let finalBadgeClass = 'mode-fast';
+            let extraStyle = '';
+            const modelUsedStr = (data.model_used || '').toLowerCase();
 
-                    if (modelUsedStr.includes('vision') || modelUsedStr.includes('gemma')) {
-                        finalModelLabel = '<i class="fas fa-eye"></i> Mode Vision';
-                        extraStyle = 'background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3);';
-                        finalBadgeClass = '';
-                    }
-                    else if (modelUsedStr.includes('coder') || modelUsedStr.includes('qwen')) {
-                        finalModelLabel = '<i class="fas fa-code"></i> Mode Code';
-                        extraStyle = 'background: rgba(168, 85, 247, 0.15); color: #a855f7; border: 1px solid rgba(168, 85, 247, 0.3);';
-                        finalBadgeClass = '';
-                    }
-                    // JURUS PEMBEDA MISTRAL: Cek apakah ini versi Medium/128B (Cerdas) atau Small/119B (Cepat)
-                    else if (modelUsedStr.includes('medium') || modelUsedStr.includes('128b')) {
-                        finalModelLabel = '<i class="fas fa-brain"></i> Mode Cerdas';
-                        finalBadgeClass = 'mode-smart';
-                    }
-                    else if (modelUsedStr.includes('small') || modelUsedStr.includes('119b')) {
-                        finalModelLabel = '<i class="fas fa-bolt"></i> Mode Cepat';
-                        finalBadgeClass = 'mode-fast';
-                    }
+            if (modelUsedStr.includes('vision') || modelUsedStr.includes('gemma')) {
+                finalModelLabel = '<i class="fas fa-eye"></i> Mode Vision';
+                extraStyle = 'background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3);';
+                finalBadgeClass = '';
+            }
+            else if (modelUsedStr.includes('coder') || modelUsedStr.includes('qwen')) {
+                finalModelLabel = '<i class="fas fa-code"></i> Mode Code';
+                extraStyle = 'background: rgba(168, 85, 247, 0.15); color: #a855f7; border: 1px solid rgba(168, 85, 247, 0.3);';
+                finalBadgeClass = '';
+            }
+            else if (modelUsedStr.includes('medium') || modelUsedStr.includes('128b')) {
+                finalModelLabel = '<i class="fas fa-brain"></i> Mode Cerdas';
+                finalBadgeClass = 'mode-smart';
+            }
+            // 🌟 JURUS PEMBEDA BADGE SAHAJA IMAGEN 🌟
+            else if (modelUsedStr.includes('imagen') || modelUsedStr.includes('flux')) {
+                finalModelLabel = '<i class="fas fa-paint-brush"></i> Sahaja Imagen';
+                extraStyle = 'background: rgba(236, 72, 153, 0.15); color: #ec4899; border: 1px solid rgba(236, 72, 153, 0.3);';
+                finalBadgeClass = '';
+            }
+            else if (modelUsedStr.includes('small') || modelUsedStr.includes('119b')) {
+                finalModelLabel = '<i class="fas fa-bolt"></i> Mode Cepat';
+                finalBadgeClass = 'mode-fast';
+            }
 
             aiMessageDiv.innerHTML = `<div class="message-avatar ai-avatar-msg" style="background: transparent; padding: 0;"><img src="https://i.ibb.co.com/jZZ0648R/Logo-SAHAJA-AI.png" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;"></div><div class="message-content"><div class="mode-badge ${finalBadgeClass}" style="${extraStyle}">${finalModelLabel}</div><div class="message-bubble markdown-body"></div><div class="ai-actions" style="position: relative; display: flex; gap: 5px; align-items: center;"><button class="action-btn" onclick="copyText(this)"><i class="far fa-copy"></i> Salin</button><div class="export-dropdown-container"><button class="action-btn" onclick="toggleExportMenu(this)"><i class="fas fa-ellipsis-v"></i></button><div class="export-menu" style="display: none; position: absolute; bottom: 100%; left: 0; background: var(--sidebar-bg); border: 1px solid var(--glass-border); border-radius: 8px; padding: 5px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); z-index: 50; width: 140px; margin-bottom: 5px;"><div class="option-item" style="font-size: 0.8rem; padding: 6px 10px;" onclick="exportToDoc(this)"><i class="fas fa-file-word" style="color: #3b82f6;"></i> Unduh DOCS</div></div></div></div></div>`;
             loadingBubble.parentNode.replaceChild(aiMessageDiv, loadingBubble);
@@ -487,7 +505,6 @@ async function sendMessage() {
         if (!currentSessionId && data.session_id) { window.history.pushState({}, '', `/chat/${data.session_id}`); currentSessionId = data.session_id; }
         window.activeForceMode = null;
 
-        // TAMBAHAN WAJIB: RESET GITHUB SETELAH SUKSES TERKIRIM
         currentGithubRepo = "";
         currentFileName = "";
 
@@ -531,9 +548,9 @@ function appendLoadingWithMode(mode) {
     if (mode === 'vision') { badgeHtml = `<div class="mode-badge" style="background: rgba(16, 185, 129, 0.15); color: #10b981;"><i class="fas fa-eye"></i> Mode Vision</div>`; textHtml = `<span class="typing-text">Menganalisis...</span>`; }
     else if (mode === 'github' || mode === 'coding') { badgeHtml = `<div class="mode-badge" style="background: rgba(168, 85, 247, 0.15); color: #a855f7;"><i class="fas fa-code"></i> Mode Code</div>`; textHtml = `<span class="typing-text">Menganalisis...</span>`; }
     else if (mode === 'smart') { badgeHtml = `<div class="mode-badge mode-smart"><i class="fas fa-brain"></i> Mode Cerdas</div>`; textHtml = `<span class="typing-text">Bernalar... <button class="switch-btn" onclick="switchToFastMode()">[Beralih ke Cepat]</button></span>`; }
+    else if (mode === 'imagen') { badgeHtml = `<div class="mode-badge" style="background: rgba(236, 72, 153, 0.15); color: #ec4899; border: 1px solid rgba(236, 72, 153, 0.3);"><i class="fas fa-paint-brush"></i> Sahaja Imagen</div>`; textHtml = `<span class="typing-text">Membuat Gambar...</span>`; }
     else { badgeHtml = `<div class="mode-badge mode-fast"><i class="fas fa-bolt"></i> Mode Cepat</div>`; textHtml = `<span class="typing-text">Berpikir... <button class="switch-btn" style="color:#d4a017;" onclick="switchToMode('smart')">[Beralih ke Cerdas]</button></span>`; }
 
-    // FIX: Ganti icon robot dengan Logo SAHAJA AI
     div.innerHTML = `
         <div class="message-avatar ai-avatar-msg" style="background: transparent; padding: 0; border: 1px solid var(--glass-border); overflow:hidden;">
             <img src="https://i.ibb.co.com/jZZ0648R/Logo-SAHAJA-AI.png" alt="AI" style="width: 100%; height: 100%; object-fit: cover;">
@@ -572,6 +589,8 @@ function animateGeminiStyle(element, markdownText) {
     }, delay + 100);
 }
 function renderAIContent(text, containerElement) {
+    if (!text) return;
+
     let rawText = text.replace(/\\\[/g, '$$$$').replace(/\\\]/g, '$$$$').replace(/\\\(/g, '$$').replace(/\\\)/g, '$$');
 
     // 1. TANGKAP TAG THINKING & REASONING
@@ -600,15 +619,23 @@ function renderAIContent(text, containerElement) {
     rawText = rawText.replace(/\$\$([\s\S]*?)\$\$/g, function(match) { const placeholder = `@@MATH_BLOCK_${mathIndex}@@`; mathBlocks[placeholder] = match; mathIndex++; return placeholder; });
     rawText = rawText.replace(/\$([^$\n]*?)\$/g, function(match) { const placeholder = `@@MATH_INLINE_${mathIndex}@@`; mathBlocks[placeholder] = match; mathIndex++; return placeholder; });
 
-    // 3. UBAH TEKS JADI MARKDOWN
+    // 3. RENDER MARKDOWN
     let htmlContent = marked.parse(rawText);
 
-    // 4. KEMBALIKAN RUMUS MATEMATIKA
+    // 4. JURUS ANTI XSS HACKER
+    if (typeof DOMPurify !== 'undefined') {
+        htmlContent = DOMPurify.sanitize(htmlContent, {
+            ADD_ATTR: ['class', 'target'], // Izinkan class CSS (seperti language-php) agar warna kode tetap jalan
+            FORBID_TAGS: ['script', 'style', 'object', 'embed'] // Banned tag perusak
+        });
+    }
+
+    // 5. KEMBALIKAN RUMUS MATEMATIKA
     for (const [placeholder, mathText] of Object.entries(mathBlocks)) {
         htmlContent = htmlContent.split(placeholder).join(mathText);
     }
 
-    // 5. KEMBALIKAN KOTAK THINKING (JURUS ANTI-BUG PARAGRAF)
+    // 6. KEMBALIKAN KOTAK THINKING (JURUS ANTI-BUG PARAGRAF)
     for (const [placeholder, thinkText] of Object.entries(thinkingBlocks)) {
         // Hancurkan tag <p> yang membungkusnya!
         const pRegex = new RegExp(`<p>\\s*${placeholder}\\s*</p>`, 'g');
@@ -619,11 +646,62 @@ function renderAIContent(text, containerElement) {
         }
     }
 
+    // 7. CETAK KE LAYAR (Plus setingan satpam anti-luberr untuk gambar)
+    containerElement.style.display = 'block';
+    containerElement.style.maxWidth = '100%';
     containerElement.innerHTML = htmlContent;
 
-    // 6. EKSEKUSI RENDER HIGHLIGHT KODE & MATEMATIKA
+    // 8. SUNTIKKAN CSS KHUSUS GAMBAR IMAGEN & TOMBOL (Setelah DOMPurify jalan)
+    const styleTag = document.createElement('style');
+    styleTag.textContent = `
+        .markdown-body img {
+            max-width: 400px !important;
+            height: auto !important;
+            border-radius: 12px !important;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3) !important;
+            margin: 15px auto !important;
+            display: block !important;
+            border: 2px solid var(--glass-border) !important;
+        }
+        .imagen-download-wrapper {
+            text-align: center; margin-top: -10px; margin-bottom: 20px;
+        }
+        .imagen-download-btn {
+            background: #1e293b; color: #f1f5f9; border: 1px solid var(--glass-border);
+            padding: 7px 15px; border-radius: 20px; font-size: 0.8rem;
+            font-weight: 500; cursor: pointer; transition: 0.2s;
+        }
+    `;
+    containerElement.appendChild(styleTag);
+
+    // 9. JURUS SISIPKAN TOMBOL UNDUH GAMBAR
+    const images = containerElement.querySelectorAll('img');
+    images.forEach(img => {
+        const imgSrc = img.getAttribute('src');
+        if (imgSrc) {
+            const downloadWrapper = document.createElement('div');
+            downloadWrapper.className = 'imagen-download-wrapper';
+
+            const downloadBtn = document.createElement('a');
+            downloadBtn.href = imgSrc;
+            downloadBtn.className = 'imagen-download-btn';
+            downloadBtn.setAttribute('download', 'Sahaja_Imagen_' + Date.now() + '.jpg');
+            downloadBtn.target = '_blank';
+            downloadBtn.innerHTML = `<i class="fas fa-cloud-download-alt"></i> Download Gambar`;
+
+            downloadWrapper.appendChild(downloadBtn);
+            img.parentNode.insertBefore(downloadWrapper, img.nextSibling);
+        }
+    });
+
+    // 10. EKSEKUSI RENDER HIGHLIGHT KODE & MATEMATIKA
     if (window.renderMathInElement) window.renderMathInElement(containerElement, { delimiters: [{ left: '$$', right: '$$', display: true }, { left: '$', right: '$', display: false }], throwOnError: false });
-    containerElement.querySelectorAll('pre code').forEach((block) => { if (window.hljs) hljs.highlightElement(block); });
+    containerElement.querySelectorAll('pre code').forEach((block) => {
+        if (window.hljs) hljs.highlightElement(block);
+        if (typeof addCopyButtonToCodeBlock === 'function') addCopyButtonToCodeBlock(block); // Beri tombol copy kalau ada fungsinya
+    });
+
+    if (typeof scrollToBottomSmooth === 'function') scrollToBottomSmooth();
 }
 
 // Fungsi Helper untuk klik buka/tutup (letakkan di luar renderAIContent)

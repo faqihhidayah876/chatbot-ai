@@ -34,7 +34,11 @@ class ChatController extends Controller
     public function sendMessage(Request $request)
     {
         try {
-            $request->validate(['message' => 'required']);
+            $request->validate([
+                'message' => 'required|string|max:20000',
+            ], [
+                'message.max' => 'Pesan terlalu panjang! Maksimal 15.000 karakter untuk mencegah overload server.'
+            ]);
 
             $userMessage = $request->message;
             $sessionId = $request->session_id;
@@ -91,6 +95,13 @@ class ChatController extends Controller
             } else {
                 $session = Session::where('id', $sessionId)->where('user_id', $userId)->first();
                 if ($session) $session->touch();
+            }
+            // =========================================================
+            // INTERCEPTOR: DETEKSI JIKA USER MINTA GENERATE GAMBAR
+            // =========================================================
+            if (\Illuminate\Support\Str::startsWith(strtolower(trim($userMessage)), '/imagen')) {
+                // Lempar langsung ke mesin Sahaja Imagen, jangan ke NVIDIA!
+                return $this->generateSahajaImagen($userMessage, $sessionId, $dbUserMessage ?? $userMessage);
             }
 
             // 3. KONSTRUKSI PESAN & PANGGIL API
@@ -545,5 +556,117 @@ class ChatController extends Controller
             return "";
         }
         return "";
+    }
+    // ==========================================
+    // FITUR SAHAJA IMAGEN (API KEY ROTATION)
+    // ==========================================
+    private function generateSahajaImagen($prompt, $sessionId, $userMessage)
+    {
+        // 1. Bersihkan prompt
+        $cleanPrompt = trim(str_ireplace('/imagen', '', $prompt));
+        if (empty($cleanPrompt)) {
+            $cleanPrompt = "A beautiful futuristic city landscape";
+        }
+
+        // 2. Ambil Config dari .env
+        $invokeUrl = env('NVIDIA_IMAGEN_ENDPOINT');
+        $modelName = env('NVIDIA_IMAGEN_MODEL');
+
+        // 🌟 3. JURUS MULTI-AKUN (Pecah string key menjadi array)
+        $rawKeys = env('NVIDIA_API_KEYS', env('NVIDIA_API_KEY')); // Fallback kalau NVIDIA_API_KEYS belum dibuat
+        $apiKeys = explode(',', $rawKeys);
+
+        $lastError = "";
+        $successData = null;
+
+        // 🌟 4. EKSEKUSI ROTASI: Coba API Key satu per satu
+        foreach ($apiKeys as $index => $key) {
+            $key = trim($key);
+            if (empty($key)) continue;
+
+            try {
+                $response = Http::withHeaders([
+                    'Authorization' => 'Bearer ' . $key,
+                    'Accept' => 'application/json',
+                    'Content-Type' => 'application/json'
+                ])->withoutVerifying()->timeout(120)->post($invokeUrl, [
+                    'prompt' => $cleanPrompt,
+                    'width' => 1024,
+                    'height' => 1024,
+                    'seed' => 0,
+                    'steps' => 4
+                ]);
+
+                if ($response->successful()) {
+                    // JIKA SUKSES: Simpan data, dan langsung KABUR dari loop! (Jangan coba key selanjutnya)
+                    $successData = $response->json();
+                    break;
+                } else {
+                    // JIKA GAGAL (Kena Limit/Error): Simpan errornya sementara, lalu biarkan loop mencoba key berikutnya
+                    $lastError = "Key ke-" . ($index + 1) . " Gagal: " . $response->body();
+                }
+            } catch (\Exception $e) {
+                $lastError = "Key ke-" . ($index + 1) . " Gagal Koneksi: " . $e->getMessage();
+            }
+        }
+
+        // 5. PENGECEKAN FINAL: Apakah dari semua kunci yang dicoba, tetap gagal semua?
+        if (!$successData) {
+            $errorMsg = "⚠️ **Sahaja Imagen Kehabisan Kuota / Kendala Teknis:**\n\nSistem telah mencoba semua API Key cadangan namun gagal. Laporan terakhir:\n```text\n" . $lastError . "\n```";
+
+            return response()->json([
+                'session_id' => $sessionId,
+                'user_message' => $userMessage,
+                'ai_response' => $errorMsg,
+                'model_used' => 'Sahaja Imagen (Limit Reached)'
+            ]);
+        }
+
+        // ====================================================================
+        // 6. JIKA BERHASIL: PROSES GAMBAR (Sama seperti sebelumnya)
+        // ====================================================================
+        try {
+            $base64 = $successData['data'][0]['b64_json'] ?? $successData['artifacts'][0]['base64'] ?? null;
+            $imageUrl = $successData['data'][0]['url'] ?? null;
+
+            if ($base64) {
+                $imageName = 'imagen_' . time() . '_' . rand(1000, 9999) . '.jpg';
+                $destinationPath = public_path('uploads/imagen');
+                if (!file_exists($destinationPath)) {
+                    mkdir($destinationPath, 0755, true);
+                }
+                file_put_contents($destinationPath . '/' . $imageName, base64_decode($base64));
+                $publicUrl = url('uploads/imagen/' . $imageName);
+                $markdownImage = "![Hasil Sahaja Imagen](" . $publicUrl . ")";
+            } elseif ($imageUrl) {
+                $markdownImage = "![Hasil Sahaja Imagen](" . $imageUrl . ")";
+            } else {
+                throw new \Exception("Gagal membaca struktur respons gambar dari NVIDIA.");
+            }
+
+            $aiReply = "**Sahaja Imagen** telah selesai membuat gambar permintaan Anda:\n\n" . $markdownImage;
+
+            Chat::create([
+                'session_id' => $sessionId,
+                'user_message' => $userMessage,
+                'ai_response' => $aiReply,
+                'model_used' => $modelName
+            ]);
+
+            return response()->json([
+                'session_id' => $sessionId,
+                'user_message' => $userMessage,
+                'ai_response' => $aiReply,
+                'model_used' => $modelName
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'session_id' => $sessionId,
+                'user_message' => $userMessage,
+                'ai_response' => "⚠️ **Error Pemrosesan Gambar:**\n\n```text\n" . $e->getMessage() . "\n```",
+                'model_used' => 'Sahaja Imagen (Error)'
+            ]);
+        }
     }
 }
