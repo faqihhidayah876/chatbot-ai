@@ -382,6 +382,10 @@ async function sendMessage() {
         if (userSelectedMode === 'imagen') {
             finalMessageToSend = '/imagen ' + messageInput;
             displayMessage = messageInput;
+
+            if (base64ImagesArray.length > 0) {
+                displayMessage = `🖼️ [${imgCount} Gambar Terlampir]\n` + displayMessage;
+            }
         } else {
             if (combinedPdfText !== "") {
                 finalMessageToSend = combinedPdfText + `Instruksi User: ${messageInput || "Tolong analisis dokumen di atas."}`;

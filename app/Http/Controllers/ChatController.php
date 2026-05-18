@@ -97,11 +97,24 @@ class ChatController extends Controller
                 if ($session) $session->touch();
             }
             // =========================================================
-            // INTERCEPTOR: DETEKSI JIKA USER MINTA GENERATE GAMBAR
+            // INTERCEPTOR: DETEKSI JIKA USER MINTA BIKIN ATAU EDIT GAMBAR
             // =========================================================
             if (\Illuminate\Support\Str::startsWith(strtolower(trim($userMessage)), '/imagen')) {
-                // Lempar langsung ke mesin Sahaja Imagen, jangan ke NVIDIA!
-                return $this->generateSahajaImagen($userMessage, $sessionId, $dbUserMessage ?? $userMessage);
+
+                // Siapkan teks riwayat untuk disimpan di database
+                $dbMsgImagen = $userMessage;
+                if ($hasImage) {
+                    $imgCount = count($request->image_data_array);
+                    $dbMsgImagen = "🖼️ [{$imgCount} Gambar Terlampir untuk Diedit]\n" . $userMessage;
+                }
+
+                // Lempar ke mesin Sahaja Imagen dan bawa foto kiriman user (parameter ke-4)
+                return $this->generateSahajaImagen(
+                    $userMessage,
+                    $sessionId,
+                    $dbMsgImagen,
+                    $request->image_data_array
+                );
             }
 
             // 3. KONSTRUKSI PESAN & PANGGIL API
@@ -558,113 +571,104 @@ class ChatController extends Controller
         return "";
     }
     // ==========================================
-    // FITUR SAHAJA IMAGEN (API KEY ROTATION)
+    // 🎨 FITUR SAHAJA IMAGEN (GENERATE & EDIT)
     // ==========================================
-    private function generateSahajaImagen($prompt, $sessionId, $userMessage)
+    // Tambahkan parameter $imageArray di sini dengan nilai default null
+    private function generateSahajaImagen($prompt, $sessionId, $userMessage, $imageArray = null)
     {
-        // 1. Bersihkan prompt
-        $cleanPrompt = trim(str_ireplace('/imagen', '', $prompt));
-        if (empty($cleanPrompt)) {
-            $cleanPrompt = "A beautiful futuristic city landscape";
-        }
-
-        // 2. Ambil Config dari .env
-        $invokeUrl = env('NVIDIA_IMAGEN_ENDPOINT');
-        $modelName = env('NVIDIA_IMAGEN_MODEL');
-
-        // 🌟 3. JURUS MULTI-AKUN (Pecah string key menjadi array)
-        $rawKeys = env('NVIDIA_API_KEYS', env('NVIDIA_API_KEY')); // Fallback kalau NVIDIA_API_KEYS belum dibuat
-        $apiKeys = explode(',', $rawKeys);
-
-        $lastError = "";
-        $successData = null;
-
-        // 🌟 4. EKSEKUSI ROTASI: Coba API Key satu per satu
-        foreach ($apiKeys as $index => $key) {
-            $key = trim($key);
-            if (empty($key)) continue;
-
-            try {
-                $response = Http::withHeaders([
-                    'Authorization' => 'Bearer ' . $key,
-                    'Accept' => 'application/json',
-                    'Content-Type' => 'application/json'
-                ])->withoutVerifying()->timeout(120)->post($invokeUrl, [
-                    'prompt' => $cleanPrompt,
-                    'width' => 1024,
-                    'height' => 1024,
-                    'seed' => 0,
-                    'steps' => 4
-                ]);
-
-                if ($response->successful()) {
-                    // JIKA SUKSES: Simpan data, dan langsung KABUR dari loop! (Jangan coba key selanjutnya)
-                    $successData = $response->json();
-                    break;
-                } else {
-                    // JIKA GAGAL (Kena Limit/Error): Simpan errornya sementara, lalu biarkan loop mencoba key berikutnya
-                    $lastError = "Key ke-" . ($index + 1) . " Gagal: " . $response->body();
-                }
-            } catch (\Exception $e) {
-                $lastError = "Key ke-" . ($index + 1) . " Gagal Koneksi: " . $e->getMessage();
-            }
-        }
-
-        // 5. PENGECEKAN FINAL: Apakah dari semua kunci yang dicoba, tetap gagal semua?
-        if (!$successData) {
-            $errorMsg = "⚠️ **Sahaja Imagen Kehabisan Kuota / Kendala Teknis:**\n\nSistem telah mencoba semua API Key cadangan namun gagal. Laporan terakhir:\n```text\n" . $lastError . "\n```";
-
-            return response()->json([
-                'session_id' => $sessionId,
-                'user_message' => $userMessage,
-                'ai_response' => $errorMsg,
-                'model_used' => 'Sahaja Imagen (Limit Reached)'
-            ]);
-        }
-
-        // ====================================================================
-        // 6. JIKA BERHASIL: PROSES GAMBAR (Sama seperti sebelumnya)
-        // ====================================================================
         try {
-            $base64 = $successData['data'][0]['b64_json'] ?? $successData['artifacts'][0]['base64'] ?? null;
-            $imageUrl = $successData['data'][0]['url'] ?? null;
+            // 1. Bersihkan prompt
+            $cleanPrompt = trim(str_ireplace('/imagen', '', $prompt));
+            if (empty($cleanPrompt)) {
+                $cleanPrompt = "A beautiful futuristic city landscape";
+            }
+
+            $apiKey = env('FREETHEAI_API_KEY');
+            if (empty($apiKey)) {
+                throw new \Exception("API Key FreeTheAI belum dipasang di .env!");
+            }
+
+            // 2. Setup Default (Mode Bikin Gambar Biasa)
+            $baseUrl = rtrim(env('FREETHEAI_BASE_URL', 'https://api.freetheai.xyz/v1'), '/');
+            $invokeUrl = $baseUrl . '/images/generations';
+            $modelName = env('FREETHEAI_MODEL', 'vhr/flux_dev');
+
+            $payload = [
+                'model' => $modelName,
+                'prompt' => $cleanPrompt
+            ];
+
+            //MODE EDIT GAMBAR (Jika User Upload Foto)
+            if (!empty($imageArray) && count($imageArray) > 0) {
+                $invokeUrl = $baseUrl . '/images/edits'; // Rute khusus edit
+
+                $modelName = env('FREETHEAI_EDIT_MODEL', 'img/gpt-image-2');
+
+                $payload['model'] = $modelName;
+                // Ambil gambar pertama yang diupload user (sudah dalam format base64 dari frontend)
+                $payload['image'] = $imageArray[0];
+            }
+
+            // 4. TEMBAK API FREETHEAI
+            $response = Http::withHeaders([
+                'Authorization' => 'Bearer ' . $apiKey,
+                'Accept' => 'application/json',
+                'Content-Type' => 'application/json'
+            ])->withoutVerifying()
+              ->timeout(120)
+              ->post($invokeUrl, $payload);
+
+            // 5. Tangkap Error
+            if (!$response->successful()) {
+                throw new \Exception("FreeTheAI Server Error (" . $response->status() . "): " . $response->body());
+            }
+
+            $data = $response->json();
+
+            // 6. Ekstrak Gambar
+            $base64 = $data['data'][0]['b64_json'] ?? null;
+            $imageUrl = $data['data'][0]['url'] ?? null;
 
             if ($base64) {
                 $imageName = 'imagen_' . time() . '_' . rand(1000, 9999) . '.jpg';
                 $destinationPath = public_path('uploads/imagen');
-                if (!file_exists($destinationPath)) {
-                    mkdir($destinationPath, 0755, true);
-                }
+                if (!file_exists($destinationPath)) mkdir($destinationPath, 0755, true);
+
                 file_put_contents($destinationPath . '/' . $imageName, base64_decode($base64));
                 $publicUrl = url('uploads/imagen/' . $imageName);
                 $markdownImage = "![Hasil Sahaja Imagen](" . $publicUrl . ")";
+
             } elseif ($imageUrl) {
                 $markdownImage = "![Hasil Sahaja Imagen](" . $imageUrl . ")";
             } else {
-                throw new \Exception("Gagal membaca struktur respons gambar dari NVIDIA.");
+                throw new \Exception("Gagal membaca struktur respons gambar dari FreeTheAI.");
             }
 
-            $aiReply = "**Sahaja Imagen** telah selesai membuat gambar permintaan Anda:\n\n" . $markdownImage;
+            // 7. Susun Pesan Balasan
+            $modeLabel = !empty($imageArray) ? 'Mengedit' : 'Membuat';
+            $aiReply = "**Sahaja Imagen** telah selesai **{$modeLabel} Gambar** Anda:\n\n" . $markdownImage;
 
             Chat::create([
                 'session_id' => $sessionId,
                 'user_message' => $userMessage,
                 'ai_response' => $aiReply,
-                'model_used' => $modelName
+                'model_used' => 'Sahaja Imagen (' . $modelName . ')'
             ]);
 
             return response()->json([
                 'session_id' => $sessionId,
                 'user_message' => $userMessage,
                 'ai_response' => $aiReply,
-                'model_used' => $modelName
+                'model_used' => 'Sahaja Imagen (' . $modelName . ')'
             ]);
 
         } catch (\Exception $e) {
+            $errorMsg = "⚠️ **Sahaja Imagen Mengalami Kendala Teknis:**\n\n```text\n" . $e->getMessage() . "\n```";
+
             return response()->json([
                 'session_id' => $sessionId,
                 'user_message' => $userMessage,
-                'ai_response' => "⚠️ **Error Pemrosesan Gambar:**\n\n```text\n" . $e->getMessage() . "\n```",
+                'ai_response' => $errorMsg,
                 'model_used' => 'Sahaja Imagen (Error)'
             ]);
         }
