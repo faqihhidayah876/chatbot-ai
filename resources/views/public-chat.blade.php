@@ -214,6 +214,23 @@
             color: #e3e3e3;
         }
 
+        /* ===== FIX UKURAN GAMBAR (SAHAJA IMAGEN) ===== */
+        .markdown-body img {
+            max-width: 100%;
+            width: 350px;
+            height: auto;
+            border-radius: 12px;
+            margin: 15px 0;
+            display: block;
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3); /* Sedikit bayangan biar estetik */
+            transition: transform 0.2s ease;
+        }
+
+        .markdown-body img:hover {
+            transform: scale(1.02); /* Efek zoom sedikit saat kursor diarahkan (khusus PC) */
+        }
+
         /* ===== TABEL MARKDOWN ===== */
         .markdown-body table {
             width: 100%;

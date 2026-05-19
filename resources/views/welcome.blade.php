@@ -848,9 +848,9 @@
         <div class="hero-section">
             <span class="hero-badge">AI ASSISTANT</span>
             <h1 class="hero-title">SAHAJA AI</h1>
-            <div class="hero-version">Beta V 4.0</div>
+            <div class="hero-version">Beta V 5.0</div>
             <p class="hero-description">
-                Asisten cerdas berbasis 4 models AI <strong>Mistral Small & Medium, Gemma 4, & Qwen 3 Coder</strong> setara dengan AI Besar lainnya siap membantu dan
+                Asisten cerdas berbasis models AI besar <strong>Mistral Small & Medium dan Qwen 3 Coder</strong> setara dengan AI Besar lainnya siap membantu dan
                 brainstorming ide Anda.
             </p>
         </div>
@@ -905,7 +905,7 @@
                     <thead>
                         <tr>
                             <th>Aspek</th>
-                            <th>SAHAJA AI v4.0</th>
+                            <th>SAHAJA AI v5.0</th>
                             <th>ChatGPT</th>
                             <th>Gemini</th>
                             <th>DeepSeek</th>

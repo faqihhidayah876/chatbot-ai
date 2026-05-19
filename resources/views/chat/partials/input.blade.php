@@ -65,17 +65,7 @@
                                 <strong style="font-size: 0.95rem; color: var(--text-primary);">Mode Cerdas</strong>
                                 <span
                                     style="font-size: 0.75rem; color: var(--text-secondary); line-height: 1.3;">Bernalar
-                                    tajam dengan Mistral 119B</span>
-                            </div>
-                        </div>
-                        <div class="option-item model-option" style="align-items: flex-start;"
-                            onclick="selectModelMode('vision', 'fa-eye')">
-                            <i class="fas fa-eye" style="color: #10b981; margin-top: 4px; width: 20px;"></i>
-                            <div style="display: flex; flex-direction: column; gap: 2px;">
-                                <strong style="font-size: 0.95rem; color: var(--text-primary);">Mode Vision</strong>
-                                <span
-                                    style="font-size: 0.75rem; color: var(--text-secondary); line-height: 1.3;">Menganalisa
-                                    gambar dengan Gemma 4</span>
+                                    tajam dengan Minimax 2.7</span>
                             </div>
                         </div>
                         <div class="option-item model-option" style="align-items: flex-start;"
@@ -94,7 +84,7 @@
                             <div style="display: flex; flex-direction: column; gap: 2px;">
                                 <strong style="font-size: 0.95rem; color: var(--text-primary);">Mode Alpha</strong>
                                 <span style="font-size: 0.75rem; color: var(--text-secondary); line-height: 1.3;">Deep
-                                    Research Agent (Tavily + Mistral)</span>
+                                    Research Agent</span>
                             </div>
                         </div>
                         <div class="option-item model-option" style="align-items: flex-start;"
@@ -104,7 +94,7 @@
                                 <strong style="font-size: 0.95rem; color: var(--text-primary);">Sahaja Imagen</strong>
                                 <span
                                     style="font-size: 0.75rem; color: var(--text-secondary); line-height: 1.3;">Generator
-                                    Gambar AI (Stable Diffusion)</span>
+                                    Gambar AI (Nano-banana-2)</span>
                             </div>
                         </div>
                     </div>

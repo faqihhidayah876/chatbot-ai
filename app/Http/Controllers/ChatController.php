@@ -52,6 +52,7 @@ class ChatController extends Controller
             $hasImage = $request->has('image_data_array') && !empty($request->image_data_array);
             $hasGithub = $request->has('github_repo') && !empty($request->github_repo);
             $manualMode = $request->input('manual_mode', 'auto');
+            $isWorkspace = str_contains($userMessage, '[REFERENSI DOKUMEN]');
 
             $maxTokensReq = (int) $request->input('max_tokens', 4096);
             $enableThinkingReq = filter_var($request->input('enable_thinking', false), FILTER_VALIDATE_BOOLEAN);
@@ -63,6 +64,7 @@ class ChatController extends Controller
             if ($manualMode !== 'auto') {
                 $activeMode = $manualMode;
             } else {
+                if ($isWorkspace) $activeMode = 'workspace';
                 if ($hasImage) $activeMode = 'vision';
                 elseif ($hasGithub) $activeMode = 'coding';
                 elseif (!$isSimple) $activeMode = 'smart';
@@ -319,6 +321,13 @@ class ChatController extends Controller
             'coding' => [
                 'provider' => env('PROVIDER_CODING'),
                 'model'    => env('MODEL_CODING'),
+                'endpoint' => env('NVIDIA_ENDPOINT'),
+                'key'      => env('NVIDIA_API_KEY'),
+                'timeout'  => 300
+            ],
+            'workspace' => [
+                'provider' => env('SAHAJA_LLM_PROVIDER'),
+                'model'    => env('SAHAJA_LLM_MODEL'),
                 'endpoint' => env('NVIDIA_ENDPOINT'),
                 'key'      => env('NVIDIA_API_KEY'),
                 'timeout'  => 300
