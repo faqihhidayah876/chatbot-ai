@@ -54,8 +54,7 @@
                             <i class="fas fa-bolt" style="color: #f59e0b; margin-top: 4px; width: 20px;"></i>
                             <div style="display: flex; flex-direction: column; gap: 2px;">
                                 <strong style="font-size: 0.95rem; color: var(--text-primary);">Mode Cepat</strong>
-                                <span style="font-size: 0.75rem; color: var(--text-secondary); line-height: 1.3;">Cepat
-                                    & akurat dengan Mistral Small 4</span>
+                                <span style="font-size: 0.75rem; color: var(--text-secondary); line-height: 1.3;">SAHAJA akan menjawab dengan cepat</span>
                             </div>
                         </div>
                         <div class="option-item model-option" style="align-items: flex-start;"
@@ -64,8 +63,8 @@
                             <div style="display: flex; flex-direction: column; gap: 2px;">
                                 <strong style="font-size: 0.95rem; color: var(--text-primary);">Mode Cerdas</strong>
                                 <span
-                                    style="font-size: 0.75rem; color: var(--text-secondary); line-height: 1.3;">Bernalar
-                                    tajam dengan Kimi K2.6</span>
+                                    style="font-size: 0.75rem; color: var(--text-secondary); line-height: 1.3;">SAHAJA akan Bernalar
+                                    lebih tajam</span>
                             </div>
                         </div>
                         <div class="option-item model-option" style="align-items: flex-start;"
@@ -74,8 +73,7 @@
                             <div style="display: flex; flex-direction: column; gap: 2px;">
                                 <strong style="font-size: 0.95rem; color: var(--text-primary);">Mode Coding</strong>
                                 <span
-                                    style="font-size: 0.75rem; color: var(--text-secondary); line-height: 1.3;">Konteks
-                                    besar dengan Qwen 3 Coder</span>
+                                    style="font-size: 0.75rem; color: var(--text-secondary); line-height: 1.3;">SAHAJA Akan menerima konteks lebih besar</span>
                             </div>
                         </div>
                         <div class="option-item model-option" style="align-items: flex-start;"
@@ -83,8 +81,8 @@
                             <i class="fas fa-atom" style="color: #ef4444; margin-top: 4px; width: 20px;"></i>
                             <div style="display: flex; flex-direction: column; gap: 2px;">
                                 <strong style="font-size: 0.95rem; color: var(--text-primary);">Mode Alpha</strong>
-                                <span style="font-size: 0.75rem; color: var(--text-secondary); line-height: 1.3;">Deep
-                                    Research Agent</span>
+                                <span style="font-size: 0.75rem; color: var(--text-secondary); line-height: 1.3;">SAHAJA Melakukan Deep
+                                    Research</span>
                             </div>
                         </div>
                         <div class="option-item model-option" style="align-items: flex-start;"
@@ -93,8 +91,8 @@
                             <div style="display: flex; flex-direction: column; gap: 2px;">
                                 <strong style="font-size: 0.95rem; color: var(--text-primary);">Sahaja Imagen</strong>
                                 <span
-                                    style="font-size: 0.75rem; color: var(--text-secondary); line-height: 1.3;">Generator
-                                    Gambar AI (Nano-banana-2)</span>
+                                    style="font-size: 0.75rem; color: var(--text-secondary); line-height: 1.3;">SAHAJA
+                                    akan membuat gambar untuk anda</span>
                             </div>
                         </div>
                     </div>
