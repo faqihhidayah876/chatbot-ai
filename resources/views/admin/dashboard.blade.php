@@ -30,7 +30,7 @@
             width: 260px;
             background: var(--sidebar-bg); border-right: 1px solid var(--glass-border);
             display: flex; flex-direction: column; padding: 20px 0;
-            z-index: 105; /* <--- UBAH ANGKA INI JADI 105 */
+            z-index: 105;
         }
         .sidebar-brand {
             padding: 0 20px 20px; border-bottom: 1px solid var(--glass-border);
@@ -82,15 +82,36 @@
             margin-bottom: 30px; height: 350px;
         }
 
-        /* Table Area */
-        .table-container { background: var(--glass-bg); padding: 25px; border-radius: 20px; border: 1px solid var(--glass-border); overflow-x: auto; }
-        .table-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        /* ===== FIX TABEL AREA RESPONSIVE ===== */
+        .table-container { background: var(--glass-bg); padding: 25px; border-radius: 20px; border: 1px solid var(--glass-border); }
+        .table-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
         .table-header h2 { font-size: 1.2rem; color: var(--text-primary); }
 
+        /* Pembungkus Khusus Scroll */
+        .table-responsive-wrapper {
+            width: 100%;
+            max-height: 60vh; /* Mengaktifkan scroll vertikal */
+            overflow-y: auto;
+            overflow-x: auto; /* Mengaktifkan scroll horizontal di mobile */
+            -webkit-overflow-scrolling: touch;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
         table { width: 100%; border-collapse: collapse; min-width: 800px; }
-        th { text-align: left; padding: 15px; color: var(--text-secondary); border-bottom: 2px solid var(--glass-border); font-size: 0.8rem; text-transform: uppercase; }
+
+        /* Sticky Header */
+        th {
+            text-align: left; padding: 15px; color: var(--text-secondary);
+            font-size: 0.8rem; text-transform: uppercase;
+            position: sticky; top: 0; z-index: 10;
+            background: #111827; /* Warna solid agar teks tidak bertumpuk saat di-scroll */
+            border-bottom: 2px solid var(--accent-color);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+        }
+
         td { padding: 15px; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-primary); vertical-align: middle; font-size: 0.9rem;}
-        tr:hover td { background: rgba(255,255,255,0.02); }
+        tr:hover td { background: rgba(255,255,255,0.03); }
 
         .user-info { display: flex; align-items: center; gap: 15px; }
         .user-avatar { width: 40px; height: 40px; background: var(--accent-gradient); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: bold; }
@@ -113,7 +134,7 @@
 
         /* ===== RESPONSIVE & TOGGLE SIDEBAR ===== */
         .mobile-header {
-            display: none; /* Sembunyi di desktop */
+            display: none;
             background: var(--sidebar-bg);
             padding: 15px 20px;
             align-items: center;
@@ -138,25 +159,23 @@
 
             .sidebar {
                 position: fixed;
-                left: -260px; /* Sembunyi ke kiri */
+                left: -260px;
                 height: 100vh;
                 transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
                 box-shadow: 10px 0 30px rgba(0,0,0,0.5);
             }
-
-            .sidebar.active {
-                transform: translateX(260px);
-            }
-
-            .sidebar-overlay.active {
-                display: block;
-            }
+            .sidebar.active { transform: translateX(260px); }
+            .sidebar-overlay.active { display: block; }
 
             .mobile-header { display: flex; }
             .main-content { padding: 20px; width: 100%; }
-            .stats-grid { grid-template-columns: 1fr 1fr; } /* 2 Kolom di HP */
+            .stats-grid { grid-template-columns: 1fr 1fr; }
             .header-title { font-size: 1.4rem; }
             .chart-container { height: 280px; }
+
+            .table-container { padding: 15px; }
+            .table-responsive-wrapper { max-height: 50vh; }
+            table { font-size: 0.85rem; }
 
             /* Sembunyikan kolom tabel yang kurang penting di HP agar tidak meluber */
             th:nth-child(3), td:nth-child(3),
@@ -164,7 +183,7 @@
         }
 
         @media (max-width: 480px) {
-            .stats-grid { grid-template-columns: 1fr; } /* 1 Kolom di HP kecil */
+            .stats-grid { grid-template-columns: 1fr; }
         }
     </style>
 </head>
@@ -251,60 +270,63 @@
                 <div class="table-header">
                     <h2><i class="fas fa-database"></i> Database Pengguna Terdaftar</h2>
                 </div>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Pengguna</th>
-                            <th>Riwayat Penggunaan</th>
-                            <th>Aktivitas Terakhir</th>
-                            <th>Tgl. Bergabung</th>
-                            <th>Kontrol God Mode</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($users ?? [] as $user)
-                        <tr>
-                            <td>
-                                <div class="user-info">
-                                    <div class="user-avatar">{{ strtoupper(substr($user->name, 0, 1)) }}</div>
-                                    <div>
-                                        <div class="user-name">{{ $user->name }}</div>
-                                        <div class="user-email">{{ $user->email }}</div>
+
+                <div class="table-responsive-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Pengguna</th>
+                                <th>Riwayat Penggunaan</th>
+                                <th>Aktivitas Terakhir</th>
+                                <th>Tgl. Bergabung</th>
+                                <th>Kontrol God Mode</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($users ?? [] as $user)
+                            <tr>
+                                <td>
+                                    <div class="user-info">
+                                        <div class="user-avatar">{{ strtoupper(substr($user->name, 0, 1)) }}</div>
+                                        <div>
+                                            <div class="user-name">{{ $user->name }}</div>
+                                            <div class="user-email">{{ $user->email }}</div>
+                                        </div>
                                     </div>
-                                </div>
-                            </td>
-                            <td>
-                                <div style="display: flex; gap: 8px; flex-direction: column; align-items: flex-start;">
-                                    <span class="badge badge-blue"><i class="fas fa-folder-open"></i> {{ $user->total_sessions ?? 0 }} Topik</span>
-                                    <span class="badge badge-purple"><i class="fas fa-comment-dots"></i> {{ $user->total_chats ?? 0 }} Prompt</span>
-                                </div>
-                            </td>
-                            <td>
-                                <div style="color: {{ ($user->last_activity ?? 'Belum ada') == 'Belum ada aktivitas' ? 'var(--text-secondary)' : '#f1f5f9' }};">
-                                    {{ $user->last_activity ?? 'Belum terdeteksi' }}
-                                </div>
-                            </td>
-                            <td>{{ $user->created_at->format('d M Y') }}</td>
-                            <td>
-                                <div class="actions-group">
-                                    <form action="{{ route('admin.clearChats', $user->id) }}" method="POST" onsubmit="return confirm('Sapu bersih riwayat obrolan user {{ $user->name }}?');">
-                                        @csrf @method('DELETE')
-                                        <button type="submit" class="btn-action btn-warn" title="Bersihkan Chat"><i class="fas fa-broom"></i> Hapus Chat</button>
-                                    </form>
-                                    <form action="{{ route('admin.deleteUser', $user->id) }}" method="POST" onsubmit="return confirm('PERINGATAN KRITIS!\nMusnahkan user {{ $user->name }} secara permanen?');">
-                                        @csrf @method('DELETE')
-                                        <button type="submit" class="btn-action btn-danger" title="Hapus Akun"><i class="fas fa-skull-crossbones"></i> Banned</button>
-                                    </form>
-                                </div>
-                            </td>
-                        </tr>
-                        @empty
-                        <tr>
-                            <td colspan="5" style="text-align: center; padding: 30px; color: var(--text-secondary);">Belum ada data pengguna.</td>
-                        </tr>
-                        @endforelse
-                    </tbody>
-                </table>
+                                </td>
+                                <td>
+                                    <div style="display: flex; gap: 8px; flex-direction: column; align-items: flex-start;">
+                                        <span class="badge badge-blue"><i class="fas fa-folder-open"></i> {{ $user->total_sessions ?? 0 }} Topik</span>
+                                        <span class="badge badge-purple"><i class="fas fa-comment-dots"></i> {{ $user->total_chats ?? 0 }} Prompt</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div style="color: {{ ($user->last_activity ?? 'Belum ada') == 'Belum ada aktivitas' ? 'var(--text-secondary)' : '#f1f5f9' }};">
+                                        {{ $user->last_activity ?? 'Belum terdeteksi' }}
+                                    </div>
+                                </td>
+                                <td>{{ $user->created_at->format('d M Y') }}</td>
+                                <td>
+                                    <div class="actions-group">
+                                        <form action="{{ route('admin.clearChats', $user->id) }}" method="POST" onsubmit="return confirm('Sapu bersih riwayat obrolan user {{ $user->name }}?');">
+                                            @csrf @method('DELETE')
+                                            <button type="submit" class="btn-action btn-warn" title="Bersihkan Chat"><i class="fas fa-broom"></i> Hapus Chat</button>
+                                        </form>
+                                        <form action="{{ route('admin.deleteUser', $user->id) }}" method="POST" onsubmit="return confirm('PERINGATAN KRITIS!\nMusnahkan user {{ $user->name }} secara permanen?');">
+                                            @csrf @method('DELETE')
+                                            <button type="submit" class="btn-action btn-danger" title="Hapus Akun"><i class="fas fa-skull-crossbones"></i> Banned</button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                            @empty
+                            <tr>
+                                <td colspan="5" style="text-align: center; padding: 30px; color: var(--text-secondary);">Belum ada data pengguna.</td>
+                            </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
@@ -313,41 +335,44 @@
                 <div class="table-header">
                     <h2><i class="fas fa-envelope-open-text"></i> Kotak Masuk Umpan Balik</h2>
                 </div>
-                <table>
-                    <thead>
-                        <tr>
-                            <th style="width: 25%;">Pengirim</th>
-                            <th style="width: 55%;">Pesan Umpan Balik / Laporan Bug</th>
-                            <th style="width: 20%;">Waktu Kirim</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($feedbacks ?? [] as $fb)
-                        <tr>
-                            <td>
-                                <div class="user-info">
-                                    <div class="user-avatar" style="width: 35px; height: 35px; font-size: 1rem;">{{ strtoupper(substr($fb->user->name ?? 'A', 0, 1)) }}</div>
-                                    <div>
-                                        <div class="user-name">{{ $fb->user->name ?? 'Anonim' }}</div>
-                                        <div class="user-email">{{ $fb->user->email ?? '-' }}</div>
+
+                <div class="table-responsive-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width: 25%;">Pengirim</th>
+                                <th style="width: 55%;">Pesan Umpan Balik / Laporan Bug</th>
+                                <th style="width: 20%;">Waktu Kirim</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($feedbacks ?? [] as $fb)
+                            <tr>
+                                <td>
+                                    <div class="user-info">
+                                        <div class="user-avatar" style="width: 35px; height: 35px; font-size: 1rem;">{{ strtoupper(substr($fb->user->name ?? 'A', 0, 1)) }}</div>
+                                        <div>
+                                            <div class="user-name">{{ $fb->user->name ?? 'Anonim' }}</div>
+                                            <div class="user-email">{{ $fb->user->email ?? '-' }}</div>
+                                        </div>
                                     </div>
-                                </div>
-                            </td>
-                            <td>
-                                <div class="feedback-msg">"{{ $fb->message }}"</div>
-                            </td>
-                            <td>{{ $fb->created_at->diffForHumans() }}</td>
-                        </tr>
-                        @empty
-                        <tr>
-                            <td colspan="3" style="text-align: center; padding: 40px; color: var(--text-secondary);">
-                                <i class="fas fa-box-open" style="font-size: 3rem; margin-bottom: 15px; opacity: 0.3;"></i><br>
-                                Belum ada umpan balik yang masuk dari pengguna.
-                            </td>
-                        </tr>
-                        @endforelse
-                    </tbody>
-                </table>
+                                </td>
+                                <td>
+                                    <div class="feedback-msg">"{{ $fb->message }}"</div>
+                                </td>
+                                <td>{{ $fb->created_at->diffForHumans() }}</td>
+                            </tr>
+                            @empty
+                            <tr>
+                                <td colspan="3" style="text-align: center; padding: 40px; color: var(--text-secondary);">
+                                    <i class="fas fa-box-open" style="font-size: 3rem; margin-bottom: 15px; opacity: 0.3;"></i><br>
+                                    Belum ada umpan balik yang masuk dari pengguna.
+                                </td>
+                            </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
