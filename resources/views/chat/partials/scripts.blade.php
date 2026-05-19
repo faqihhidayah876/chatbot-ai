@@ -475,8 +475,7 @@ async function sendMessage() {
                 extraStyle = 'background: rgba(168, 85, 247, 0.15); color: #a855f7; border: 1px solid rgba(168, 85, 247, 0.3);';
                 finalBadgeClass = '';
             }
-            // 2. Mode Cerdas (Kimi K2.6)
-            else if (modelUsedStr.includes('kimi') || modelUsedStr.includes('moonshot')) {
+            else if (modelUsedStr.includes('medium')) {
                 finalModelLabel = '<i class="fas fa-brain"></i> Mode Cerdas';
                 finalBadgeClass = 'mode-smart';
                 extraStyle = '';
