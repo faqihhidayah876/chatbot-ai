@@ -65,15 +65,10 @@ class ChatController extends Controller
                 $activeMode = $manualMode;
             } else {
                 if ($isWorkspace) $activeMode = 'workspace';
-                if ($hasImage) $activeMode = 'vision';
+                if ($hasImage) $activeMode = 'fast';
                 elseif ($hasGithub) $activeMode = 'coding';
                 elseif (!$isSimple) $activeMode = 'smart';
                 else $activeMode = 'fast';
-            }
-
-            if ($activeMode === 'vision') {
-                $maxTokensReq = 2048;
-                $enableThinkingReq = false;
             }
 
             $aiConfig = $this->getAiConfiguration($activeMode);

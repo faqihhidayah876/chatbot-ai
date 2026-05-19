@@ -65,7 +65,7 @@
                                 <strong style="font-size: 0.95rem; color: var(--text-primary);">Mode Cerdas</strong>
                                 <span
                                     style="font-size: 0.75rem; color: var(--text-secondary); line-height: 1.3;">Bernalar
-                                    tajam dengan Minimax 2.7</span>
+                                    tajam dengan Kimi K2.6</span>
                             </div>
                         </div>
                         <div class="option-item model-option" style="align-items: flex-start;"

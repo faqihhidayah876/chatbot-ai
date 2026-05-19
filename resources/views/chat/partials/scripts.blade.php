@@ -470,20 +470,18 @@ async function sendMessage() {
             let extraStyle = '';
             const modelUsedStr = (data.model_used || '').toLowerCase();
 
-            if (modelUsedStr.includes('vision') || modelUsedStr.includes('gemma')) {
-                finalModelLabel = '<i class="fas fa-eye"></i> Mode Vision';
-                extraStyle = 'background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3);';
-                finalBadgeClass = '';
-            }
-            else if (modelUsedStr.includes('coder') || modelUsedStr.includes('qwen')) {
+            if (modelUsedStr.includes('coder') || modelUsedStr.includes('qwen')) {
                 finalModelLabel = '<i class="fas fa-code"></i> Mode Code';
                 extraStyle = 'background: rgba(168, 85, 247, 0.15); color: #a855f7; border: 1px solid rgba(168, 85, 247, 0.3);';
                 finalBadgeClass = '';
             }
-            else if (modelUsedStr.includes('medium') || modelUsedStr.includes('128b')) {
+            // 2. Mode Cerdas (Kimi K2.6)
+            else if (modelUsedStr.includes('kimi') || modelUsedStr.includes('moonshot')) {
                 finalModelLabel = '<i class="fas fa-brain"></i> Mode Cerdas';
                 finalBadgeClass = 'mode-smart';
+                extraStyle = '';
             }
+            // Mode Vision DIHAPUS, jadi kalau bawa gambar otomatis masuk ke Mode Cepat (Else yang paling bawah)
             // 🌟 JURUS PEMBEDA BADGE SAHAJA IMAGEN 🌟
             else if (modelUsedStr.includes('imagen') || modelUsedStr.includes('flux')) {
                 finalModelLabel = '<i class="fas fa-paint-brush"></i> Sahaja Imagen';
