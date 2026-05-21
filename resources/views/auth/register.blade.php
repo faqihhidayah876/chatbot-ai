@@ -9,207 +9,144 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
-            --main-bg: #0a0e17;
-            --glass-bg: rgba(15, 27, 45, 0.7);
-            --glass-border: rgba(98, 160, 234, 0.15);
-            --text-primary: #f1f5f9;
-            --text-secondary: #94a3b8;
-            --accent-gradient: linear-gradient(135deg, #2563eb, #06b6d4);
-            --input-bg: rgba(30, 41, 59, 0.5);
+            --bg-primary: #080c14;
+            --surface: rgba(18, 26, 44, 0.8);
+            --surface-border: rgba(74, 130, 220, 0.15);
+            --text-primary: #e8edf4;
+            --text-secondary: #8899b4;
+            --accent: #3b82f6;
+            --accent-gradient: linear-gradient(135deg, #3b82f6 0%, #22c5e0 100%);
+            --input-bg: rgba(18, 26, 44, 0.7);
             --error: #ef4444;
+            --radius-lg: 20px;
+            --radius-full: 9999px;
+            --transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
         }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Poppins', sans-serif;
-        }
-
+        * { margin:0; padding:0; box-sizing:border-box; }
         body {
-            background: var(--main-bg);
+            font-family: 'Poppins', sans-serif;
+            background: var(--bg-primary);
             color: var(--text-primary);
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            position: relative;
-            overflow-y: auto; /* PENTING: agar body bisa di-scroll */
             padding: 20px;
+            position: relative;
+            overflow-x: hidden;
         }
-
         body::before {
             content: '';
-            position: fixed; /* fixed, bukan absolute, agar background tetap saat scroll */
-            inset: 0;
-            background: radial-gradient(circle at 80% 20%, rgba(6, 182, 212, 0.15) 0%, transparent 60%),
-                        radial-gradient(circle at 20% 80%, rgba(37, 99, 235, 0.12) 0%, transparent 60%);
+            position: fixed; inset:0;
+            background: radial-gradient(circle at 80% 20%, rgba(34,197,224,0.15) 0%, transparent 60%),
+                        radial-gradient(circle at 20% 80%, rgba(37,99,235,0.12) 0%, transparent 60%);
             z-index: -1;
-            pointer-events: none;
         }
-
         .auth-card {
             width: 100%;
             max-width: 450px;
-            background: var(--glass-bg);
-            backdrop-filter: blur(16px);
-            border: 1px solid var(--glass-border);
-            border-radius: 24px;
-            padding: 2.5rem;
+            background: var(--surface);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+            border: 1px solid var(--surface-border);
+            border-radius: var(--radius-lg);
+            padding: 2.5rem 2rem;
             text-align: center;
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
-            margin: auto; /* untuk centering vertical saat di-scroll */
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+            animation: fadeInUp 0.5s ease;
         }
-
-        .logo {
-            font-size: 3rem;
-            margin-bottom: 1rem;
+        @keyframes fadeInUp {
+            from { opacity:0; transform: translateY(20px); }
+            to { opacity:1; transform: translateY(0); }
+        }
+        .icon-wrapper {
+            width: 70px; height: 70px;
             background: var(--accent-gradient);
-            -webkit-background-clip: text;
-            color: transparent;
+            border-radius: 18px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            color: white;
+            margin-bottom: 1.2rem;
+            box-shadow: 0 6px 18px rgba(59,130,246,0.3);
         }
-
         h2 {
-            margin-bottom: 0.5rem;
-            font-size: 1.8rem;
+            font-size: 1.6rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            margin-bottom: 0.25rem;
         }
-
-        p {
+        .subtitle {
             color: var(--text-secondary);
             font-size: 0.9rem;
             margin-bottom: 2rem;
         }
-
         .form-group {
-            margin-bottom: 1.2rem;
             text-align: left;
+            margin-bottom: 1.2rem;
         }
-
         label {
             display: block;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
+            font-weight: 500;
             color: var(--text-secondary);
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.4rem;
+            letter-spacing: 0.02em;
         }
-
         input {
             width: 100%;
-            padding: 0.8rem 1rem;
+            padding: 0.75rem 1rem;
             border-radius: 12px;
             background: var(--input-bg);
-            border: 1px solid var(--glass-border);
+            border: 1px solid var(--surface-border);
             color: var(--text-primary);
             font-size: 0.95rem;
             outline: none;
-            transition: 0.3s;
+            transition: var(--transition);
         }
-
         input:focus {
-            border-color: #2563eb;
-            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(59,130,246,0.15);
         }
-
         .btn {
             width: 100%;
-            padding: 0.9rem;
-            border-radius: 12px;
-            font-weight: 600;
+            padding: 0.85rem;
+            border-radius: var(--radius-full);
             background: var(--accent-gradient);
             color: white;
+            font-weight: 600;
+            font-size: 0.95rem;
             border: none;
             cursor: pointer;
             margin-top: 1rem;
-            transition: 0.3s;
+            transition: var(--transition);
+            box-shadow: 0 4px 12px rgba(59,130,246,0.3);
         }
-
         .btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(37, 99, 235, 0.4);
+            box-shadow: 0 8px 20px rgba(59,130,246,0.5);
         }
-
         .footer-link {
             margin-top: 1.5rem;
             font-size: 0.85rem;
             color: var(--text-secondary);
         }
-
         .footer-link a {
             color: #62a0ea;
             text-decoration: none;
             font-weight: 500;
         }
-
-        .footer-link a:hover {
-            text-decoration: underline;
-        }
-
-        .error-msg {
-            color: var(--error);
-            font-size: 0.8rem;
-            margin-top: 0.3rem;
-        }
-
-        /* RESPONSIVE UNTUK HANDPHONE */
-        @media (max-width: 480px) {
-            body {
-                padding: 16px;
-                display: block; /* ganti flex jadi block agar bisa scroll natural */
-            }
-
-            .auth-card {
-                padding: 1.8rem 1.5rem;
-                margin: 10px auto;
-                width: 100%;
-            }
-
-            .logo {
-                font-size: 2.5rem;
-            }
-
-            h2 {
-                font-size: 1.5rem;
-            }
-
-            .form-group {
-                margin-bottom: 1rem;
-            }
-
-            input {
-                padding: 0.7rem 0.9rem;
-            }
-
-            .btn {
-                padding: 0.8rem;
-            }
-
-            .footer-link {
-                margin-top: 1.2rem;
-            }
-        }
-
-        /* Untuk layar sangat kecil (misal: iPhone SE) */
-        @media (max-width: 360px) {
-            .auth-card {
-                padding: 1.5rem 1.2rem;
-            }
-
-            .logo {
-                font-size: 2.2rem;
-                margin-bottom: 0.5rem;
-            }
-
-            h2 {
-                font-size: 1.3rem;
-            }
-        }
+        .footer-link a:hover { text-decoration: underline; }
+        .error-msg { color: var(--error); font-size: 0.78rem; margin-top: 0.3rem; }
+        @media (max-width: 480px) { .auth-card { padding: 2rem 1.5rem; } }
     </style>
 </head>
 <body>
     <div class="auth-card">
-        <div class="logo"><i class="fas fa-user-plus"></i></div>
+        <div class="icon-wrapper"><i class="fas fa-user-plus"></i></div>
         <h2>Buat Akun Baru</h2>
-        <p>Bergabung dengan SAHAJA AI sekarang</p>
-
+        <p class="subtitle">Bergabung dengan SAHAJA AI sekarang</p>
         <form action="{{ route('register.post') }}" method="POST">
             @csrf
             <div class="form-group">
@@ -217,31 +154,26 @@
                 <input type="text" name="name" placeholder="Nama Kamu" required value="{{ old('name') }}">
                 @error('name') <div class="error-msg">{{ $message }}</div> @enderror
             </div>
-
             <div class="form-group">
                 <label>Email Address</label>
-                <input type="email" name="email" placeholder="contoh@email.com" required value="{{ old('email') }}">
+                <input type="email" name="email" placeholder="userh@email.com" required value="{{ old('email') }}">
                 @error('email') <div class="error-msg">{{ $message }}</div> @enderror
             </div>
-
             <div class="form-group">
                 <label>Password</label>
                 <input type="password" name="password" placeholder="Minimal 8 karakter" required>
                 @error('password') <div class="error-msg">{{ $message }}</div> @enderror
             </div>
-
             <div class="form-group">
                 <label>Konfirmasi Password</label>
                 <input type="password" name="password_confirmation" placeholder="Ulangi password" required>
             </div>
-
             <button type="submit" class="btn">Daftar</button>
         </form>
-
         <div class="footer-link">
             Sudah punya akun? <a href="{{ route('login') }}">Masuk Disini</a>
         </div>
-        <div class="footer-link" style="margin-top: 0.5rem; margin-bottom: 0.2rem;">
+        <div class="footer-link" style="margin-top:0.5rem;">
             <a href="{{ route('home') }}"><i class="fas fa-arrow-left"></i> Kembali ke Beranda</a>
         </div>
     </div>
