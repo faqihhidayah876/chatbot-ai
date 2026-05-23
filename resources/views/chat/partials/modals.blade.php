@@ -69,7 +69,7 @@
                         <strong style="display: block; font-size: 0.95rem; color: #ec4899; margin-bottom: 3px;">Sahaja
                             Imagen</strong>
                         <span style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.4;">Buat gambar dengan mengetik <code>/imagen</code> atau lampirkan foto untuk mengedit
-                            gambar. powered by: <b>GPT-Image 2</b>.</span>
+                            gambar. powered by: <b>Flux</b>.</span>
                     </div>
                 </div>
                 <div class="feature-item"

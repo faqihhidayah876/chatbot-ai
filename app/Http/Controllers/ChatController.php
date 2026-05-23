@@ -575,7 +575,7 @@ class ChatController extends Controller
         return "";
     }
     // ==========================================
-    // FITUR SAHAJA IMAGEN (HYBRID + ZERO STORAGE)
+    // FITUR SAHAJA IMAGEN (HYBRID CLOUDFLARE)
     // ==========================================
     private function generateSahajaImagen($prompt, $sessionId, $userMessage, $imageArray = null)
     {
@@ -587,7 +587,7 @@ class ChatController extends Controller
             }
 
             // ========================================================
-            // ROBOT PENYAPU OTOMATIS (Menghapus file lama > 24 Jam)
+            // ROBOT OTOMATIS
             // ========================================================
             $destinationPath = public_path('uploads/imagen');
             if (file_exists($destinationPath)) {
@@ -595,7 +595,6 @@ class ChatController extends Controller
                 $now   = time();
                 foreach ($files as $file) {
                     if (is_file($file)) {
-                        // Hapus jika file lebih tua dari 1 hari (60 detik * 60 menit * 24 jam)
                         if ($now - filemtime($file) >= 60 * 60 * 24) {
                             unlink($file);
                         }
@@ -607,14 +606,14 @@ class ChatController extends Controller
             if (!empty($imageArray) && count($imageArray) > 0) {
 
                 // ========================================================
-                // JALUR 1: MODE EDIT GAMBAR (API FREETHEAI - LOCAL SAVE)
+                // JALUR 1: MODE EDIT GAMBAR (Tetap Pakai FreeTheAI)
                 // ========================================================
                 $apiKey = env('FREETHEAI_API_KEY');
                 if (empty($apiKey)) throw new \Exception("API Key FreeTheAI belum dipasang di .env!");
 
                 $baseUrl = rtrim(env('FREETHEAI_BASE_URL', 'https://api.freetheai.xyz/v1'), '/');
                 $invokeUrl = $baseUrl . '/images/edits';
-                $modelName = env('FREETHEAI_MODEL', 'img/gpt-image-2');
+                $modelName = env('FREETHEAI_MODEL');
 
                 $payload = [
                     'model' => $modelName,
@@ -637,7 +636,6 @@ class ChatController extends Controller
                 $imageUrl = $data['data'][0]['url'] ?? null;
 
                 if ($base64) {
-                    // Terpaksa simpan lokal, tapi aman karena ada Robot Penyapu Otomatis!
                     $imageName = 'imagen_edit_' . time() . '_' . rand(1000, 9999) . '.jpg';
                     if (!file_exists($destinationPath)) mkdir($destinationPath, 0755, true);
                     file_put_contents($destinationPath . '/' . $imageName, base64_decode($base64));
@@ -655,28 +653,64 @@ class ChatController extends Controller
             } else {
 
                 // ========================================================
-                // 🍌 JALUR 2: MODE GENERATE TEKS (POLLINATIONS - ZERO STORAGE)
+                // JALUR 2: MODE GENERATE (CLOUDFLARE - FLUX 1 SCHNELL)
                 // ========================================================
-                $encodedPrompt = urlencode($cleanPrompt);
-                $seed = rand(1, 2147483647);
+                $accountId = env('CLOUDFLARE_ACCOUNT_ID');
+                $apiToken = env('CLOUDFLARE_API_TOKEN');
 
-                $pollinationsUrl = "https://image.pollinations.ai/prompt/" . $encodedPrompt . "?model=nanobanana-2&width=1024&height=1024&seed=" . $seed . "&enhance=false&nologo=true";
+                if (empty($accountId) || empty($apiToken)) {
+                    throw new \Exception("Konfigurasi Cloudflare di .env belum lengkap!");
+                }
 
-                // PANCING SERVER MEREKA UNTUK RENDER (Jangan simpan file-nya!)
-                $response = Http::withoutVerifying()->timeout(120)->get($pollinationsUrl);
+                // ID Model Resmi Flux di Cloudflare yang 1000% Stabil
+                $cfModel = '@cf/black-forest-labs/flux-1-schnell';
+                $cfUrl = "https://api.cloudflare.com/client/v4/accounts/{$accountId}/ai/run/{$cfModel}";
+
+                // Tembak Server Cloudflare dengan format JSON standar (tanpa multipart)
+                $response = Http::withToken($apiToken)
+                    ->withoutVerifying()
+                    ->timeout(120)
+                    ->post($cfUrl, [
+                        'prompt' => $cleanPrompt
+                    ]);
 
                 if (!$response->successful()) {
-                    throw new \Exception("Pollinations Server Error. Status: " . $response->status());
+                    throw new \Exception("Cloudflare AI Error. Status: " . $response->status() . " | " . $response->body());
                 }
+
+                // DETEKTOR PINTAR: Cek tipe data balasan Cloudflare
+                $contentType = $response->header('Content-Type');
+                $imageContent = null;
+
+                if (str_contains($contentType, 'application/json')) {
+                    // Jika CF membalas dengan JSON, kita ekstrak gambar base64-nya
+                    $data = $response->json();
+                    if (isset($data['result']['image'])) {
+                        $imageContent = base64_decode($data['result']['image']);
+                    } else {
+                        // Jika tidak ada gambar di dalam JSON, berarti itu pesan error
+                        throw new \Exception("Server membalas dengan JSON yang bukan gambar: " . json_encode($data));
+                    }
+                } else {
+                    // Jika CF membalas langsung dengan file binary gambar
+                    $imageContent = $response->body();
+                }
+
+                // Cloudflare biasanya menggunakan format PNG untuk hasil render
+                $imageName = 'cf_flux_' . time() . '_' . rand(1000, 9999) . '.png';
+
+                if (!file_exists($destinationPath)) mkdir($destinationPath, 0755, true);
+
+                // Simpan file ke server AlwaysData (Aman karena ada robot penyapu)
+                file_put_contents($destinationPath . '/' . $imageName, $imageContent);
+                $publicUrl = url('uploads/imagen/' . $imageName);
 
                 // FIX BUG MARKDOWN
                 $safeAltText = htmlspecialchars(substr(str_replace(["\r", "\n", "[", "]"], ' ', $cleanPrompt), 0, 40));
 
-                // LANGSUNG BERIKAN URL MEREKA KE FRONTEND! (Server kita bersih dari beban penyimpanan)
-                $markdownImage = "![" . $safeAltText . "...](" . $pollinationsUrl . ")";
-                $aiReply = "**Sahaja Imagen** berhasil membuat gambar!\n\n" . $markdownImage;
-                $modelUsedLabel = 'Sahaja Imagen (Pollinations)';
-
+                $markdownImage = "![" . $safeAltText . "...](" . $publicUrl . ")";
+                $aiReply = "**Sahaja Imagen** berhasil membuat gambar anda!\n\n" . $markdownImage;
+                $modelUsedLabel = 'Sahaja Imagen (CF Flux)';
             }
 
             // ========================================================
