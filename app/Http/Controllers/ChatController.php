@@ -286,17 +286,14 @@ class ChatController extends Controller
     // ==========================================
     // FUNGSI ROUTER & API MULTI-ENGINE
     // ==========================================
-    // ==========================================
-    // FUNGSI ROUTER & API MULTI-ENGINE (SECURE)
-    // ==========================================
     private function getAiConfiguration($mode)
     {
         return match ($mode) {
             'smart' => [
-                'provider' => env('PROVIDER_SMART'),
-                'model'    => env('MODEL_SMART'),
-                'endpoint' => env('NVIDIA_ENDPOINT'),
-                'key'      => env('NVIDIA_API_KEY'),
+                'provider' => 'cloudflare',
+                'model'    => '@cf/moonshotai/kimi-k2.6',
+                'endpoint' => env('CLOUDFLARE_ENDPOINT'),
+                'key'      => env('CLOUDFLARE_API_TOKEN'),
                 'timeout'  => 300
             ],
             'alpha' => [
@@ -606,7 +603,7 @@ class ChatController extends Controller
             if (!empty($imageArray) && count($imageArray) > 0) {
 
                 // ========================================================
-                // JALUR 1: MODE EDIT GAMBAR (Tetap Pakai FreeTheAI)
+                // MODE EDIT GAMBAR (Tetap Pakai FreeTheAI)
                 // ========================================================
                 $apiKey = env('FREETHEAI_API_KEY');
                 if (empty($apiKey)) throw new \Exception("API Key FreeTheAI belum dipasang di .env!");
@@ -653,25 +650,28 @@ class ChatController extends Controller
             } else {
 
                 // ========================================================
-                // JALUR 2: MODE GENERATE (CLOUDFLARE - FLUX 1 SCHNELL)
+                // MODE GENERATE (CLOUDFLARE - FLUX 2 KLEIN 9B)
                 // ========================================================
                 $accountId = env('CLOUDFLARE_ACCOUNT_ID');
                 $apiToken = env('CLOUDFLARE_API_TOKEN');
 
                 if (empty($accountId) || empty($apiToken)) {
-                    throw new \Exception("Konfigurasi Cloudflare di .env belum lengkap!");
+                    throw new \Exception("Konfigurasi belum lengkap!");
                 }
 
-                // ID Model Resmi Flux di Cloudflare yang 1000% Stabil
-                $cfModel = '@cf/black-forest-labs/flux-1-schnell';
+                // ID Model Resmi Flux 2 Klein di Cloudflare
+                $cfModel = '@cf/black-forest-labs/flux-2-klein-9b';
                 $cfUrl = "https://api.cloudflare.com/client/v4/accounts/{$accountId}/ai/run/{$cfModel}";
 
-                // Tembak Server Cloudflare dengan format JSON standar (tanpa multipart)
+                // Cloudflare dengan format MULTIPART & Dimensi
                 $response = Http::withToken($apiToken)
                     ->withoutVerifying()
                     ->timeout(120)
+                    ->asMultipart()
                     ->post($cfUrl, [
-                        'prompt' => $cleanPrompt
+                        'prompt' => $cleanPrompt,
+                        'width'  => '1024',
+                        'height' => '1024'
                     ]);
 
                 if (!$response->successful()) {
@@ -683,25 +683,21 @@ class ChatController extends Controller
                 $imageContent = null;
 
                 if (str_contains($contentType, 'application/json')) {
-                    // Jika CF membalas dengan JSON, kita ekstrak gambar base64-nya
                     $data = $response->json();
                     if (isset($data['result']['image'])) {
                         $imageContent = base64_decode($data['result']['image']);
                     } else {
-                        // Jika tidak ada gambar di dalam JSON, berarti itu pesan error
                         throw new \Exception("Server membalas dengan JSON yang bukan gambar: " . json_encode($data));
                     }
                 } else {
-                    // Jika CF membalas langsung dengan file binary gambar
                     $imageContent = $response->body();
                 }
 
-                // Cloudflare biasanya menggunakan format PNG untuk hasil render
-                $imageName = 'cf_flux_' . time() . '_' . rand(1000, 9999) . '.png';
+                $imageName = 'cf_flux2_' . time() . '_' . rand(1000, 9999) . '.png';
 
                 if (!file_exists($destinationPath)) mkdir($destinationPath, 0755, true);
 
-                // Simpan file ke server AlwaysData (Aman karena ada robot penyapu)
+                // Simpan file ke server
                 file_put_contents($destinationPath . '/' . $imageName, $imageContent);
                 $publicUrl = url('uploads/imagen/' . $imageName);
 
@@ -710,7 +706,7 @@ class ChatController extends Controller
 
                 $markdownImage = "![" . $safeAltText . "...](" . $publicUrl . ")";
                 $aiReply = "**Sahaja Imagen** berhasil membuat gambar anda!\n\n" . $markdownImage;
-                $modelUsedLabel = 'Sahaja Imagen (CF Flux)';
+                $modelUsedLabel = 'Sahaja Imagen (Flux 2 Klein)';
             }
 
             // ========================================================
