@@ -121,7 +121,7 @@ class ChatController extends Controller
             if ($hasGithub) {
                 $githubContent = $this->fetchGithubRepoContent($request->github_repo, $userMessage);
                 if (\Illuminate\Support\Str::startsWith($githubContent, 'SISTEM ERROR')) {
-                    $aiReply = "⚠️ **GitHub Scanner Terblokir**\n\n" . $githubContent;
+                    $aiReply = "**GitHub Scanner Terblokir**\n\n" . $githubContent;
                 }
             }
 
@@ -129,7 +129,8 @@ class ChatController extends Controller
                 try {
                     $configSahaja = config('sahaja');
                     $systemPrompt = is_array($configSahaja) ? ($configSahaja['personality'] ?? "Kamu adalah SAHAJA AI.") : ($configSahaja ?? "Kamu adalah SAHAJA AI.");
-                    $aturanKode = "\n\nATURAN KODE: Anda WAJIB membungkus kodingan menggunakan Markdown standar (3 backticks). DILARANG KERAS menambahkan simbol apapun sebelum tanda backticks.";
+                    $aturanKode = "\n\nATURAN KODE & FORMATTING:\n1. Anda WAJIB membungkus kodingan menggunakan Markdown standar (3 backticks).\n2. [CRITICAL] JIKA MEMBUAT DIAGRAM MERMAID: Anda WAJIB secara eksplisit menggunakan tag pembuka
+                    http://googleusercontent.com/immersive_entry_chip/0.";
 
                     if ($enableWebSearchReq && !$hasGithub && !$hasImage) {
                         $webContext = $this->fetchTavilyContext($userMessage);
@@ -290,10 +291,10 @@ class ChatController extends Controller
     {
         return match ($mode) {
             'smart' => [
-                'provider' => 'cloudflare',
-                'model'    => '@cf/moonshotai/kimi-k2.6',
-                'endpoint' => env('CLOUDFLARE_ENDPOINT'),
-                'key'      => env('CLOUDFLARE_API_TOKEN'),
+                'provider' => env('PROVIDER_SMART'),
+                'model'    => env('MODEL_SMART'),
+                'endpoint' => env('NVIDIA_ENDPOINT'),
+                'key'      => env('NVIDIA_API_KEY'),
                 'timeout'  => 300
             ],
             'alpha' => [
@@ -603,12 +604,12 @@ class ChatController extends Controller
             if (!empty($imageArray) && count($imageArray) > 0) {
 
                 // ========================================================
-                // MODE EDIT GAMBAR (Tetap Pakai FreeTheAI)
+                // JALUR 1: MODE EDIT GAMBAR (Tetap Pakai FreeTheAI)
                 // ========================================================
                 $apiKey = env('FREETHEAI_API_KEY');
-                if (empty($apiKey)) throw new \Exception("API Key FreeTheAI belum dipasang di .env!");
+                if (empty($apiKey)) throw new \Exception("API Key belum terpasang!");
 
-                $baseUrl = rtrim(env('FREETHEAI_BASE_URL', 'https://api.freetheai.xyz/v1'), '/');
+                $baseUrl = rtrim(env('FREETHEAI_BASE_URL'), '/');
                 $invokeUrl = $baseUrl . '/images/edits';
                 $modelName = env('FREETHEAI_MODEL');
 
@@ -645,37 +646,30 @@ class ChatController extends Controller
                 }
 
                 $aiReply = "**Sahaja Imagen** berhasil mengedit gambar anda!\n\n" . $markdownImage;
-                $modelUsedLabel = 'Sahaja Imagen (FreeTheAI Edit)';
+                $modelUsedLabel = 'Sahaja Imagen';
 
             } else {
 
                 // ========================================================
-                // MODE GENERATE (CLOUDFLARE - FLUX 2 KLEIN 9B)
+                // JALUR 2: MODE GENERATE (CLOUDFLARE - FLUX 1 SCHNELL)
                 // ========================================================
-                $accountId = env('CLOUDFLARE_ACCOUNT_ID');
                 $apiToken = env('CLOUDFLARE_API_TOKEN');
+                $cfUrl = env('CLOUDFLARE_IMAGEN_ENDPOINT');
 
-                if (empty($accountId) || empty($apiToken)) {
-                    throw new \Exception("Konfigurasi belum lengkap!");
+                if (empty($apiToken) || empty($cfUrl)) {
+                    throw new \Exception("Konfigurasi Cloudflare (Token / Endpoint Imagen) di .env belum lengkap!");
                 }
 
-                // ID Model Resmi Flux 2 Klein di Cloudflare
-                $cfModel = '@cf/black-forest-labs/flux-2-klein-9b';
-                $cfUrl = "https://api.cloudflare.com/client/v4/accounts/{$accountId}/ai/run/{$cfModel}";
-
-                // Cloudflare dengan format MULTIPART & Dimensi
+                // Tembak Server Cloudflare dengan format JSON standar (tanpa multipart)
                 $response = Http::withToken($apiToken)
                     ->withoutVerifying()
                     ->timeout(120)
-                    ->asMultipart()
                     ->post($cfUrl, [
-                        'prompt' => $cleanPrompt,
-                        'width'  => '1024',
-                        'height' => '1024'
+                        'prompt' => $cleanPrompt
                     ]);
 
                 if (!$response->successful()) {
-                    throw new \Exception("Cloudflare AI Error. Status: " . $response->status() . " | " . $response->body());
+                    throw new \Exception("Server AI Error. Status: " . $response->status() . " | " . $response->body());
                 }
 
                 // DETEKTOR PINTAR: Cek tipe data balasan Cloudflare
@@ -693,11 +687,11 @@ class ChatController extends Controller
                     $imageContent = $response->body();
                 }
 
-                $imageName = 'cf_flux2_' . time() . '_' . rand(1000, 9999) . '.png';
+                $imageName = 'cf_flux_' . time() . '_' . rand(1000, 9999) . '.png';
 
                 if (!file_exists($destinationPath)) mkdir($destinationPath, 0755, true);
 
-                // Simpan file ke server
+                // Simpan file ke server AlwaysData (Aman karena ada robot penyapu)
                 file_put_contents($destinationPath . '/' . $imageName, $imageContent);
                 $publicUrl = url('uploads/imagen/' . $imageName);
 
@@ -706,7 +700,7 @@ class ChatController extends Controller
 
                 $markdownImage = "![" . $safeAltText . "...](" . $publicUrl . ")";
                 $aiReply = "**Sahaja Imagen** berhasil membuat gambar anda!\n\n" . $markdownImage;
-                $modelUsedLabel = 'Sahaja Imagen (Flux 2 Klein)';
+                $modelUsedLabel = 'Sahaja Imagen (CF Flux)';
             }
 
             // ========================================================
