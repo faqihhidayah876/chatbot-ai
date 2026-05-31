@@ -293,8 +293,8 @@ class ChatController extends Controller
             'smart' => [
                 'provider' => env('PROVIDER_SMART'),
                 'model'    => env('MODEL_SMART'),
-                'endpoint' => env('NVIDIA_ENDPOINT'),
-                'key'      => env('NVIDIA_API_KEY'),
+                'endpoint' => env('CEREBRAS_ENDPOINT'),
+                'key'      => env('CEREBRAS_API_KEY'),
                 'timeout'  => 300
             ],
             'alpha' => [
@@ -328,8 +328,8 @@ class ChatController extends Controller
             default => [
                 'provider' => env('PROVIDER_FAST'),
                 'model'    => env('MODEL_FAST'),
-                'endpoint' => env('NVIDIA_ENDPOINT'),
-                'key'      => env('NVIDIA_API_KEY'),
+                'endpoint' => env('MISTRAL_ENDPOINT'),
+                'key'      => env('MISTRAL_API_KEY'),
                 'timeout'  => 300
             ],
         };
