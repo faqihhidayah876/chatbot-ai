@@ -2,11 +2,12 @@
     <div class="sidebar-brand">
         <div class="brand-logo-container">
             <img src="https://i.ibb.co.com/jZZ0648R/Logo-SAHAJA-AI.png" alt="Logo"
-                style="width: 24px; height: 24px; margin-right:  ; border-radius: 4px;">
+                style="width: 24px; height: 24px; margin-right: 8px; border-radius: 4px;">
             <span class="brand-text text-label">SAHAJA AI</span>
         </div>
         <button class="toggle-btn-sidebar" id="sidebarToggleBtn"><i class="fas fa-bars"></i></button>
     </div>
+
     <div class="new-chat-wrapper">
         <a href="{{ route('chat.new') }}" class="new-chat-btn" style="margin-bottom: 10px;">
             <i class="fas fa-plus"></i> <span class="btn-text text-label">Percakapan Baru</span>
@@ -18,6 +19,7 @@
             <i class="fas fa-book-reader" style="color: #10b981;"></i> <span class="btn-text text-label">SAHAJA LLM</span>
         </a>
     </div>
+
     <div class="history-container">
         <div class="history-label text-label">Riwayat</div>
         @foreach ($sessions as $session)
@@ -43,6 +45,29 @@
             </div>
         @endforeach
     </div>
+
+    <!-- ========================================== -->
+    <!-- WIDGET BANNER PRODUK BARU -->
+    <!-- ========================================== -->
+    <div id="sahaja-product-banner" class="sahaja-banner-container">
+        <div class="banner-header">
+            <span class="banner-title text-label">New product launched</span>
+            <button id="close-banner-btn" class="close-btn" aria-label="Close banner">&times;</button>
+        </div>
+        <p class="banner-subtitle text-label">
+            Click to enter and explore more model capabilities.
+        </p>
+        <div class="banner-buttons">
+            <a href="https://sistem-deteksi-penyakit-daun.vercel.app" target="_blank" class="banner-btn">
+                🌿 Disease Leaves Early Detection
+            </a>
+            <a href="https://explainable-ai-blush.vercel.app" target="_blank" class="banner-btn">
+                🗣️ Fatigue Detection System
+            </a>
+        </div>
+    </div>
+    <!-- ========================================== -->
+
     <div class="sidebar-footer">
         <div class="user-profile" onclick="toggleMenu(event, 'logout-menu')">
         @if(Auth::user()->avatar)

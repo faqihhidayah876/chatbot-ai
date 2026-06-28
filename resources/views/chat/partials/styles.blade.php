@@ -2164,3 +2164,119 @@ body.light-mode .markdown-body a {
     margin-top: 6px;
     margin-bottom: 0; /* Hindari spasi ganda */
 }
+
+/* ========================================== */
+/* STYLING BANNER PRODUK BARU */
+/* ========================================== */
+.sahaja-banner-container {
+    background-color: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 16px;
+    margin: 16px; /* Sesuaikan margin dengan lebar sidebar kamu */
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    position: relative;
+    transition: opacity 0.3s ease-out;
+}
+
+/* Mode Gelap (Opsional, jika SAHAJA AI punya Dark Mode) */
+@media (prefers-color-scheme: dark) {
+    .sahaja-banner-container {
+        background-color: #1f2937;
+        border-color: #374151;
+    }
+}
+
+.banner-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.banner-title {
+    font-weight: 600;
+    font-size: 14px;
+    color: #111827;
+}
+
+@media (prefers-color-scheme: dark) {
+    .banner-title { color: #f9fafb; }
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    font-size: 20px;
+    line-height: 1;
+    cursor: pointer;
+    color: #9ca3af;
+    transition: color 0.2s;
+}
+
+.close-btn:hover {
+    color: #ef4444; /* Berubah merah saat di-hover */
+}
+
+.banner-subtitle {
+    font-size: 12px;
+    color: #6b7280;
+    margin-bottom: 16px;
+    line-height: 1.4;
+}
+
+@media (prefers-color-scheme: dark) {
+    .banner-subtitle { color: #9ca3af; }
+}
+
+.banner-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 8px; /* Jarak antar tombol */
+}
+
+.banner-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 12px;
+    background-color: #f3f4f6;
+    color: #374151;
+    text-decoration: none;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    transition: all 0.2s ease-in-out;
+    border: 1px solid transparent;
+}
+
+@media (prefers-color-scheme: dark) {
+    .banner-btn {
+        background-color: #374151;
+        color: #f9fafb;
+    }
+}
+
+.banner-btn:hover {
+    background-color: #e5e7eb;
+    border-color: #d1d5db;
+    transform: translateY(-1px);
+}
+
+@media (prefers-color-scheme: dark) {
+    .banner-btn:hover {
+        background-color: #4b5563;
+        border-color: #6b7280;
+    }
+}
+
+.banner-subtitle {
+    font-size: 11px;
+    color: var(--text-secondary, #6b7280);
+    margin-bottom: 12px;
+    line-height: 1.5;
+    white-space: normal;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    display: block;
+}

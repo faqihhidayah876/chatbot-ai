@@ -1358,3 +1358,30 @@ window.toggleResearchPanel = function() {
         floatBtn.style.display = 'none';
     }
 };
+
+// ==========================================
+// SCRIPT BANNER PRODUK BARU (SESSION MODE)
+// ==========================================
+document.addEventListener("DOMContentLoaded", function() {
+    const banner = document.getElementById("sahaja-product-banner");
+    const closeBtn = document.getElementById("close-banner-btn");
+
+    if (banner && closeBtn) {
+        // 🚀 MENGGUNAKAN SESSION STORAGE: Ingatan akan kereset saat browser/tab ditutup (Sistem per-login)
+        if (sessionStorage.getItem("sahajaBannerSessionClosed") === "true") {
+            banner.style.display = "none";
+        }
+
+        // Event saat tombol X diklik
+        closeBtn.addEventListener("click", function() {
+            banner.style.opacity = "0"; // Efek fade out
+
+            setTimeout(function() {
+                banner.style.display = "none"; // Hilangkan elemen
+            }, 300);
+
+            // Simpan aksi ke memori sementara (hilang saat sesi berakhir)
+            sessionStorage.setItem("sahajaBannerSessionClosed", "true");
+        });
+    }
+});
