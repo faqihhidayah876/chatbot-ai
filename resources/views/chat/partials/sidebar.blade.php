@@ -50,19 +50,21 @@
     <!-- WIDGET BANNER PRODUK BARU -->
     <!-- ========================================== -->
     <div id="sahaja-product-banner" class="sahaja-banner-container">
-        <div class="banner-header">
-            <span class="banner-title text-label">New product launched</span>
-            <button id="close-banner-btn" class="close-btn" aria-label="Close banner">&times;</button>
-        </div>
-        <p class="banner-subtitle text-label">
-            Click to enter and explore more model capabilities.
-        </p>
+    <div class="banner-header">
+        <span class="banner-title text-label">New product launched</span>
+        <button id="close-banner-btn" class="close-btn" aria-label="Close banner">&times;</button>
+    </div>
+    <p class="banner-subtitle text-label">
+        Jelajahi project AI lainnya yang telah saya kembangkan.
+    </p>
         <div class="banner-buttons">
             <a href="https://sistem-deteksi-penyakit-daun.vercel.app" target="_blank" class="banner-btn">
-                🌿 Disease Leaves Early Detection
+                <img src="https://i.ibb.co.com/FkTcv772/Picsart-26-06-29-00-33-18-415.png" alt="Logo" class="btn-logo-micro">
+                Leaf Disease Detection
             </a>
             <a href="https://explainable-ai-blush.vercel.app" target="_blank" class="banner-btn">
-                🗣️ Fatigue Detection System
+                <img src="https://i.ibb.co.com/Rpkm30y0/logo-datmin.png" alt="Logo" class="btn-logo-micro">
+                Fatigue Detection System
             </a>
         </div>
     </div>

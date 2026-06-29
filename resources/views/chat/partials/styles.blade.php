@@ -2274,9 +2274,18 @@ body.light-mode .markdown-body a {
     font-size: 11px;
     color: var(--text-secondary, #6b7280);
     margin-bottom: 12px;
-    line-height: 1.5;
+    line-height: 1.5; /* Memberi sedikit ruang antar baris */
     white-space: normal;
     word-wrap: break-word;
     overflow-wrap: break-word;
     display: block;
+}
+
+.btn-logo-micro {
+    width: 14px; /* Ukuran micro, sedikit lebih besar dari emot */
+    height: 14px;
+    margin-right: 6px; /* Jarak dengan teks */
+    border-radius: 2px; /* Sedikit melengkung */
+    vertical-align: middle; /* Sejajar dengan teks */
+    object-fit: contain; /* Memastikan logo gak gepeng */
 }
