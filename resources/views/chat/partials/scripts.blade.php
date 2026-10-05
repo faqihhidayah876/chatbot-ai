@@ -465,30 +465,35 @@ async function sendMessage() {
         const loadingBubble = document.getElementById(loadingId);
         if (loadingBubble) {
             const aiMessageDiv = document.createElement('div'); aiMessageDiv.className = 'message ai';
+
+            // =========================================================
+            // 🌟 BADGE DINAMIS: Gunakan variabel `mode` langsung
+            //    (bukan menebak dari nama model)
+            // =========================================================
             let finalModelLabel = '<i class="fas fa-bolt"></i> Mode Cepat';
             let finalBadgeClass = 'mode-fast';
             let extraStyle = '';
-            const modelUsedStr = (data.model_used || '').toLowerCase();
 
-            if (modelUsedStr.includes('coder') || modelUsedStr.includes('qwen')) {
-                finalModelLabel = '<i class="fas fa-code"></i> Mode Code';
-                extraStyle = 'background: rgba(168, 85, 247, 0.15); color: #a855f7; border: 1px solid rgba(168, 85, 247, 0.3);';
-                finalBadgeClass = '';
-            }
-            else if (modelUsedStr.includes('medium') || modelUsedStr.includes('kimi') || modelUsedStr.includes('moonshot')) {
+            if (mode === 'smart' || mode === 'alpha') {
                 finalModelLabel = '<i class="fas fa-brain"></i> Mode Cerdas';
                 finalBadgeClass = 'mode-smart';
-                extraStyle = '';
             }
-            else if (modelUsedStr.includes('imagen') || modelUsedStr.includes('flux')) {
-                finalModelLabel = '<i class="fas fa-paint-brush"></i> Sahaja Imagen';
-                extraStyle = 'background: rgba(236, 72, 153, 0.15); color: #ec4899; border: 1px solid rgba(236, 72, 153, 0.3);';
+            else if (mode === 'coding' || mode === 'github' || mode === 'workspace') {
+                finalModelLabel = '<i class="fas fa-code"></i> Mode Code';
                 finalBadgeClass = '';
+                extraStyle = 'background: rgba(168, 85, 247, 0.15); color: #a855f7; border: 1px solid rgba(168, 85, 247, 0.3);';
             }
-            else if (modelUsedStr.includes('small') || modelUsedStr.includes('119b')) {
-                finalModelLabel = '<i class="fas fa-bolt"></i> Mode Cepat';
-                finalBadgeClass = 'mode-fast';
+            else if (mode === 'imagen') {
+                finalModelLabel = '<i class="fas fa-paint-brush"></i> Sahaja Imagen';
+                finalBadgeClass = '';
+                extraStyle = 'background: rgba(236, 72, 153, 0.15); color: #ec4899; border: 1px solid rgba(236, 72, 153, 0.3);';
             }
+            else if (mode === 'vision') {
+                finalModelLabel = '<i class="fas fa-eye"></i> Mode Vision';
+                finalBadgeClass = '';
+                extraStyle = 'background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3);';
+            }
+            // else → default: Mode Cepat
 
             aiMessageDiv.innerHTML = `<div class="message-avatar ai-avatar-msg" style="background: transparent; padding: 0;"><img src="https://i.ibb.co.com/jZZ0648R/Logo-SAHAJA-AI.png" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;"></div><div class="message-content"><div class="mode-badge ${finalBadgeClass}" style="${extraStyle}">${finalModelLabel}</div><div class="message-bubble markdown-body"></div><div class="ai-actions" style="position: relative; display: flex; gap: 5px; align-items: center;"><button class="action-btn" onclick="copyText(this)"><i class="far fa-copy"></i> Salin</button><div class="export-dropdown-container"><button class="action-btn" onclick="toggleExportMenu(this)"><i class="fas fa-ellipsis-v"></i></button><div class="export-menu" style="display: none; position: absolute; bottom: 100%; left: 0; background: var(--sidebar-bg); border: 1px solid var(--glass-border); border-radius: 8px; padding: 5px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); z-index: 50; width: 140px; margin-bottom: 5px;"><div class="option-item" style="font-size: 0.8rem; padding: 6px 10px;" onclick="exportToDoc(this)"><i class="fas fa-file-word" style="color: #3b82f6;"></i> Unduh DOCS</div></div></div></div></div>`;
             loadingBubble.parentNode.replaceChild(aiMessageDiv, loadingBubble);

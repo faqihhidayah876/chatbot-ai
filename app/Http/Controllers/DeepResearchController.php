@@ -120,11 +120,11 @@ class DeepResearchController extends Controller
                 " . $context;
 
                 $modelAlpha = env('MODEL_ALPHA');
-                $endpointAlpha = env('NVIDIA_ENDPOINT');
+                $endpointAlpha = env('MISTRAL_ENDPOINT');
                 $providerAlpha = env('PROVIDER_ALPHA');
 
                 $response = Http::withHeaders([
-                    'Authorization' => 'Bearer ' . env('NVIDIA_API_KEY'),
+                    'Authorization' => 'Bearer ' . env('MISTRAL_API_KEY'),
                     'Content-Type' => 'application/json',
                     'Accept' => 'application/json'
                 ])->withoutVerifying()->timeout(150)->post($endpointAlpha, [
