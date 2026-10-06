@@ -9,7 +9,6 @@ if (typeof marked !== 'undefined') {
 let currentSessionId = "{{ $currentSession ? $currentSession->id : '' }}";
 let currentController = null;
 let lastUserMessage = "";
-window.activeForceMode = null;
 
 let attachedFiles = []; let fileIdCounter = 0; let currentGithubRepo = "";
 let pendingAvatarBase64 = null; let targetActionId = null; let targetActionType = '';
@@ -335,17 +334,7 @@ let userSelectedMode = 'auto';
 document.getElementById('modelSelectButton')?.addEventListener('click', (e) => { e.stopPropagation(); attachMenu.classList.remove('show'); document.getElementById('modelMenu').classList.toggle('show'); });
 attachBtn?.addEventListener('click', (e) => { e.stopPropagation(); document.getElementById('modelMenu').classList.remove('show'); attachMenu.classList.toggle('show'); });
 function selectModelMode(mode, iconClass) { userSelectedMode = mode; document.getElementById('currentModelIcon').className = `fas ${iconClass}`; document.querySelectorAll('.model-option').forEach(el => el.style.background = 'transparent'); event.currentTarget.style.background = 'var(--glass-highlight)'; document.getElementById('modelMenu').classList.remove('show'); }
-let isSwitchingMode = false; // VARIABEL PENANDA BARU
 
-function switchToMode(targetMode) {
-    window.activeForceMode = targetMode;
-    if (currentController) currentController.abort();
-    const oldLoading = document.querySelector('.message.ai:last-child');
-    if (oldLoading && oldLoading.querySelector('.typing-indicator')) oldLoading.remove();
-    sendMessage();
-}
-
-function switchToFastMode() { switchToMode('fast'); }
 
 function detectComplexity(text) {
     const t = text.toLowerCase();
@@ -379,7 +368,7 @@ async function sendMessage() {
     if (!messageInput && attachedFiles.length === 0 && !currentGithubRepo) return;
 
     // 3. JURUS BYPASS MODE ALPHA (DEEP RESEARCH)
-    if (userSelectedMode === 'alpha' && window.activeForceMode === null) {
+    if (userSelectedMode === 'alpha') {
         startDeepResearch(messageInput);
         chatInput.disabled = false;
         chatInput.style.height = 'auto';
@@ -392,43 +381,37 @@ async function sendMessage() {
     let finalMessageToSend = messageInput;
     let displayMessage = messageInput;
 
-    if (window.activeForceMode !== null) {
-        if (!lastUserMessage) return; finalMessageToSend = lastUserMessage;
-    } else {
-        if (userSelectedMode === 'imagen') {
-            finalMessageToSend = '/imagen ' + messageInput;
-            displayMessage = messageInput;
+    if (userSelectedMode === 'imagen') {
+        finalMessageToSend = '/imagen ' + messageInput;
+        displayMessage = messageInput;
 
-            if (base64ImagesArray.length > 0) {
-                displayMessage = `🖼️ [${imgCount} Gambar Terlampir]\n` + displayMessage;
-            }
-        } else {
-            if (combinedPdfText !== "") {
-                finalMessageToSend = combinedPdfText + `Instruksi User: ${messageInput || "Tolong analisis dokumen di atas."}`;
-                displayMessage = `📎 [${pdfCount} Dokumen Terlampir]\n${messageInput}`;
-            }
-            if (base64ImagesArray.length > 0) {
-                if (finalMessageToSend === messageInput) finalMessageToSend = messageInput || "Jelaskan gambar-gambar ini.";
-                displayMessage = `🖼️ [${imgCount} Gambar Terlampir]\n` + displayMessage;
-            }
-            if (currentGithubRepo) {
-                finalMessageToSend = messageInput || "Analisis kode ini.";
-                displayMessage = `📦 [GitHub: ${currentFileName || 'Repo'}]\n${messageInput}`;
-            }
+        if (base64ImagesArray.length > 0) {
+            displayMessage = `🖼️ [${imgCount} Gambar Terlampir]\n` + displayMessage;
         }
-
-        lastUserMessage = finalMessageToSend;
-
-        if (window.activeForceMode === null) {
-            const welcome = document.getElementById('welcomeScreen'); if (welcome) welcome.style.display = 'none';
-            const msgContainer = document.getElementById('messagesContainer'); if (msgContainer) msgContainer.style.display = 'flex';
-            chatInput.value = ''; chatInput.style.height = 'auto';
-
-            // 🌟 Cetak pesan normal, langsung rapi dan fit-content bawaan sistem
-            appendMessage('user', displayMessage);
-            formatAttachmentIcons();
+    } else {
+        if (combinedPdfText !== "") {
+            finalMessageToSend = combinedPdfText + `Instruksi User: ${messageInput || "Tolong analisis dokumen di atas."}`;
+            displayMessage = `📎 [${pdfCount} Dokumen Terlampir]\n${messageInput}`;
+        }
+        if (base64ImagesArray.length > 0) {
+            if (finalMessageToSend === messageInput) finalMessageToSend = messageInput || "Jelaskan gambar-gambar ini.";
+            displayMessage = `🖼️ [${imgCount} Gambar Terlampir]\n` + displayMessage;
+        }
+        if (currentGithubRepo) {
+            finalMessageToSend = messageInput || "Analisis kode ini.";
+            displayMessage = `📦 [GitHub: ${currentFileName || 'Repo'}]\n${messageInput}`;
         }
     }
+
+    lastUserMessage = finalMessageToSend;
+
+    const welcome = document.getElementById('welcomeScreen'); if (welcome) welcome.style.display = 'none';
+    const msgContainer = document.getElementById('messagesContainer'); if (msgContainer) msgContainer.style.display = 'flex';
+    chatInput.value = ''; chatInput.style.height = 'auto';
+
+    // 🌟 Cetak pesan normal, langsung rapi dan fit-content bawaan sistem
+    appendMessage('user', displayMessage);
+    formatAttachmentIcons();
 
     // 5. SIAPKAN PAYLOAD UNTUK LARAVEL (ANTI-GAGAL)
     const maxTokensEl = document.getElementById('maxTokensInput');
@@ -446,12 +429,10 @@ async function sendMessage() {
 
     if (base64ImagesArray.length > 0) payload.image_data_array = base64ImagesArray;
     if (currentGithubRepo) payload.github_repo = currentGithubRepo;
-    if (window.activeForceMode !== null) payload.force_mode = window.activeForceMode;
 
     // 6. DETEKSI MODE AI OTOMATIS
     let mode = 'fast';
-    if (window.activeForceMode !== null) mode = window.activeForceMode;
-    else if (userSelectedMode !== 'auto') mode = userSelectedMode;
+    if (userSelectedMode !== 'auto') mode = userSelectedMode;
     else {
         let isComplex = detectComplexity(finalMessageToSend);
         if (combinedPdfText !== "") isComplex = true;
@@ -464,8 +445,9 @@ async function sendMessage() {
     }
 
     const loadingId = appendLoadingWithMode(mode); scrollToBottom();
-    if (window.activeForceMode === null) removeFile();
-    if (currentController) currentController.abort(); currentController = new AbortController();
+    removeFile();
+    if (currentController) currentController.abort(); 
+    currentController = new AbortController();
 
     chatInput.disabled = true;
     const sendBtn = document.getElementById('sendButton');
@@ -528,7 +510,6 @@ async function sendMessage() {
             // Update state aktif di sidebar
             setActiveSidebarItem(data.session_id);
         }
-        window.activeForceMode = null;
 
         currentGithubRepo = "";
         currentFileName = "";
@@ -537,7 +518,6 @@ async function sendMessage() {
         const lBubble = document.getElementById(loadingId);
         if (lBubble) lBubble.remove();
         if (error.name !== 'AbortError') showToast("Gagal: " + error.message, "error");
-        window.activeForceMode = null;
     } finally {
         chatInput.disabled = false;
         sendBtn.style.opacity = '1';
@@ -659,9 +639,9 @@ function appendLoadingWithMode(mode) {
     let badgeHtml = ''; let textHtml = '';
     if (mode === 'vision') { badgeHtml = `<div class="mode-badge" style="background: rgba(16, 185, 129, 0.15); color: #10b981;"><i class="fas fa-eye"></i> Mode Vision</div>`; textHtml = `<span class="typing-text">Menganalisis...</span>`; }
     else if (mode === 'github' || mode === 'coding') { badgeHtml = `<div class="mode-badge" style="background: rgba(168, 85, 247, 0.15); color: #a855f7;"><i class="fas fa-code"></i> Mode Code</div>`; textHtml = `<span class="typing-text">Menganalisis...</span>`; }
-    else if (mode === 'smart') { badgeHtml = `<div class="mode-badge mode-smart"><i class="fas fa-brain"></i> Mode Cerdas</div>`; textHtml = `<span class="typing-text">Bernalar... <button class="switch-btn" onclick="switchToFastMode()">[Beralih ke Cepat]</button></span>`; }
+    else if (mode === 'smart') { badgeHtml = `<div class="mode-badge mode-smart"><i class="fas fa-brain"></i> Mode Cerdas</div>`; textHtml = `<span class="typing-text">Bernalar...</span>`; }
     else if (mode === 'imagen') { badgeHtml = `<div class="mode-badge" style="background: rgba(236, 72, 153, 0.15); color: #ec4899; border: 1px solid rgba(236, 72, 153, 0.3);"><i class="fas fa-paint-brush"></i> Sahaja Imagen</div>`; textHtml = `<span class="typing-text">Membuat Gambar...</span>`; }
-    else { badgeHtml = `<div class="mode-badge mode-fast"><i class="fas fa-bolt"></i> Mode Cepat</div>`; textHtml = `<span class="typing-text">Berpikir... <button class="switch-btn" style="color:#d4a017;" onclick="switchToMode('smart')">[Beralih ke Cerdas]</button></span>`; }
+    else { badgeHtml = `<div class="mode-badge mode-fast"><i class="fas fa-bolt"></i> Mode Cepat</div>`; textHtml = `<span class="typing-text">Berpikir...</span>`; }
 
     div.innerHTML = `
         <div class="message-avatar ai-avatar-msg" style="background: transparent; padding: 0; border: 1px solid var(--glass-border); overflow:hidden;">
