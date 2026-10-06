@@ -186,7 +186,9 @@ class DeepResearchController extends Controller
                     'session_id' => $research->session_id,
                     'user_message' => "Deep Research: " . $research->topic,
                     'ai_response' => $finalMarkdown,
-                    'model_used' => $modelAlpha . ' (' . strtoupper($providerAlpha) . ')'
+                    'mode' => 'alpha',
+                    'provider' => strtolower($providerAlpha),
+                    'model' => $modelAlpha,
                 ]);
 
                 $logs[] = ['time' => now()->timezone('Asia/Jakarta')->format('H:i:s'), 'message' => 'Analisis selesai. Laporan disimpan ke riwayat chat.'];

@@ -11,6 +11,9 @@ class Chat extends Model
         'session_id',
         'user_message',
         'ai_response',
+        'mode',
+        'provider',
+        'model',
     ];
     public function session()
     {

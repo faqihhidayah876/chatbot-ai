@@ -271,6 +271,9 @@ class ChatController extends Controller
                 'session_id' => $sessionId,
                 'user_message' => $dbUserMessage,
                 'ai_response' => $aiReply,
+                'mode' => $activeMode,
+                'provider' => strtolower($aiConfig['provider'] ?? 'unknown'),
+                'model' => $selectedModel,
             ]);
 
             return response()->json([
@@ -731,7 +734,9 @@ class ChatController extends Controller
                 'session_id' => $sessionId,
                 'user_message' => $userMessage,
                 'ai_response' => $aiReply,
-                'model_used' => $modelUsedLabel
+                'mode' => 'imagen',
+                'provider' => str_contains($modelUsedLabel, 'CF') ? 'cloudflare' : 'freetheai',
+                'model' => $modelUsedLabel,
             ]);
 
             return response()->json([

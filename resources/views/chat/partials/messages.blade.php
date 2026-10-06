@@ -47,6 +47,32 @@
                     style="width: 100%; height: 100%; object-fit: cover;">
             </div>
             <div class="message-content">
+                @if($chat->mode)
+                    @php
+                        $modeLabels = [
+                            'fast' => 'Cepat',
+                            'smart' => 'Cerdas',
+                            'coding' => 'Coding',
+                            'alpha' => 'Riset',
+                            'vision' => 'Vision',
+                            'imagen' => 'Imagen',
+                            'workspace' => 'Workspace',
+                        ];
+                        $modeIcons = [
+                            'fast' => 'bolt',
+                            'smart' => 'microchip',
+                            'coding' => 'code',
+                            'alpha' => 'circle-nodes',
+                            'vision' => 'eye',
+                            'imagen' => 'image',
+                            'workspace' => 'book-open',
+                        ];
+                    @endphp
+                    <div class="mode-badge" style="margin-bottom: 6px;">
+                        <i class="fas fa-{{ $modeIcons[$chat->mode] ?? 'bolt' }}"></i>
+                        Mode {{ $modeLabels[$chat->mode] ?? ucfirst($chat->mode) }}
+                    </div>
+                @endif
                 {{-- Hidden raw data for JS rendering --}}
                 <div class="message-bubble markdown-body ai-raw-data" style="display: none;">{{ $chat->ai_response }}</div>
                 {{-- Rendered markdown --}}
