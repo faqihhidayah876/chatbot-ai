@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Workspace;
 use App\Models\LlmDocument;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class SahajaLlmController extends Controller
 {
@@ -42,7 +43,17 @@ class SahajaLlmController extends Controller
 
             return response()->json(['success' => true, 'doc' => $doc]);
         } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()]);
+            Log::error('LLM Upload Error', [
+                'message' => $e->getMessage(),
+                'file'    => $e->getFile(),
+                'line'    => $e->getLine(),
+                'user_id' => Auth::id(),
+                'file_name' => $request->file_name ?? null,
+            ]);
+            return response()->json([
+                'success' => false, 
+                'message' => 'Gagal mengunggah dokumen. Silakan coba lagi.'
+            ]);
         }
     }
     public function deleteDocument($id)
@@ -58,7 +69,17 @@ class SahajaLlmController extends Controller
             }
             return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
         } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()]);
+            Log::error('LLM Delete Error', [
+                'message' => $e->getMessage(),
+                'file'    => $e->getFile(),
+                'line'    => $e->getLine(),
+                'user_id' => Auth::id(),
+                'doc_id'  => $id ?? null,
+            ]);
+            return response()->json([
+                'success' => false, 
+                'message' => 'Gagal menghapus dokumen. Silakan coba lagi.'
+            ]);
         }
     }
 }

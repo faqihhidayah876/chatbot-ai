@@ -235,14 +235,18 @@ class ChatController extends Controller
                     $aiReply = $this->callOpenAiCompatible($aiConfig['endpoint'], $aiConfig['key'], $selectedModel, $messages, $timeout, $maxTokensReq);
 
                 } catch (\Exception $e) {
-                    $errorMsg = $e->getMessage();
-                    try { Log::error("AI Error: " . $errorMsg); } catch (\Exception $logErr) {}
+                    Log::error('AI Provider Error', [
+                        'message' => $e->getMessage(),
+                        'file'    => $e->getFile(),
+                        'line'    => $e->getLine(),
+                        'user_id' => Auth::id(),
+                        'mode'    => $activeMode ?? 'unknown',
+                        'model'   => $selectedModel ?? 'unknown',
+                    ]);
 
-                    // JURUS ANTI BANGKAI ERROR: Langsung lemparkan error 500 ke Frontend
-                    // Script akan terhenti di sini dan TIDAK AKAN melanjutkan ke fungsi Chat::create()
                     return response()->json([
                         'error' => true,
-                        'message' => 'NVIDIA/Groq sedang sibuk atau timeout. Silakan coba lagi.'
+                        'message' => 'Layanan AI sedang sibuk. Silakan coba lagi dalam beberapa saat.'
                     ], 500);
                 }
             }
@@ -277,9 +281,17 @@ class ChatController extends Controller
             ]);
 
         } catch (\Throwable $globalEx) {
+            Log::error('Chat Fatal Error', [
+                'message' => $globalEx->getMessage(),
+                'file'    => $globalEx->getFile(),
+                'line'    => $globalEx->getLine(),
+                'trace'   => $globalEx->getTraceAsString(),
+                'user_id' => Auth::id(),
+            ]);
+
             return response()->json([
                 'error' => true,
-                'message' => 'Fatal Error: ' . $globalEx->getMessage() . ' (Baris: ' . $globalEx->getLine() . ')'
+                'message' => 'Terjadi kesalahan pada server. Silakan muat ulang halaman dan coba lagi.'
             ], 500);
         }
     }
@@ -522,7 +534,13 @@ class ChatController extends Controller
 
             return $megaContent;
         } catch (\Exception $e) {
-            return "SISTEM ERROR: " . $e->getMessage();
+            Log::error('GitHub Scanner Error', [
+                'message' => $e->getMessage(),
+                'file'    => $e->getFile(),
+                'line'    => $e->getLine(),
+                'repo'    => $repoUrl ?? null,
+            ]);
+            return "SISTEM ERROR: Gagal membaca isi file dari repository GitHub.";
         }
     }
     // FUNGSI PENERIMA UMPAN BALIK
@@ -724,7 +742,16 @@ class ChatController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            $errorMsg = "**Sahaja Imagen Mengalami Kendala Teknis:**\n\n```text\n" . $e->getMessage() . "\n```";
+            Log::error('Sahaja Imagen Error', [
+                'message' => $e->getMessage(),
+                'file'    => $e->getFile(),
+                'line'    => $e->getLine(),
+                'user_id' => Auth::id(),
+                'prompt'  => $cleanPrompt ?? null,
+            ]);
+
+            $errorMsg = "**Sahaja Imagen Mengalami Kendala Teknis**\n\n"
+                      . "Layanan gambar sedang sibuk. Silakan coba lagi dalam beberapa saat.";
             return response()->json([
                 'session_id' => $sessionId,
                 'user_message' => $userMessage,

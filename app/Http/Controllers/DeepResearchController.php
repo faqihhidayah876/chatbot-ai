@@ -9,6 +9,7 @@ use App\Models\Session; // <--- WAJIB DITAMBAH
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 
 class DeepResearchController extends Controller
 {
@@ -46,7 +47,17 @@ class DeepResearchController extends Controller
                 'session_id' => $sessionId // Kirim ID session agar frontend bisa update URL
             ]);
         } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Database Error: ' . $e->getMessage()]);
+            Log::error('Deep Research Init Error', [
+                'message' => $e->getMessage(),
+                'file'    => $e->getFile(),
+                'line'    => $e->getLine(),
+                'user_id' => Auth::id(),
+                'topic'   => $request->topic ?? null,
+            ]);
+            return response()->json([
+                'success' => false, 
+                'message' => 'Gagal memulai riset. Silakan coba lagi.'
+            ]);
         }
     }
 
@@ -93,7 +104,14 @@ class DeepResearchController extends Controller
                 $research->update(['logs' => $logs]);
 
             } catch (\Exception $e) {
-                $logs[] = ['time' => now()->timezone('Asia/Jakarta')->format('H:i:s'), 'message' => 'Error: ' . $e->getMessage()];
+                Log::error('Deep Research Tavily Error', [
+                    'message' => $e->getMessage(),
+                    'file'    => $e->getFile(),
+                    'line'    => $e->getLine(),
+                    'research_id' => $research->id,
+                ]);
+                $logs[] = ['time' => now()->timezone('Asia/Jakarta')->format('H:i:s'), 
+                           'message' => 'Gagal mengambil data dari internet. Silakan coba lagi.'];
                 $research->update(['status' => 'error', 'logs' => $logs]);
             }
             return response()->json(['success' => true, 'status' => $research->status, 'logs' => $logs]);
@@ -176,7 +194,15 @@ class DeepResearchController extends Controller
                 Cache::forget('alpha_context_' . $research->id);
 
             } catch (\Exception $e) {
-                $logs[] = ['time' => now()->timezone('Asia/Jakarta')->format('H:i:s'), 'message' => 'Error AI: ' . $e->getMessage()];
+                Log::error('Deep Research AI Error', [
+                    'message' => $e->getMessage(),
+                    'file'    => $e->getFile(),
+                    'line'    => $e->getLine(),
+                    'research_id' => $research->id,
+                    'model' => $modelAlpha ?? 'unknown',
+                ]);
+                $logs[] = ['time' => now()->timezone('Asia/Jakarta')->format('H:i:s'), 
+                           'message' => 'Mesin AI sedang sibuk. Silakan coba lagi.'];
                 $research->update(['status' => 'error', 'logs' => $logs]);
             }
 

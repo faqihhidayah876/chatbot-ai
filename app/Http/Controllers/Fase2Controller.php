@@ -8,6 +8,7 @@ use App\Models\FasePost;
 use App\Models\FaseLike;
 use App\Models\FaseComment;
 use App\Models\Session;
+use Illuminate\Support\Facades\Log;
 
 class Fase2Controller extends Controller
 {
@@ -73,7 +74,17 @@ class Fase2Controller extends Controller
             return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
 
         } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+            Log::error('Fase2 Delete Error', [
+                'message' => $e->getMessage(),
+                'file'    => $e->getFile(),
+                'line'    => $e->getLine(),
+                'post_id' => $id ?? null,
+                'user_id' => Auth::id(),
+            ]);
+            return response()->json([
+                'success' => false, 
+                'message' => 'Gagal menghapus. Silakan coba lagi.'
+            ], 500);
         }
     }
     // Tambah Komentar Fase 2
