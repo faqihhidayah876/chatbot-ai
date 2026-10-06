@@ -15,28 +15,126 @@
 
     <link rel="icon" type="image/png" href="https://i.ibb.co.com/jZZ0648R/Logo-SAHAJA-AI.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <script>
+        (function() {
+            const theme = localStorage.getItem('sahaja-theme') || localStorage.getItem('theme');
+            if (theme === 'light') {
+                document.documentElement.classList.add('light-mode');
+                document.addEventListener('DOMContentLoaded', () => {
+                    document.body.classList.add('light-mode');
+                });
+            }
+        })();
+    </script>
     <style>
         :root {
-            --main-bg: #0a0e17;
-            --panel-bg: #151b23;
-            --glass-border: rgba(255, 255, 255, 0.1);
-            --glass-hover: rgba(255, 255, 255, 0.05);
-            --text-primary: #f1f5f9;
-            --text-secondary: #94a3b8;
-            --accent-color: #2563eb;
-            --llm-accent: #10b981;
+            --bg-base: #11141a;
+            --bg-subtle: #181c24;
+            --bg-elevated: #1e232d;
+            --bg-overlay: #232833;
+            --bg-hover: rgba(255, 255, 255, 0.05);
+
+            --border-subtle: rgba(255, 255, 255, 0.08);
+            --border-medium: rgba(255, 255, 255, 0.14);
+            --border-strong: rgba(255, 255, 255, 0.24);
+
+            --text-primary: #f0f2f5;
+            --text-secondary: #9aa0a6;
+            --text-tertiary: #5f6368;
+            --text-disabled: #3c4043;
+
+            --accent: #3b82f6;
+            --accent-hover: #2563eb;
+            --accent-active: #1d4ed8;
+            --accent-subtle: rgba(59, 130, 246, 0.12);
+            --accent-border: rgba(59, 130, 246, 0.3);
+
+            --success: #10b981;
+            --success-subtle: rgba(16, 185, 129, 0.12);
+            --warning: #f59e0b;
+            --warning-subtle: rgba(245, 158, 11, 0.12);
+            --danger: #ef4444;
+            --danger-subtle: rgba(239, 68, 68, 0.12);
+
+            --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+
+            --radius-sm: 6px;
+            --radius-md: 10px;
+            --radius-lg: 14px;
+            --radius-xl: 20px;
+            --radius-full: 9999px;
+
+            --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+            --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+            --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
+
+            --ease: cubic-bezier(0.4, 0, 0.2, 1);
+            --duration-micro: 150ms;
+            --duration-base: 200ms;
+            --duration-macro: 350ms;
+
+            --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+            --transition-normal: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+            --transition-slow: 350ms cubic-bezier(0.4, 0, 0.2, 1);
+
+            /* Backward compatibility aliases */
+            --main-bg: var(--bg-base);
+            --panel-bg: var(--bg-subtle);
+            --glass-border: var(--border-subtle);
+            --glass-hover: var(--bg-hover);
+            --accent-color: var(--accent);
+            --llm-accent: var(--accent);
+        }
+
+        html.light-mode,
+        html.light-mode body,
+        body.light-mode {
+            --bg-base: #f8fafc;
+            --bg-subtle: #f1f5f9;
+            --bg-elevated: #ffffff;
+            --bg-overlay: #ffffff;
+            --bg-hover: rgba(0, 0, 0, 0.04);
+
+            --border-subtle: rgba(0, 0, 0, 0.08);
+            --border-medium: rgba(0, 0, 0, 0.15);
+            --border-strong: rgba(0, 0, 0, 0.25);
+
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --text-tertiary: #94a3b8;
+            --text-disabled: #cbd5e1;
+
+            --accent: #2563eb;
+            --accent-hover: #1d4ed8;
+            --accent-active: #1e40af;
+            --accent-subtle: rgba(37, 99, 235, 0.08);
+            --accent-border: rgba(37, 99, 235, 0.25);
+
+            --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+            --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
+
+            --main-bg: var(--bg-base);
+            --panel-bg: var(--bg-subtle);
+            --glass-border: var(--border-subtle);
+            --glass-hover: var(--bg-hover);
+            --accent-color: var(--accent);
+            --llm-accent: var(--accent);
         }
 
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Poppins', sans-serif;
+            font-family: var(--font-sans);
         }
 
         body {
-            background-color: var(--main-bg);
+            background-color: var(--bg-base);
             color: var(--text-primary);
             height: 100vh;
             display: flex;
@@ -46,13 +144,13 @@
 
         /* ===== HEADER ===== */
         .llm-header {
-            height: 60px;
+            height: 56px;
             display: flex;
             align-items: center;
             justify-content: space-between;
             padding: 0 20px;
-            border-bottom: 1px solid var(--glass-border);
-            background: var(--main-bg);
+            border-bottom: 1px solid var(--border-subtle);
+            background: var(--bg-base);
             flex-shrink: 0;
             z-index: 100;
         }
@@ -61,42 +159,45 @@
         .header-right {
             display: flex;
             align-items: center;
-            gap: 15px;
+            gap: 12px;
         }
 
         .btn-header {
-            background: transparent;
+            background: var(--bg-elevated);
             color: var(--text-primary);
-            border: 1px solid var(--glass-border);
-            padding: 6px 14px;
-            border-radius: 20px;
+            border: 1px solid var(--border-subtle);
+            padding: 6px 12px;
+            border-radius: var(--radius-sm);
             text-decoration: none;
-            font-size: 0.85rem;
-            display: flex;
+            font-size: 13px;
+            font-weight: 500;
+            display: inline-flex;
             align-items: center;
             gap: 8px;
             cursor: pointer;
-            transition: 0.2s;
+            transition: var(--transition-fast);
         }
 
         .btn-header:hover {
-            background: var(--glass-hover);
+            background: var(--bg-hover);
+            border-color: var(--border-medium);
         }
 
         /* ===== GRID LAYOUT (3 PANEL) ===== */
         .llm-workspace {
             display: grid;
             grid-template-columns: 300px 1fr 300px;
-            gap: 15px;
-            padding: 15px;
-            height: calc(100vh - 60px);
+            gap: 14px;
+            padding: 14px;
+            height: calc(100vh - 56px);
             overflow: hidden;
+            background: var(--bg-base);
         }
 
         .panel {
-            background: var(--panel-bg);
-            border: 1px solid var(--glass-border);
-            border-radius: 16px;
+            background: var(--bg-subtle);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
             display: flex;
             flex-direction: column;
             overflow: hidden;
@@ -104,60 +205,64 @@
         }
 
         .panel-header {
-            padding: 15px 20px;
-            font-size: 0.9rem;
+            padding: 14px 18px;
+            font-size: 14px;
             font-weight: 600;
+            color: var(--text-primary);
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 1px solid var(--glass-border);
+            border-bottom: 1px solid var(--border-subtle);
+            background: var(--bg-subtle);
         }
 
         /* ===== PANEL KIRI (SUMBER) ===== */
         .source-content {
-            padding: 15px;
+            padding: 16px;
             overflow-y: auto;
             flex: 1;
         }
 
         .btn-add-source {
             width: 100%;
-            background: transparent;
-            border: 1px dashed var(--llm-accent);
-            color: var(--llm-accent);
+            background: var(--accent-subtle);
+            border: 1px dashed var(--accent);
+            color: var(--accent);
             padding: 12px;
-            border-radius: 12px;
-            font-size: 0.85rem;
+            border-radius: var(--radius-md);
+            font-size: 13px;
+            font-weight: 500;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 8px;
             cursor: pointer;
-            transition: 0.2s;
-            margin-bottom: 20px;
-            font-weight: 600;
+            transition: var(--transition-fast);
+            margin-bottom: 16px;
         }
 
         .btn-add-source:hover {
-            background: rgba(16, 185, 129, 0.1);
+            background: var(--accent);
+            color: #ffffff;
         }
 
         .doc-item {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid var(--glass-border);
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-subtle);
             padding: 12px;
-            border-radius: 8px;
-            margin-bottom: 10px;
-            font-size: 0.85rem;
+            border-radius: var(--radius-md);
+            margin-bottom: 8px;
+            font-size: 13px;
+            color: var(--text-primary);
             display: flex;
             align-items: center;
             justify-content: space-between;
-            transition: 0.2s;
+            transition: var(--transition-fast);
         }
 
         .doc-item:hover {
-            background: var(--glass-hover);
-            border-color: rgba(255, 255, 255, 0.2);
+            background: var(--bg-hover);
+            border-color: var(--border-medium);
         }
 
         .empty-state {
@@ -169,21 +274,20 @@
 
         .empty-state i {
             font-size: 2rem;
-            margin-bottom: 15px;
+            margin-bottom: 12px;
             opacity: 0.3;
         }
 
         .empty-state p {
-            font-size: 0.8rem;
+            font-size: 13px;
             line-height: 1.6;
         }
 
         /* ===== PANEL TENGAH (CHAT / MAIN) ===== */
-        /* PERBAIKAN BUG TERPOTONG: Hilangkan justify-content: center di sini! */
         .chat-content {
             flex: 1;
             overflow-y: auto;
-            padding: 20px 40px;
+            padding: 24px 32px;
             display: flex;
             flex-direction: column;
             scroll-behavior: smooth;
@@ -199,23 +303,31 @@
         }
 
         .greeting-wrapper h1 {
-            font-size: 1.8rem;
+            font-size: 1.6rem;
             margin-bottom: 10px;
             font-weight: 600;
+            color: var(--text-primary);
         }
 
         .greeting-wrapper p {
             color: var(--text-secondary);
-            font-size: 0.9rem;
+            font-size: 14px;
             line-height: 1.6;
-            max-width: 500px;
+            max-width: 520px;
+        }
+
+        .welcome-logo-img {
+            width: 48px;
+            height: 48px;
+            border-radius: var(--radius-md);
+            margin-bottom: 16px;
         }
 
         /* Area Chat History */
         #llmChatHistory {
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            gap: 16px;
             width: 100%;
             max-width: 800px;
             margin: 0 auto;
@@ -224,8 +336,8 @@
         .chat-msg {
             display: flex;
             flex-direction: column;
-            gap: 5px;
-            max-width: 90%;
+            gap: 4px;
+            max-width: 88%;
         }
 
         .chat-msg.user {
@@ -237,30 +349,31 @@
         }
 
         .bubble {
-            padding: 15px 20px;
-            font-size: 0.95rem;
+            padding: 14px 18px;
+            font-size: 14px;
             line-height: 1.6;
-            border-radius: 16px;
+            border-radius: var(--radius-lg);
             word-wrap: break-word;
         }
 
         .chat-msg.user .bubble {
-            background: var(--accent-color);
-            color: white;
+            background: var(--accent);
+            color: #ffffff;
             border-bottom-right-radius: 4px;
         }
 
         .chat-msg.ai .bubble {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid var(--glass-border);
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-primary);
             border-bottom-left-radius: 4px;
         }
 
-        /* Animasi Text Mulus */
+        /* Animasi Text */
         .gemini-block {
             opacity: 0;
-            transform: translateY(15px);
-            transition: all 0.5s cubic-bezier(0.25, 0.8, 0.25, 1);
+            transform: translateY(10px);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .gemini-block.show {
@@ -270,79 +383,84 @@
 
         /* Input Area */
         .chat-input-wrapper {
-            padding: 15px 20px;
-            background: var(--panel-bg);
-            border-top: 1px solid var(--glass-border);
+            padding: 14px 20px;
+            background: var(--bg-subtle);
+            border-top: 1px solid var(--border-subtle);
             display: flex;
             flex-direction: column;
             align-items: center;
-            /* KUNCI RAHASIA: Memaksa semua isi ke tengah */
         }
 
         .chat-input-box {
-            background: rgba(0, 0, 0, 0.5);
-            border: 1px solid var(--glass-border);
-            border-radius: 24px;
-            padding: 10px 20px;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-full);
+            padding: 8px 16px;
             display: flex;
             align-items: center;
-            gap: 15px;
+            gap: 12px;
             width: 100%;
             max-width: 800px;
-            /* Biar ukurannya proporsional di layar besar */
+            transition: border-color var(--transition-fast);
+        }
+
+        .chat-input-box:focus-within {
+            border-color: var(--accent-border);
         }
 
         .chat-input-box input {
             flex: 1;
             background: transparent;
             border: none;
-            color: white;
+            color: var(--text-primary);
             outline: none;
-            font-size: 0.95rem;
+            font-size: 14px;
+        }
+
+        .chat-input-box input::placeholder {
+            color: var(--text-tertiary);
         }
 
         .source-count {
-            font-size: 0.75rem;
-            color: var(--llm-accent);
-            font-weight: bold;
-            background: rgba(16, 185, 129, 0.1);
+            font-size: 12px;
+            color: var(--accent);
+            font-weight: 600;
+            background: var(--accent-subtle);
             padding: 4px 10px;
-            border-radius: 12px;
+            border-radius: var(--radius-full);
             white-space: nowrap;
         }
 
         .btn-send {
-            background: var(--text-primary);
-            color: var(--main-bg);
+            background: var(--accent);
+            color: #ffffff;
             border: none;
-            width: 35px;
-            height: 35px;
-            border-radius: 50%;
+            width: 34px;
+            height: 34px;
+            border-radius: var(--radius-full);
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            transition: 0.2s;
+            transition: var(--transition-fast);
             flex-shrink: 0;
         }
 
         .btn-send:hover {
-            transform: scale(1.1);
+            background: var(--accent-hover);
         }
 
         .input-footer {
             text-align: center;
-            font-size: 0.75rem;
-            color: var(--text-secondary);
-            margin-top: 12px;
-            opacity: 0.7;
-            /* Sedikit dipudarkan agar elegan */
-            font-weight: 500;
+            font-size: 12px;
+            color: var(--text-tertiary);
+            margin-top: 8px;
+            font-weight: 400;
         }
 
         /* ===== PANEL KANAN (STUDIO) ===== */
         .studio-content {
-            padding: 15px;
+            padding: 16px;
             overflow-y: auto;
             flex: 1;
         }
@@ -354,48 +472,49 @@
         }
 
         .studio-btn {
-            background: transparent;
-            border: 1px solid var(--glass-border);
-            border-radius: 12px;
-            padding: 15px 10px;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            padding: 14px 12px;
             display: flex;
             flex-direction: column;
             align-items: flex-start;
-            gap: 10px;
+            gap: 8px;
             color: var(--text-secondary);
             cursor: pointer;
-            transition: 0.2s;
+            transition: var(--transition-fast);
             text-align: left;
         }
 
         .studio-btn i {
-            font-size: 1.2rem;
-            color: var(--text-primary);
+            font-size: 16px;
+            color: var(--accent);
         }
 
         .studio-btn span {
-            font-size: 0.75rem;
+            font-size: 12px;
+            font-weight: 500;
         }
 
         .studio-btn:hover {
-            background: var(--glass-hover);
-            color: white;
-            border-color: rgba(255, 255, 255, 0.3);
+            background: var(--bg-hover);
+            color: var(--text-primary);
+            border-color: var(--border-medium);
         }
 
-        /* Stylingan Markdown */
+        /* Styling Markdown */
         .markdown-body pre {
-            background: #000;
-            padding: 15px;
-            border-radius: 8px;
+            background: var(--bg-base);
+            padding: 14px;
+            border-radius: var(--radius-md);
             overflow-x: auto;
             margin: 10px 0;
-            border: 1px solid var(--glass-border);
+            border: 1px solid var(--border-subtle);
         }
 
         .markdown-body code {
-            font-family: monospace;
-            color: #60a5fa;
+            font-family: var(--font-mono);
+            color: var(--accent);
         }
 
         .markdown-body ul,
@@ -411,12 +530,12 @@
         /* ===== RESPONSIVE KHUSUS MOBILE ===== */
         .mobile-toggle {
             display: none;
-            background: transparent;
-            border: 1px solid var(--glass-border);
-            border-radius: 8px;
-            color: white;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
             padding: 6px 12px;
-            font-size: 1rem;
+            font-size: 14px;
             cursor: pointer;
         }
 
@@ -428,18 +547,18 @@
             .studio-panel {
                 position: fixed;
                 right: -100%;
-                top: 60px;
-                height: calc(100vh - 60px);
+                top: 56px;
+                height: calc(100vh - 56px);
                 width: 300px;
                 z-index: 1000;
-                transition: 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+                transition: var(--transition-normal);
                 border-radius: 0;
-                border-left: 1px solid var(--glass-border);
+                border-left: 1px solid var(--border-subtle);
             }
 
             .studio-panel.show {
                 right: 0;
-                box-shadow: -10px 0 30px rgba(0, 0, 0, 0.5);
+                box-shadow: var(--shadow-lg);
             }
 
             .mobile-toggle {
@@ -462,40 +581,39 @@
             .source-panel {
                 position: fixed;
                 left: -100%;
-                top: 60px;
-                height: calc(100vh - 60px);
+                top: 56px;
+                height: calc(100vh - 56px);
                 width: 280px;
                 z-index: 1000;
-                transition: 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+                transition: var(--transition-normal);
                 border-radius: 0;
-                border-right: 1px solid var(--glass-border);
+                border-right: 1px solid var(--border-subtle);
             }
 
             .source-panel.show {
                 left: 0;
-                box-shadow: 10px 0 30px rgba(0, 0, 0, 0.5);
+                box-shadow: var(--shadow-lg);
             }
 
             .header-right .btn-header span {
                 display: none;
             }
 
-            /* 🔥 FIX HEADER MELUBER 🔥 */
             .llm-header {
-                padding: 0 10px;
+                padding: 0 12px;
             }
+
             .header-left span {
-                font-size: 0.95rem !important;
+                font-size: 14px !important;
                 white-space: nowrap;
                 overflow: hidden;
                 text-overflow: ellipsis;
                 max-width: 140px;
             }
 
-            /* 🔥 FIX KOTAK INPUT TENGGELAM 🔥 */
             .chat-content {
-                padding: 15px 10px;
-                padding-bottom: 110px; /* Jauhkan riwayat chat dari kotak input */
+                padding: 16px 12px;
+                padding-bottom: 110px;
             }
 
             .chat-input-wrapper {
@@ -504,10 +622,9 @@
                 left: 0;
                 right: 0;
                 padding: 10px;
-                /* Tambahan safe-area untuk support layar iPhone/Android modern */
                 padding-bottom: calc(10px + env(safe-area-inset-bottom));
-                background: var(--main-bg);
-                border-top: 1px solid var(--glass-border);
+                background: var(--bg-base);
+                border-top: 1px solid var(--border-subtle);
                 z-index: 100;
             }
 
@@ -515,43 +632,147 @@
                 flex-wrap: nowrap;
                 gap: 8px;
                 width: 100%;
-                border-radius: 20px;
+                border-radius: var(--radius-full);
                 padding: 8px 12px;
             }
 
-            /* Sembunyikan label sumber di HP agar area ketik lebih luas */
             .source-count {
                 display: none;
             }
         }
+
         /* ===== MODAL KONFIRMASI CUSTOM ===== */
         .modal-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(5px);
+            background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(4px);
             display: flex; align-items: center; justify-content: center;
-            z-index: 100000; opacity: 0; visibility: hidden; transition: 0.3s ease;
+            z-index: 100000; opacity: 0; visibility: hidden; transition: var(--transition-normal);
         }
         .modal-overlay.show { opacity: 1; visibility: visible; }
 
         .modal-content {
-            background: var(--panel-bg); border: 1px solid var(--glass-border);
-            border-radius: 20px; padding: 25px; width: 90%; max-width: 400px;
-            box-shadow: 0 15px 40px rgba(0,0,0,0.5); text-align: center;
-            transform: translateY(20px); transition: 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            background: var(--bg-overlay) !important; border: 1px solid var(--border-medium);
+            border-radius: var(--radius-lg); padding: 24px; width: 90%; max-width: 400px;
+            box-shadow: var(--shadow-lg); text-align: center;
+            transform: translateY(16px); transition: var(--transition-normal);
         }
         .modal-overlay.show .modal-content { transform: translateY(0); }
 
         .btn-cancel {
-            background: transparent; border: 1px solid var(--glass-border); color: var(--text-primary);
-            padding: 8px 16px; border-radius: 8px; cursor: pointer; transition: 0.2s; font-weight: 500; flex: 1;
+            background: var(--bg-elevated); border: 1px solid var(--border-subtle); color: var(--text-primary);
+            padding: 8px 16px; border-radius: var(--radius-sm); cursor: pointer; transition: var(--transition-fast); font-weight: 500; flex: 1;
         }
-        .btn-cancel:hover { background: var(--glass-hover); }
+        .btn-cancel:hover { background: var(--bg-hover); border-color: var(--border-medium); }
 
         .btn-danger {
-            background: #ef4444; border: none; color: white;
-            padding: 8px 16px; border-radius: 8px; cursor: pointer; transition: 0.2s; font-weight: 500; flex: 1;
+            background: var(--danger); border: none; color: #ffffff;
+            padding: 8px 16px; border-radius: var(--radius-sm); cursor: pointer; transition: var(--transition-fast); font-weight: 500; flex: 1;
         }
-        .btn-danger:hover { background: #dc2626; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3); }
+        .btn-danger:hover { background: #dc2626; }
+
+        /* ============================================================
+           SCROLLBAR STYLING — Global
+           ============================================================ */
+
+        /* Firefox */
+        * {
+          scrollbar-width: thin;
+          scrollbar-color: var(--border-medium) transparent;
+        }
+
+        body.light-mode *,
+        html.light-mode * {
+          scrollbar-color: var(--border-medium) transparent;
+        }
+
+        /* Webkit (Chrome, Edge, Safari, Opera, Brave) */
+        *::-webkit-scrollbar {
+          width: 8px;
+          height: 8px;
+        }
+
+        *::-webkit-scrollbar-track {
+          background: transparent;
+        }
+
+        *::-webkit-scrollbar-thumb {
+          background: var(--border-medium);
+          border-radius: var(--radius-full);
+          border: 2px solid transparent;
+          background-clip: padding-box;
+          transition: background-color var(--duration-micro) var(--ease);
+        }
+
+        *::-webkit-scrollbar-thumb:hover {
+          background: var(--text-tertiary);
+          background-clip: padding-box;
+          border: 2px solid transparent;
+        }
+
+        *::-webkit-scrollbar-thumb:active {
+          background: var(--accent);
+          background-clip: padding-box;
+          border: 2px solid transparent;
+        }
+
+        *::-webkit-scrollbar-corner {
+          background: transparent;
+        }
+
+        /* Thin scrollbar untuk komponen spesifik */
+        .multi-file-container::-webkit-scrollbar,
+        .suggested-actions-grid::-webkit-scrollbar,
+        .comments-list::-webkit-scrollbar,
+        .source-content::-webkit-scrollbar,
+        .studio-content::-webkit-scrollbar {
+          height: 4px;
+          width: 6px;
+        }
+
+        .multi-file-container::-webkit-scrollbar-thumb,
+        .suggested-actions-grid::-webkit-scrollbar-thumb,
+        .comments-list::-webkit-scrollbar-thumb,
+        .source-content::-webkit-scrollbar-thumb,
+        .studio-content::-webkit-scrollbar-thumb {
+          background: var(--border-medium);
+          border-radius: var(--radius-full);
+        }
+
+        /* Scrollbar di code block (pre) — lebih tipis & subtle */
+        .markdown-body pre::-webkit-scrollbar,
+        .markdown-body pre::-webkit-scrollbar-track {
+          height: 6px;
+        }
+
+        .markdown-body pre::-webkit-scrollbar-thumb {
+          background: rgba(255, 255, 255, 0.15);
+          border-radius: var(--radius-full);
+        }
+
+        body.light-mode .markdown-body pre::-webkit-scrollbar-thumb,
+        html.light-mode .markdown-body pre::-webkit-scrollbar-thumb {
+          background: rgba(0, 0, 0, 0.15);
+        }
+
+        .markdown-body pre::-webkit-scrollbar-thumb:hover {
+          background: rgba(255, 255, 255, 0.3);
+        }
+
+        body.light-mode .markdown-body pre::-webkit-scrollbar-thumb:hover,
+        html.light-mode .markdown-body pre::-webkit-scrollbar-thumb:hover {
+          background: rgba(0, 0, 0, 0.3);
+        }
+
+        /* Firefox untuk code block */
+        .markdown-body pre {
+          scrollbar-width: thin;
+          scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+        }
+
+        body.light-mode .markdown-body pre,
+        html.light-mode .markdown-body pre {
+          scrollbar-color: rgba(0, 0, 0, 0.15) transparent;
+        }
     </style>
 </head>
 
@@ -559,22 +780,31 @@
 
     <header class="llm-header">
         <div class="header-left">
-            <button class="mobile-toggle" onclick="document.getElementById('sourcePanel').classList.toggle('show')">
+            <button class="mobile-toggle" onclick="document.getElementById('sourcePanel').classList.toggle('show')" aria-label="Menu sumber">
                 <i class="fas fa-folder"></i>
             </button>
-            <a href="{{ route('chat.index') }}" class="btn-header"><i class="fas fa-arrow-left"></i>
-                <span>Kembali</span></a>
-            <span style="font-weight: 600; font-size: 1.1rem; margin-left: 10px;"><i class="fas fa-book-reader"
-                    style="color: var(--llm-accent); margin-right: 5px;"></i> SAHAJA LLM</span>
+            <a href="{{ route('chat.index') }}" class="btn-header" aria-label="Kembali ke chat">
+                <i class="fas fa-arrow-left"></i>
+                <span>Kembali</span>
+            </a>
+            <div style="display: flex; align-items: center; gap: 8px; margin-left: 6px;">
+                <img src="https://i.ibb.co.com/jZZ0648R/Logo-SAHAJA-AI.png" alt="Logo SAHAJA AI"
+                    style="width: 24px; height: 24px; border-radius: 4px; object-fit: contain;">
+                <span style="font-weight: 600; font-size: 15px; color: var(--text-primary);">SAHAJA LLM</span>
+            </div>
         </div>
         <div class="header-right">
-            <button class="mobile-toggle" onclick="document.getElementById('studioPanel').classList.toggle('show')">
+            <button class="mobile-toggle" onclick="document.getElementById('studioPanel').classList.toggle('show')" aria-label="Menu studio">
                 <i class="fas fa-layer-group"></i>
             </button>
-            <div
-                style="width: 32px; height: 32px; background: var(--accent-color); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.85rem;">
-                {{ strtoupper(substr(Auth::user()->name ?? 'U', 0, 1)) }}
-            </div>
+            @if(Auth::user()->avatar)
+                <img src="{{ Auth::user()->avatar }}" alt="{{ Auth::user()->name }}"
+                    style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 1px solid var(--border-subtle);">
+            @else
+                <div class="user-avatar" style="width: 32px; height: 32px; background: var(--bg-elevated); border: 1px solid var(--border-subtle); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 13px; color: var(--text-primary);">
+                    {{ strtoupper(substr(Auth::user()->name ?? 'U', 0, 1)) }}
+                </div>
+            @endif
         </div>
     </header>
 
@@ -730,11 +960,11 @@
                 document.head.appendChild(style);
             }
             const toast = document.createElement('div');
-            const icon = type === 'success' ? 'check-circle' : (type === 'error' ? 'exclamation-circle' : 'info-circle');
-            const color = type === 'success' ? '#10b981' : (type === 'error' ? '#ef4444' : '#3b82f6');
+            const icon = type === 'success' ? 'circle-check' : (type === 'error' ? 'circle-exclamation' : 'circle-info');
+            const color = type === 'success' ? 'var(--success)' : (type === 'error' ? 'var(--danger)' : 'var(--accent)');
             toast.style.cssText =
-                `background: rgba(30, 41, 59, 0.95); color: white; padding: 12px 24px; border-radius: 12px; font-size: 0.9rem; display: flex; align-items: center; gap: 10px; animation: slideDownLLM 0.3s ease forwards; backdrop-filter: blur(8px); border-left: 4px solid ${color}; box-shadow: 0 10px 25px rgba(0,0,0,0.3);`;
-            toast.innerHTML = `<i class="fas fa-${icon}"></i> <span>${message}</span>`;
+                `background: var(--bg-overlay); color: var(--text-primary); border: 1px solid var(--border-subtle); padding: 12px 20px; border-radius: var(--radius-md); font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 10px; animation: slideDownLLM 0.3s ease forwards; backdrop-filter: blur(8px); border-left: 4px solid ${color}; box-shadow: var(--shadow-md);`;
+            toast.innerHTML = `<i class="fas fa-${icon}" style="color: ${color};"></i> <span>${message}</span>`;
             container.appendChild(toast);
             setTimeout(() => {
                 toast.style.opacity = '0';
@@ -895,7 +1125,7 @@
             // Munculkan Loading AI
             const loadingId = 'loading-' + Date.now();
             history.innerHTML +=
-                `<div class="chat-msg ai" id="${loadingId}"><div class="bubble" style="color: var(--llm-accent);"><i class="fas fa-circle-notch fa-spin"></i> SAHAJA sedang memproses dokumen...</div></div>`;
+                `<div class="chat-msg ai" id="${loadingId}"><div class="bubble" style="color: var(--accent);"><i class="fas fa-circle-notch fa-spin"></i> SAHAJA sedang memproses dokumen...</div></div>`;
             scrollToBottom();
 
             const finalPayload =

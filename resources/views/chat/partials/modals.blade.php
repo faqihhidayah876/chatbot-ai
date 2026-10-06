@@ -1,14 +1,14 @@
 {{-- MODAL UPDATE / ONBOARDING --}}
 <div class="modal-overlay" id="updateModal" style="z-index: 100010;">
     <div class="modal-content"
-        style="padding: 0; overflow: hidden; max-width: 550px; background: var(--sidebar-bg); border-radius: 20px;">
+        style="padding: 0; overflow: hidden; max-width: 550px; background: var(--bg-overlay); border: 1px solid var(--border-subtle); border-radius: 20px;">
         <button class="modal-close" id="closeModalBtn"
             style="z-index: 50; top: 15px; right: 15px; background: rgba(0,0,0,0.3); color: white;"><i
                 class="fas fa-times"></i></button>
 
         <div id="onboard-step-1" style="display: block; position: relative;">
             <div
-                style="background: linear-gradient(-45deg, #0a0e17, #1e293b, var(--accent-color), #06b6d4); background-size: 400% 400%; animation: gradientAurora 12s ease infinite; padding: 60px 20px; text-align: center; position: relative; overflow: hidden;">
+                style="background: linear-gradient(-45deg, #0a0e17, #1e293b, var(--accent), #06b6d4); background-size: 400% 400%; animation: gradientAurora 12s ease infinite; padding: 60px 20px; text-align: center; position: relative; overflow: hidden;">
 
                 <div
                     style="position: absolute; top: -10%; left: -10%; width: 180px; height: 180px; background: rgba(37, 99, 235, 0.6); border-radius: 50%; filter: blur(40px); animation: floatOrb 7s ease-in-out infinite;">
@@ -52,11 +52,11 @@
 
         <div id="onboard-step-2" style="display: none; padding: 0;">
             <div
-                style="background: var(--sidebar-bg); padding: 25px 25px 10px 25px; border-bottom: 1px solid var(--glass-border); position: relative; z-index: 10;">
+                style="background: var(--bg-overlay); padding: 25px 25px 10px 25px; border-bottom: 1px solid var(--border-subtle); position: relative; z-index: 10;">
                 <h2
-                    style="color: var(--accent-color); font-size: 1.4rem; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 10px;">
+                    style="color: var(--accent); font-size: 1.4rem; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 10px;">
                     PEMBARUAN SAHAJA AI <span
-                        style="font-size: 0.7rem; background: var(--accent-color); color: #000; padding: 2px 8px; border-radius: 10px; margin-left: 5px;">v5.0</span>
+                        style="font-size: 0.7rem; background: var(--accent); color: #fff; padding: 2px 8px; border-radius: 10px; margin-left: 5px;">v5.0</span>
                 </h2>
             </div>
             <div class="modal-body" style="padding: 20px 25px; max-height: 400px; overflow-y: auto;">
@@ -98,13 +98,13 @@
                 </div>
             </div>
             <div
-                style="display: flex; justify-content: space-between; align-items: center; padding: 20px 25px; border-top: 1px solid var(--glass-border); background: var(--sidebar-bg);">
+                style="display: flex; justify-content: space-between; align-items: center; padding: 20px 25px; border-top: 1px solid var(--border-subtle); background: var(--bg-overlay);">
                 <div class="onboard-dots">
                     <div class="dot"></div>
-                    <div class="dot active" style="width: 24px; background: var(--success-color);"></div>
+                    <div class="dot active" style="width: 24px; background: var(--success);"></div>
                 </div>
                 <button id="finish-onboard-btn" onclick="closeOnboardModal()" class="github-submit-btn"
-                    style="position: relative; z-index: 999; cursor: pointer; padding: 10px 25px; border-radius: 30px; font-size: 0.9rem; background: var(--success-color); box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3); border: none; color: white; font-weight: 600;">
+                    style="position: relative; z-index: 999; cursor: pointer; padding: 10px 25px; border-radius: 30px; font-size: 0.9rem; background: var(--success); box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3); border: none; color: white; font-weight: 600;">
                     Mulai Chat!
                 </button>
             </div>
@@ -133,7 +133,7 @@
 {{-- MODAL SETTINGS --}}
 <div class="modal-overlay" id="settingsModal" style="z-index: 100000;">
     <button class="modal-close-outside" onclick="closeSettingsModal()"><i class="fas fa-times"></i></button>
-    <div class="settings-modal-box">
+    <div class="settings-modal-box" style="background: var(--bg-overlay);">
         <div class="settings-sidebar">
             <h3 style="padding: 10px 10px; font-size: 1.1rem; color: var(--text-primary);">Pengaturan</h3>
             <button class="nav-btn active" onclick="switchTab('umum')"><i class="fas fa-cog"></i> Umum</button>
@@ -171,7 +171,7 @@
                             @if (Auth::user()->avatar)
                                 <button class="action-btn"
                                     onclick="openConfirmModal('Hapus Foto Profil?', 'Foto profil akan dikembalikan ke inisial nama Anda.', 'deleteAvatar')"
-                                    style="color: var(--danger-color); border: 1px solid var(--danger-color); padding: 5px 10px; border-radius: 8px; font-size: 0.85rem;"><i
+                                    style="color: var(--danger); border: 1px solid var(--danger); padding: 5px 10px; border-radius: 8px; font-size: 0.85rem;"><i
                                         class="fas fa-trash"></i></button>
                             @endif
                         </div>
@@ -196,9 +196,9 @@
                     <input type="email" class="github-input" value="{{ Auth::user()->email }}" disabled
                         style="opacity: 0.6;">
                 </div>
-                <hr style="border: 0; border-top: 1px solid var(--glass-border); margin: 20px 0;">
+                <hr style="border: 0; border-top: 1px solid var(--border-subtle); margin: 20px 0;">
                 <button class="option-item delete"
-                    style="width: auto; padding: 10px; font-weight: 600; border: 1px solid #ef4444;"
+                    style="width: auto; padding: 10px; font-weight: 600; border: 1px solid var(--danger);"
                     onclick="openConfirmModal('Hapus Akun Permanen?', 'Seluruh data akun, foto, dan obrolan akan hilang selamanya.', 'deleteAccount')"><i
                         class="fas fa-trash-alt"></i> Hapus Akun</button>
             </div>
@@ -213,23 +213,23 @@
                             dibatalkan.</span>
                     </div>
                     <button class="option-item delete"
-                        style="width: auto; padding: 8px 15px; border: 1px solid #ef4444; margin-top:10px;"
+                        style="width: auto; padding: 8px 15px; border: 1px solid var(--danger); margin-top:10px;"
                         onclick="openConfirmModal('Hapus Semua Obrolan?',
                     'Seluruh riwayat chat Anda di semua percakapan akan musnah. Ini tidak dapat dibatalkan.', 'clearAllChats')">Hapus
                         semua obrolan</button>
                 </div>
-                <hr style="border: 0; border-top: 1px solid var(--glass-border); margin: 25px 0 15px 0;">
-                <h3 style="margin-bottom: 15px; color: var(--accent-color);"><i class="fas fa-sliders-h"></i>
+                <hr style="border: 0; border-top: 1px solid var(--border-subtle); margin: 25px 0 15px 0;">
+                <h3 style="margin-bottom: 15px; color: var(--accent);"><i class="fas fa-sliders-h"></i>
                     Konfigurasi Mesin AI</h3>
 
                 <div style="margin-bottom: 20px;">
                     <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
                         <strong style="font-size: 0.9rem;">Max Tokens (Panjang Jawaban)</strong>
                         <span id="tokenValueDisplay"
-                            style="font-size: 0.85rem; font-family: monospace; color: var(--accent-color); font-weight: bold;">4096</span>
+                            style="font-size: 0.85rem; font-family: monospace; color: var(--accent); font-weight: bold;">4096</span>
                     </div>
                     <input type="range" id="maxTokensInput" min="512" max="8192" step="512"
-                        value="4096" style="width: 100%; accent-color: var(--accent-color); cursor: pointer;"
+                        value="4096" style="width: 100%; accent-color: var(--accent); cursor: pointer;"
                         oninput="document.getElementById('tokenValueDisplay').innerText = this.value">
                     <span style="font-size: 0.75rem; color: var(--text-secondary);">Atur batas maksimal kata.</span>
                 </div>
@@ -262,17 +262,17 @@
                 <h3 style="margin-bottom: 20px;">Tentang SAHAJA AI</h3>
                 <div style="display: flex; flex-direction: column; gap: 15px;">
                     <div
-                        style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--glass-border); padding-bottom: 10px;">
+                        style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-subtle); padding-bottom: 10px;">
                         <span>Syarat Penggunaan</span>
                         <button class="github-submit-btn"
-                            style="background: transparent; color: var(--text-primary); border: 1px solid var(--glass-border); padding: 5px 15px;"
+                            style="background: transparent; color: var(--text-primary); border: 1px solid var(--border-subtle); padding: 5px 15px;"
                             onclick="window.open('{{ route('terms') }}', '_blank')">Lihat</button>
                     </div>
                     <div
-                        style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--glass-border); padding-bottom: 10px;">
+                        style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-subtle); padding-bottom: 10px;">
                         <span>Kebijakan Privasi</span>
                         <button class="github-submit-btn"
-                            style="background: transparent; color: var(--text-primary); border: 1px solid var(--glass-border); padding: 5px 15px;"
+                            style="background: transparent; color: var(--text-primary); border: 1px solid var(--border-subtle); padding: 5px 15px;"
                             onclick="window.open('{{ route('privacy') }}', '_blank')">Lihat</button>
                     </div>
                     <div
@@ -289,18 +289,18 @@
 {{-- MODAL BANTUAN & FEEDBACK --}}
 <div class="modal-overlay" id="helpModal" style="z-index: 100005;">
     <div class="modal-content"
-        style="max-width: 550px; background: var(--sidebar-bg); padding: 25px; border-radius: 12px; border: 1px solid var(--glass-border);">
+        style="max-width: 550px; background: var(--bg-overlay); padding: 25px; border-radius: 12px; border: 1px solid var(--border-subtle);">
         <button class="modal-close" onclick="closeCustomModal('helpModal')"
             style="position: absolute; right: 15px; top: 15px;"><i class="fas fa-times"></i></button>
-        <h2 style="font-size: 1.3rem; margin-bottom: 15px; color: var(--accent-color);"><i
+        <h2 style="font-size: 1.3rem; margin-bottom: 15px; color: var(--accent);"><i
                 class="fas fa-question-circle"></i> Bantuan & Umpan Balik</h2>
 
         <div
-            style="display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 1px solid var(--glass-border); padding-bottom: 10px;">
+            style="display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 1px solid var(--border-subtle); padding-bottom: 10px;">
             <button onclick="switchHelpTab('faq')" class="github-submit-btn" id="btn-faq"
                 style="flex: 1; padding: 8px;">FAQ Bantuan</button>
             <button onclick="switchHelpTab('feedback')" class="github-submit-btn" id="btn-feedback"
-                style="flex: 1; padding: 8px; background: transparent; color: var(--text-primary); border: 1px solid var(--glass-border);">Kirim
+                style="flex: 1; padding: 8px; background: transparent; color: var(--text-primary); border: 1px solid var(--border-subtle);">Kirim
                 Masukan</button>
         </div>
 
@@ -326,16 +326,16 @@
 {{-- MODAL SHARE --}}
 <div class="modal-overlay" id="shareModal" style="z-index: 100005;">
     <div class="modal-content"
-        style="max-width: 400px; background: var(--sidebar-bg); padding: 25px; border-radius: 12px; border: 1px solid var(--glass-border); text-align: center;">
+        style="max-width: 400px; background: var(--bg-overlay); padding: 25px; border-radius: 12px; border: 1px solid var(--border-subtle); text-align: center;">
         <button class="modal-close" onclick="closeCustomModal('shareModal')"
             style="position: absolute; right: 15px; top: 15px;"><i class="fas fa-times"></i></button>
-        <h3 style="margin-bottom: 15px;"><i class="fas fa-share-alt" style="color: var(--accent-color);"></i> Bagikan
+        <h3 style="margin-bottom: 15px;"><i class="fas fa-share-alt" style="color: var(--accent);"></i> Bagikan
             Percakapan</h3>
         <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 15px;">Salin tautan di bawah ini
             untuk membagikan percakapan ini ke publik.</p>
         <div style="display: flex; gap: 10px;">
             <input type="text" id="shareLinkInput" class="github-input" readonly
-                style="flex: 1; background: var(--glass-highlight);">
+                style="flex: 1; background: var(--bg-hover);">
             <button class="github-submit-btn" onclick="copyShareLink()"><i class="far fa-copy"></i> Salin</button>
         </div>
     </div>
@@ -344,11 +344,11 @@
 {{-- MODAL RENAME ROOM --}}
 <div class="modal-overlay" id="renameRoomModal" style="z-index: 100005;">
     <div class="modal-content"
-        style="max-width: 400px; background: var(--sidebar-bg); padding: 25px; border-radius: 12px; border: 1px solid var(--glass-border);">
+        style="max-width: 400px; background: var(--bg-overlay); padding: 25px; border-radius: 12px; border: 1px solid var(--border-subtle);">
         <button class="modal-close" onclick="closeCustomModal('renameRoomModal')"
             style="position: absolute; right: 15px; top: 15px;"><i class="fas fa-times"></i></button>
         <h2 style="font-size: 1.2rem; margin-bottom: 15px;"><i class="fas fa-pen"
-                style="color: var(--accent-color);"></i> Ganti Nama</h2>
+                style="color: var(--accent);"></i> Ganti Nama</h2>
         <div class="github-input-group" style="display: flex; gap: 10px;">
             <input type="text" id="renameInput" class="github-input" placeholder="Nama percakapan baru...">
             <button id="btnConfirmRename" class="github-submit-btn" onclick="executeRename()">Simpan</button>
@@ -359,19 +359,19 @@
 {{-- MODAL KONFIRMASI DANGER ACTION --}}
 <div class="modal-overlay" id="confirmDangerModal" style="z-index: 100005;">
     <div class="modal-content"
-        style="max-width: 400px; background: var(--sidebar-bg); padding: 25px; border-radius: 12px; border: 1px solid var(--glass-border); text-align: center;">
+        style="max-width: 400px; background: var(--bg-overlay); padding: 25px; border-radius: 12px; border: 1px solid var(--border-subtle); text-align: center;">
         <button class="modal-close" onclick="closeCustomModal('confirmDangerModal')"
             style="position: absolute; right: 15px; top: 15px;"><i class="fas fa-times"></i></button>
-        <div style="font-size: 3rem; color: var(--danger-color); margin-bottom: 10px;"><i
+        <div style="font-size: 3rem; color: var(--danger); margin-bottom: 10px;"><i
                 class="fas fa-exclamation-triangle"></i></div>
         <h2 id="dangerModalTitle" style="font-size: 1.2rem; margin-bottom: 10px;">Konfirmasi</h2>
         <p id="dangerModalText" style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 20px;">Apakah
             Anda yakin ingin melanjutkan tindakan ini?</p>
         <div style="display: flex; gap: 10px; justify-content: center;">
             <button class="github-submit-btn"
-                style="background: transparent; border: 1px solid var(--glass-border); color: var(--text-primary);"
+                style="background: transparent; border: 1px solid var(--border-subtle); color: var(--text-primary);"
                 onclick="closeCustomModal('confirmDangerModal')">Batal</button>
-            <button id="btnConfirmDanger" class="github-submit-btn" style="background: var(--danger-color);"
+            <button id="btnConfirmDanger" class="github-submit-btn" style="background: var(--danger);"
                 onclick="executeDangerAction()">Ya, Hapus</button>
         </div>
     </div>
@@ -379,16 +379,16 @@
 
 {{-- MODAL / PANEL DEEP RESEARCH (AGEN ALPHA) --}}
 <div id="floatingResearchBtn"
-    style="display: none; position: fixed; bottom: 80px; right: 20px; z-index: 99; background: var(--accent-gradient); color: white; padding: 12px 20px; border-radius: 30px; cursor: pointer; box-shadow: 0 4px 15px rgba(37, 99, 235, 0.4);"
+    style="display: none; position: fixed; bottom: 80px; right: 20px; z-index: 99; background: var(--accent); color: white; padding: 12px 20px; border-radius: 30px; cursor: pointer; box-shadow: 0 4px 15px rgba(37, 99, 235, 0.4);"
     onclick="toggleResearchPanel()">
     <i class="fas fa-atom fa-spin-slow"></i> Agen Alpha Aktif
 </div>
 
 <div id="researchPanel" class="research-panel"
-    style="position: fixed; top: 0; right: -400px; width: 350px; height: 100vh; background: var(--sidebar-bg); border-left: 1px solid var(--glass-border); z-index: 100000; transition: 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); display: flex; flex-direction: column; box-shadow: -5px 0 25px rgba(0,0,0,0.5);">
+    style="position: fixed; top: 0; right: -400px; width: 350px; height: 100vh; background: var(--bg-overlay); border-left: 1px solid var(--border-subtle); z-index: 100000; transition: 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); display: flex; flex-direction: column; box-shadow: -5px 0 25px rgba(0,0,0,0.5);">
     <div
-        style="padding: 20px; border-bottom: 1px solid var(--glass-border); display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.2);">
-        <h3 style="margin: 0; color: #ef4444; font-size: 1.1rem;"><i class="fas fa-atom"></i> Agen Alpha</h3>
+        style="padding: 20px; border-bottom: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center; background: var(--bg-subtle);">
+        <h3 style="margin: 0; color: var(--danger); font-size: 1.1rem;"><i class="fas fa-atom"></i> Agen Alpha</h3>
         <button onclick="toggleResearchPanel()"
             style="background: transparent; border: none; color: var(--text-secondary); cursor: pointer; font-size: 1.2rem;"><i
                 class="fas fa-times"></i></button>
@@ -399,6 +399,10 @@
 </div>
 
 <style>
+    .modal-content, .settings-modal-box {
+        background: var(--bg-overlay) !important;
+    }
+
     #researchPanel.active {
         right: 0 !important;
     }
@@ -406,32 +410,33 @@
     .log-item {
         padding: 12px;
         border-radius: 8px;
-        background: rgba(255, 255, 255, 0.05);
-        border-left: 3px solid #3b82f6;
+        background: var(--bg-subtle);
+        border-left: 3px solid var(--accent);
         line-height: 1.5;
+        color: var(--text-primary);
     }
 
     .log-item.processing {
-        border-color: #f59e0b;
-        color: #fcd34d;
-        background: rgba(245, 158, 11, 0.1);
+        border-color: var(--warning);
+        color: var(--warning);
+        background: var(--warning-subtle);
     }
 
     .log-item.success {
-        border-color: #10b981;
-        color: #6ee7b7;
-        background: rgba(16, 185, 129, 0.1);
+        border-color: var(--success);
+        color: var(--success);
+        background: var(--success-subtle);
     }
 
     .log-item.error {
-        border-color: #ef4444;
-        color: #fca5a5;
-        background: rgba(239, 68, 68, 0.1);
+        border-color: var(--danger);
+        color: var(--danger);
+        background: var(--danger-subtle);
     }
 
     .log-item.info {
-        border-color: #3b82f6;
-        color: #93c5fd;
+        border-color: var(--accent);
+        color: var(--accent);
     }
 
     .fa-spin-slow {

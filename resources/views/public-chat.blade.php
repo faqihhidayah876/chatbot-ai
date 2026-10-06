@@ -16,6 +16,15 @@
         rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/html-docx-js@0.3.1/dist/html-docx.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        (function() {
+            if (localStorage.getItem('sahaja-theme') === 'light' || localStorage.getItem('theme') === 'light') {
+                document.documentElement.classList.add('light-mode');
+                document.addEventListener('DOMContentLoaded', () => 
+                    document.body.classList.add('light-mode'));
+            }
+        })();
+    </script>
 
     <style>
         /* CSS Disederhanakan untuk Public View */
@@ -23,10 +32,27 @@
             --main-bg: #0a0e17;
             --text-primary: #f1f5f9;
             --text-secondary: #94a3b8;
+            --text-tertiary: #64748b;
             --accent-color: #2563eb;
+            --accent: #2563eb;
             --accent-gradient: linear-gradient(135deg, #2563eb, #06b6d4);
             --message-user-bg: linear-gradient(135deg, #2563eb, #1d4ed8);
             --glass-border: rgba(98, 160, 234, 0.15);
+            --border-medium: rgba(255, 255, 255, 0.14);
+            --radius-full: 9999px;
+            --duration-micro: 150ms;
+            --ease: cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        html.light-mode,
+        html.light-mode body,
+        body.light-mode {
+            --main-bg: #f8fafc;
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --text-tertiary: #94a3b8;
+            --border-medium: rgba(0, 0, 0, 0.15);
+            --glass-border: rgba(0, 0, 0, 0.1);
         }
 
         * {
@@ -588,6 +614,105 @@
 
         body.light-mode .export-menu .option-item:hover {
             background: #f1f5f9;
+        }
+
+        /* ============================================================
+           SCROLLBAR STYLING — Global
+           ============================================================ */
+
+        /* Firefox */
+        * {
+          scrollbar-width: thin;
+          scrollbar-color: var(--border-medium) transparent;
+        }
+
+        body.light-mode *,
+        html.light-mode * {
+          scrollbar-color: var(--border-medium) transparent;
+        }
+
+        /* Webkit (Chrome, Edge, Safari, Opera, Brave) */
+        *::-webkit-scrollbar {
+          width: 8px;
+          height: 8px;
+        }
+
+        *::-webkit-scrollbar-track {
+          background: transparent;
+        }
+
+        *::-webkit-scrollbar-thumb {
+          background: var(--border-medium);
+          border-radius: var(--radius-full);
+          border: 2px solid transparent;
+          background-clip: padding-box;
+          transition: background-color var(--duration-micro) var(--ease);
+        }
+
+        *::-webkit-scrollbar-thumb:hover {
+          background: var(--text-tertiary);
+          background-clip: padding-box;
+          border: 2px solid transparent;
+        }
+
+        *::-webkit-scrollbar-thumb:active {
+          background: var(--accent);
+          background-clip: padding-box;
+          border: 2px solid transparent;
+        }
+
+        *::-webkit-scrollbar-corner {
+          background: transparent;
+        }
+
+        /* Thin scrollbar untuk komponen spesifik */
+        .multi-file-container::-webkit-scrollbar,
+        .suggested-actions-grid::-webkit-scrollbar,
+        .comments-list::-webkit-scrollbar {
+          height: 4px;
+        }
+
+        .multi-file-container::-webkit-scrollbar-thumb,
+        .suggested-actions-grid::-webkit-scrollbar-thumb,
+        .comments-list::-webkit-scrollbar-thumb {
+          background: var(--border-medium);
+          border-radius: var(--radius-full);
+        }
+
+        /* Scrollbar di code block (pre) — lebih tipis & subtle */
+        .markdown-body pre::-webkit-scrollbar,
+        .markdown-body pre::-webkit-scrollbar-track {
+          height: 6px;
+        }
+
+        .markdown-body pre::-webkit-scrollbar-thumb {
+          background: rgba(255, 255, 255, 0.15);
+          border-radius: var(--radius-full);
+        }
+
+        body.light-mode .markdown-body pre::-webkit-scrollbar-thumb,
+        html.light-mode .markdown-body pre::-webkit-scrollbar-thumb {
+          background: rgba(0, 0, 0, 0.15);
+        }
+
+        .markdown-body pre::-webkit-scrollbar-thumb:hover {
+          background: rgba(255, 255, 255, 0.3);
+        }
+
+        body.light-mode .markdown-body pre::-webkit-scrollbar-thumb:hover,
+        html.light-mode .markdown-body pre::-webkit-scrollbar-thumb:hover {
+          background: rgba(0, 0, 0, 0.3);
+        }
+
+        /* Firefox untuk code block */
+        .markdown-body pre {
+          scrollbar-width: thin;
+          scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+        }
+
+        body.light-mode .markdown-body pre,
+        html.light-mode .markdown-body pre {
+          scrollbar-color: rgba(0, 0, 0, 0.15) transparent;
         }
     </style>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">

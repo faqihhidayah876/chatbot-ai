@@ -9,7 +9,15 @@
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=poppins:400,500,600,700" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="icon" type="image/png" href="https://i.ibb.co.com/jZZ0648R/Logo-SAHAJA-AI.png">
+    <script>
+      (function() {
+        if (localStorage.getItem('sahaja-theme') === 'light' || localStorage.getItem('theme') === 'light') {
+          document.documentElement.classList.add('light-mode');
+          document.addEventListener('DOMContentLoaded', () => 
+            document.body.classList.add('light-mode'));
+        }
+      })();
+    </script>
 
     <style>
         /* ===== THEME VARIABLES ===== */
@@ -39,8 +47,15 @@
             --transition-fast: 0.18s cubic-bezier(0.4, 0, 0.2, 1);
             --transition-smooth: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             --transition-spring: 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+
+            --border-medium: rgba(74, 130, 220, 0.25);
+            --text-tertiary: var(--text-muted);
+            --duration-micro: 150ms;
+            --ease: cubic-bezier(0.4, 0, 0.2, 1);
         }
 
+        html.light-mode,
+        html.light-mode body,
         body.light-mode {
             --bg-primary: #f6f8fb;
             --bg-secondary: #eef1f6;
@@ -1043,6 +1058,105 @@
                 gap: 1.2rem;
             }
         }
+
+        /* ============================================================
+           SCROLLBAR STYLING — Global
+           ============================================================ */
+
+        /* Firefox */
+        * {
+          scrollbar-width: thin;
+          scrollbar-color: var(--border-medium) transparent;
+        }
+
+        body.light-mode *,
+        html.light-mode * {
+          scrollbar-color: var(--border-medium) transparent;
+        }
+
+        /* Webkit (Chrome, Edge, Safari, Opera, Brave) */
+        *::-webkit-scrollbar {
+          width: 8px;
+          height: 8px;
+        }
+
+        *::-webkit-scrollbar-track {
+          background: transparent;
+        }
+
+        *::-webkit-scrollbar-thumb {
+          background: var(--border-medium);
+          border-radius: var(--radius-full);
+          border: 2px solid transparent;
+          background-clip: padding-box;
+          transition: background-color var(--duration-micro) var(--ease);
+        }
+
+        *::-webkit-scrollbar-thumb:hover {
+          background: var(--text-tertiary);
+          background-clip: padding-box;
+          border: 2px solid transparent;
+        }
+
+        *::-webkit-scrollbar-thumb:active {
+          background: var(--accent);
+          background-clip: padding-box;
+          border: 2px solid transparent;
+        }
+
+        *::-webkit-scrollbar-corner {
+          background: transparent;
+        }
+
+        /* Thin scrollbar untuk komponen spesifik */
+        .multi-file-container::-webkit-scrollbar,
+        .suggested-actions-grid::-webkit-scrollbar,
+        .comments-list::-webkit-scrollbar {
+          height: 4px;
+        }
+
+        .multi-file-container::-webkit-scrollbar-thumb,
+        .suggested-actions-grid::-webkit-scrollbar-thumb,
+        .comments-list::-webkit-scrollbar-thumb {
+          background: var(--border-medium);
+          border-radius: var(--radius-full);
+        }
+
+        /* Scrollbar di code block (pre) — lebih tipis & subtle */
+        .markdown-body pre::-webkit-scrollbar,
+        .markdown-body pre::-webkit-scrollbar-track {
+          height: 6px;
+        }
+
+        .markdown-body pre::-webkit-scrollbar-thumb {
+          background: rgba(255, 255, 255, 0.15);
+          border-radius: var(--radius-full);
+        }
+
+        body.light-mode .markdown-body pre::-webkit-scrollbar-thumb,
+        html.light-mode .markdown-body pre::-webkit-scrollbar-thumb {
+          background: rgba(0, 0, 0, 0.15);
+        }
+
+        .markdown-body pre::-webkit-scrollbar-thumb:hover {
+          background: rgba(255, 255, 255, 0.3);
+        }
+
+        body.light-mode .markdown-body pre::-webkit-scrollbar-thumb:hover,
+        html.light-mode .markdown-body pre::-webkit-scrollbar-thumb:hover {
+          background: rgba(0, 0, 0, 0.3);
+        }
+
+        /* Firefox untuk code block */
+        .markdown-body pre {
+          scrollbar-width: thin;
+          scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+        }
+
+        body.light-mode .markdown-body pre,
+        html.light-mode .markdown-body pre {
+          scrollbar-color: rgba(0, 0, 0, 0.15) transparent;
+        }
     </style>
 </head>
 
@@ -1265,9 +1379,10 @@
             const themeLabel = document.getElementById('themeLabel');
 
             // Initialize theme from localStorage
-            const savedTheme = localStorage.getItem('sahaja-theme');
+            const savedTheme = localStorage.getItem('sahaja-theme') || localStorage.getItem('theme');
             if (savedTheme === 'light') {
                 body.classList.add('light-mode');
+                document.documentElement.classList.add('light-mode');
                 themeIcon.className = 'fas fa-sun';
                 themeLabel.innerText = 'Terang';
             } else {
@@ -1279,6 +1394,7 @@
             // Toggle theme
             themeToggle.addEventListener('click', () => {
                 const isLight = body.classList.toggle('light-mode');
+                document.documentElement.classList.toggle('light-mode', isLight);
                 if (isLight) {
                     localStorage.setItem('sahaja-theme', 'light');
                     themeIcon.className = 'fas fa-sun';

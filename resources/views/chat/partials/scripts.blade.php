@@ -106,9 +106,25 @@ function switchTab(tabId) {
     document.getElementById('tab-' + tabId).classList.add('active'); event.currentTarget.classList.add('active');
 }
 function setTheme(mode) {
-    const isLight = mode === 'light'; document.body.classList.toggle('light-mode', isLight); localStorage.setItem('theme', isLight ? 'light' : 'dark');
-    document.getElementById('btnThemeLight').classList.toggle('active', isLight); document.getElementById('btnThemeDark').classList.toggle('active', !isLight);
+    const isLight = mode === 'light';
+    document.body.classList.toggle('light-mode', isLight);
+    document.documentElement.classList.toggle('light-mode', isLight);
+    localStorage.setItem('sahaja-theme', isLight ? 'light' : 'dark');
+    document.getElementById('btnThemeLight')?.classList.toggle('active', isLight);
+    document.getElementById('btnThemeDark')?.classList.toggle('active', !isLight);
 }
+
+// Initial theme sync on load
+(function() {
+    const savedTheme = localStorage.getItem('sahaja-theme') || localStorage.getItem('theme');
+    const isLight = savedTheme === 'light';
+    if (isLight) {
+        document.body.classList.add('light-mode');
+        document.documentElement.classList.add('light-mode');
+    }
+    document.getElementById('btnThemeLight')?.classList.toggle('active', isLight);
+    document.getElementById('btnThemeDark')?.classList.toggle('active', !isLight);
+})();
 
 document.getElementById('avatarInput')?.addEventListener('change', function(e) {
     const file = e.target.files[0]; if (!file) return;
@@ -601,12 +617,12 @@ function renderAIContent(text, containerElement) {
         const cleanThinking = innerThinking.trim().replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
         thinkingBlocks[placeholder] = `
-        <div class="thinking-container" style="margin: 10px 0 20px 0; border: 1px solid var(--glass-border); border-radius: 12px; overflow: hidden; background: rgba(0, 0, 0, 0.2);">
-            <div class="thinking-header" style="padding: 10px 15px; cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 0.85rem; color: var(--text-secondary); background: rgba(255, 255, 255, 0.05);" onclick="toggleThinking(this)">
+        <div class="thinking-container" style="margin: 10px 0 20px 0; border: 1px solid var(--border-subtle); border-radius: 12px; overflow: hidden; background: var(--bg-subtle);">
+            <div class="thinking-header" style="padding: 10px 15px; cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 0.85rem; color: var(--text-secondary); background: var(--bg-elevated);" onclick="toggleThinking(this)">
                 <i class="fas fa-brain"></i> <span style="font-weight: 500;">Alur Berpikir SAHAJA AI</span>
                 <i class="fas fa-chevron-right" style="margin-left: auto; transition: 0.2s;"></i>
             </div>
-            <div class="thinking-content" style="display: none; padding: 15px; font-size: 0.85rem; color: var(--text-secondary); border-top: 1px solid var(--glass-border); white-space: pre-wrap; font-style: italic; line-height: 1.6;">${cleanThinking}</div>
+            <div class="thinking-content" style="display: none; padding: 15px; font-size: 0.85rem; color: var(--text-secondary); border-top: 1px solid var(--border-subtle); white-space: pre-wrap; font-style: italic; line-height: 1.6;">${cleanThinking}</div>
         </div>`;
         thinkingIndex++;
         return placeholder;
@@ -662,16 +678,22 @@ function renderAIContent(text, containerElement) {
             box-shadow: 0 8px 25px rgba(0,0,0,0.3) !important;
             margin: 15px auto !important;
             display: block !important;
-            border: 2px solid var(--glass-border) !important;
+            border: 2px solid var(--border-subtle) !important;
         }
         .imagen-download-wrapper {
             text-align: center; margin-top: -10px; margin-bottom: 20px;
         }
         .imagen-download-btn {
-            background: #1e293b; color: #f1f5f9; border: 1px solid var(--glass-border);
+            background: var(--bg-elevated); color: var(--text-primary); border: 1px solid var(--border-subtle);
             padding: 7px 15px; border-radius: 20px; font-size: 0.8rem;
             font-weight: 500; cursor: pointer;
             display: inline-flex; align-items: center; gap: 8px; text-decoration: none !important;
+            transition: background var(--duration-micro, 150ms) var(--ease, ease), border-color var(--duration-micro, 150ms) var(--ease, ease), color var(--duration-micro, 150ms) var(--ease, ease);
+        }
+        .imagen-download-btn:hover {
+            background: var(--bg-hover);
+            border-color: var(--accent-border);
+            color: var(--accent);
         }
     `;
     containerElement.appendChild(styleTag);
