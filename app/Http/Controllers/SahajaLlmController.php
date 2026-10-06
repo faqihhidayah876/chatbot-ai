@@ -34,9 +34,21 @@ class SahajaLlmController extends Controller
                 'content' => 'required'
             ]);
 
+            // VERIFIKASI: workspace_id harus milik user yang sedang login
+            $workspace = Workspace::where('id', $request->workspace_id)
+                ->where('user_id', Auth::id())
+                ->first();
+
+            if (!$workspace) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Akses ditolak. Workspace tidak ditemukan atau bukan milik Anda.'
+                ], 403);
+            }
+
             // Simpan teks PDF ke database
             $doc = LlmDocument::create([
-                'workspace_id' => $request->workspace_id,
+                'workspace_id' => $workspace->id,
                 'file_name' => $request->file_name,
                 'content' => $request->content
             ]);
