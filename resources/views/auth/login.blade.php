@@ -3,171 +3,410 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=yes">
-    <title>Login - SAHAJA AI</title>
-    <link href="https://fonts.bunny.net/css?family=poppins:400,500,600,700" rel="stylesheet">
+    <title>Masuk — SAHAJA AI</title>
+    <link rel="preconnect" href="https://fonts.bunny.net">
+    <link href="https://fonts.bunny.net/css?family=inter:400,500,600|jetbrains-mono:400,500" rel="stylesheet">
     <link rel="icon" type="image/png" href="https://i.ibb.co.com/jZZ0648R/Logo-SAHAJA-AI.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    {{-- Theme Init (Anti-FOUC) --}}
+    <script>
+        (function() {
+            if (localStorage.getItem('sahaja-theme') === 'light') {
+                document.documentElement.classList.add('light-mode');
+            }
+        })();
+    </script>
+
     <style>
         :root {
-            --bg-primary: #080c14;
-            --surface: rgba(18, 26, 44, 0.8);
-            --surface-border: rgba(74, 130, 220, 0.15);
-            --text-primary: #e8edf4;
-            --text-secondary: #8899b4;
-            --accent: #3b82f6;
-            --accent-gradient: linear-gradient(135deg, #3b82f6 0%, #22c5e0 100%);
-            --input-bg: rgba(18, 26, 44, 0.7);
-            --error: #ef4444;
-            --radius-lg: 20px;
+            --bg-base: #0B0D12;
+            --bg-subtle: #12151C;
+            --bg-elevated: #1A1E27;
+            --bg-overlay: #232833;
+            --bg-hover: #1E2229;
+            --border-subtle: rgba(255, 255, 255, 0.06);
+            --border-medium: rgba(255, 255, 255, 0.10);
+            --border-strong: rgba(255, 255, 255, 0.16);
+            --text-primary: #E8EAED;
+            --text-secondary: #9AA0A6;
+            --text-tertiary: #5F6368;
+            --accent: #3B82F6;
+            --accent-hover: #60A5FA;
+            --accent-subtle: hsl(217 91% 60% / 0.12);
+            --accent-border: hsl(217 91% 60% / 0.30);
+            --success: #10B981;
+            --warning: #F59E0B;
+            --danger: #EF4444;
+            --danger-subtle: rgba(239, 68, 68, 0.12);
+            --radius-sm: 6px;
+            --radius-md: 10px;
+            --radius-lg: 14px;
+            --radius-xl: 20px;
             --radius-full: 9999px;
-            --transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.30);
+            --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.35);
+            --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.45);
+            --ease: cubic-bezier(0.4, 0, 0.2, 1);
+            --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
         }
-        * { margin:0; padding:0; box-sizing:border-box; }
+
+        body.light-mode,
+        html.light-mode body {
+            --bg-base: #FAFBFC;
+            --bg-subtle: #F1F3F5;
+            --bg-elevated: #FFFFFF;
+            --bg-overlay: #FFFFFF;
+            --bg-hover: #EEF1F5;
+            --border-subtle: rgba(0, 0, 0, 0.06);
+            --border-medium: rgba(0, 0, 0, 0.10);
+            --border-strong: rgba(0, 0, 0, 0.16);
+            --text-primary: #111827;
+            --text-secondary: #4B5563;
+            --text-tertiary: #9CA3AF;
+            --accent: #2563EB;
+            --accent-hover: #1D4ED8;
+            --accent-subtle: hsl(221 83% 53% / 0.08);
+            --accent-border: hsl(221 83% 53% / 0.25);
+            --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.06);
+            --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.10);
+            --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.14);
+        }
+
+        .preload * {
+            transition: none !important;
+        }
+
+        *, *::before, *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: 'Poppins', sans-serif;
-            background: var(--bg-primary);
+            font-family: var(--font-sans);
+            background-color: var(--bg-base);
             color: var(--text-primary);
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 20px;
+            padding: 24px;
             position: relative;
             overflow-x: hidden;
+            line-height: 1.5;
+            transition: background-color 200ms var(--ease), color 200ms var(--ease);
         }
+
+        /* Subtle radial ambient (opacity < 0.05) */
         body::before {
             content: '';
-            position: fixed; inset:0;
-            background: radial-gradient(circle at 20% 30%, rgba(37,99,235,0.15) 0%, transparent 60%),
-                        radial-gradient(circle at 80% 70%, rgba(34,197,224,0.12) 0%, transparent 60%);
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(circle at 15% 10%, rgba(37, 99, 235, 0.04) 0%, transparent 45%);
+            pointer-events: none;
             z-index: -1;
         }
+
+        /* Theme Toggle Button */
+        .theme-toggle-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 36px;
+            height: 36px;
+            border-radius: var(--radius-md);
+            background: var(--bg-subtle);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 150ms var(--ease), color 150ms var(--ease), border-color 150ms var(--ease);
+            z-index: 50;
+        }
+
+        .theme-toggle-btn:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+            border-color: var(--border-medium);
+        }
+
+        .theme-toggle-btn:focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 2px;
+        }
+
+        /* Card Container */
         .auth-card {
             width: 100%;
             max-width: 420px;
-            background: var(--surface);
-            backdrop-filter: blur(18px);
-            -webkit-backdrop-filter: blur(18px);
-            border: 1px solid var(--surface-border);
-            border-radius: var(--radius-lg);
-            padding: 2.5rem 2rem;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-xl);
+            padding: 40px 32px;
             text-align: center;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
-            animation: fadeInUp 0.5s ease;
+            box-shadow: var(--shadow-md);
+            animation: cardFadeUp 500ms var(--ease) both;
         }
-        @keyframes fadeInUp {
-            from { opacity:0; transform: translateY(20px); }
-            to { opacity:1; transform: translateY(0); }
+
+        @keyframes cardFadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
+
         .logo-img {
-            width: 90px;
-            border-radius: 16px;
-            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
-            margin-bottom: 1.5rem;
+            width: 56px;
+            height: 56px;
+            border-radius: var(--radius-md);
+            object-fit: contain;
+            margin-bottom: 24px;
         }
-        h2 {
-            font-size: 1.6rem;
-            font-weight: 700;
+
+        .auth-title {
+            font-size: 24px;
+            font-weight: 600;
             letter-spacing: -0.02em;
-            margin-bottom: 0.25rem;
+            color: var(--text-primary);
+            margin-bottom: 8px;
         }
-        .subtitle {
+
+        .auth-subtitle {
+            font-size: 14px;
+            font-weight: 400;
             color: var(--text-secondary);
-            font-size: 0.9rem;
-            margin-bottom: 2rem;
+            margin-bottom: 32px;
+            line-height: 1.5;
         }
-        .form-group {
+
+        /* Form */
+        .auth-form {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
             text-align: left;
-            margin-bottom: 1.2rem;
         }
-        label {
-            display: block;
-            font-size: 0.8rem;
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-label {
+            font-size: 13px;
             font-weight: 500;
             color: var(--text-secondary);
-            margin-bottom: 0.4rem;
-            letter-spacing: 0.02em;
+            margin-bottom: 6px;
         }
-        input {
+
+        .form-input {
             width: 100%;
-            padding: 0.75rem 1rem;
-            border-radius: 12px;
-            background: var(--input-bg);
-            border: 1px solid var(--surface-border);
+            height: 44px;
+            padding: 0 14px;
+            background: var(--bg-subtle);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
             color: var(--text-primary);
-            font-size: 0.95rem;
+            font-size: 15px;
+            font-family: inherit;
             outline: none;
-            transition: var(--transition);
+            transition: border-color 150ms var(--ease), background-color 150ms var(--ease);
         }
-        input:focus {
+
+        .form-input::placeholder {
+            color: var(--text-tertiary);
+        }
+
+        .form-input:focus {
             border-color: var(--accent);
-            box-shadow: 0 0 0 3px rgba(59,130,246,0.15);
+            background-color: var(--bg-base);
         }
-        .btn {
+
+        .form-input.is-invalid {
+            border-color: var(--danger);
+        }
+
+        .error-msg {
+            font-size: 12px;
+            color: var(--danger);
+            margin-top: 4px;
+        }
+
+        .btn-submit {
             width: 100%;
-            padding: 0.85rem;
-            border-radius: var(--radius-full);
-            background: var(--accent-gradient);
-            color: white;
-            font-weight: 600;
-            font-size: 0.95rem;
+            height: 44px;
+            background: var(--accent);
+            color: #ffffff;
+            font-size: 14px;
+            font-weight: 500;
             border: none;
+            border-radius: var(--radius-md);
             cursor: pointer;
-            margin-top: 1rem;
-            transition: var(--transition);
-            box-shadow: 0 4px 12px rgba(59,130,246,0.3);
+            margin-top: 8px;
+            transition: background-color 150ms var(--ease), transform 150ms var(--ease);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
         }
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(59,130,246,0.5);
+
+        .btn-submit:hover {
+            background: var(--accent-hover);
         }
-        .footer-link {
-            margin-top: 1.5rem;
-            font-size: 0.85rem;
+
+        .btn-submit:active {
+            transform: scale(0.98);
+        }
+
+        .btn-submit:focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 2px;
+        }
+
+        /* Footer Links */
+        .auth-footer {
+            margin-top: 24px;
+            font-size: 13px;
             color: var(--text-secondary);
+            text-align: center;
         }
-        .footer-link a {
-            color: #62a0ea;
+
+        .auth-link {
+            color: var(--accent);
             text-decoration: none;
             font-weight: 500;
+            transition: text-decoration 150ms var(--ease);
         }
-        .footer-link a:hover {
+
+        .auth-link:hover {
             text-decoration: underline;
         }
-        .error-msg {
-            color: var(--error);
-            font-size: 0.78rem;
-            margin-top: 0.3rem;
+
+        .back-link {
+            display: block;
+            text-align: center;
+            font-size: 13px;
+            color: var(--text-tertiary);
+            text-decoration: none;
+            margin-top: 12px;
+            transition: color 150ms var(--ease);
         }
+
+        .back-link:hover {
+            color: var(--text-primary);
+        }
+
+        /* Mobile */
         @media (max-width: 480px) {
-            .auth-card { padding: 2rem 1.5rem; }
+            .auth-card {
+                padding: 32px 24px;
+            }
+            .auth-title {
+                font-size: 22px;
+            }
+        }
+
+        /* Prefers-reduced-motion */
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                transition-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+            }
+            .auth-card {
+                animation: none !important;
+            }
         }
     </style>
 </head>
-<body>
+<body class="preload">
+    {{-- Theme Toggle --}}
+    <button type="button" class="theme-toggle-btn" id="themeToggleBtn" aria-label="Toggle tema tampilan" onclick="setTheme()">
+        <i class="fas fa-moon" id="themeIcon"></i>
+    </button>
+
     <div class="auth-card">
-        <img src="https://i.ibb.co.com/wrrG06ds/Logo-SAHAJA-AI.png" alt="Logo SAHAJA AI" class="logo-img">
-        <h2>Selamat Datang Kembali</h2>
-        <p class="subtitle">Masuk untuk melanjutkan ke SAHAJA AI</p>
-        <form action="{{ route('login.post') }}" method="POST">
+        <img src="https://i.ibb.co.com/jZZ0648R/Logo-SAHAJA-AI.png" alt="Logo SAHAJA AI" class="logo-img" loading="eager">
+        <h1 class="auth-title">Selamat Datang</h1>
+        <p class="auth-subtitle">Masuk untuk melanjutkan ke SAHAJA AI</p>
+
+        <form action="{{ route('login.post') }}" method="POST" class="auth-form" novalidate>
             @csrf
+
             <div class="form-group">
-                <label>Email Address</label>
-                <input type="email" name="email" placeholder="user@email.com" required value="{{ old('email') }}">
-                @error('email') <div class="error-msg">{{ $message }}</div> @enderror
+                <label for="email" class="form-label">Email</label>
+                <input
+                    id="email"
+                    type="email"
+                    name="email"
+                    value="{{ old('email') }}"
+                    required
+                    autocomplete="email"
+                    placeholder="nama@email.com"
+                    class="form-input @error('email') is-invalid @enderror"
+                    @error('email') aria-invalid="true" aria-describedby="email-error" @enderror
+                >
+                @error('email')
+                    <div class="error-msg" id="email-error" role="alert">{{ $message }}</div>
+                @enderror
             </div>
+
             <div class="form-group">
-                <label>Password</label>
-                <input type="password" name="password" placeholder="••••••••" required>
+                <label for="password" class="form-label">Password</label>
+                <input
+                    id="password"
+                    type="password"
+                    name="password"
+                    required
+                    autocomplete="current-password"
+                    placeholder="••••••••"
+                    class="form-input @error('password') is-invalid @enderror"
+                    @error('password') aria-invalid="true" aria-describedby="password-error" @enderror
+                >
+                @error('password')
+                    <div class="error-msg" id="password-error" role="alert">{{ $message }}</div>
+                @enderror
             </div>
-            <button type="submit" class="btn">Masuk</button>
+
+            <button type="submit" class="btn-submit">Masuk</button>
         </form>
-        <div class="footer-link">
-            Belum punya akun? <a href="{{ route('register') }}">Daftar Sekarang</a>
+
+        <div class="auth-footer">
+            Belum punya akun? <a href="{{ route('register') }}" class="auth-link">Daftar</a>
         </div>
-        <div class="footer-link" style="margin-top:0.5rem;">
-            <a href="{{ route('home') }}"><i class="fas fa-arrow-left"></i> Kembali ke Beranda</a>
-        </div>
+
+        <a href="{{ route('home') }}" class="back-link">← Kembali ke Beranda</a>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            document.body.classList.remove('preload');
+            if (localStorage.getItem('sahaja-theme') === 'light') {
+                document.body.classList.add('light-mode');
+                const themeIcon = document.getElementById('themeIcon');
+                if (themeIcon) {
+                    themeIcon.className = 'fas fa-sun';
+                }
+            }
+        });
+
+        function setTheme() {
+            const isLight = document.documentElement.classList.toggle('light-mode');
+            document.body.classList.toggle('light-mode', isLight);
+            localStorage.setItem('sahaja-theme', isLight ? 'light' : 'dark');
+            const themeIcon = document.getElementById('themeIcon');
+            if (themeIcon) {
+                themeIcon.className = isLight ? 'fas fa-sun' : 'fas fa-moon';
+            }
+        }
+    </script>
 </body>
 </html>
