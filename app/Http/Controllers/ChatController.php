@@ -52,6 +52,7 @@ class ChatController extends Controller
             $hasImage = $request->has('image_data_array') && !empty($request->image_data_array);
             $hasGithub = $request->has('github_repo') && !empty($request->github_repo);
             $manualMode = $request->input('manual_mode', 'auto');
+            $forceMode = $request->input('force_mode', null);
             $isWorkspace = str_contains($userMessage, '[REFERENSI DOKUMEN]');
 
             $maxTokensReq = (int) $request->input('max_tokens', 4096);
@@ -60,6 +61,7 @@ class ChatController extends Controller
             // =========================================================
             // 🌟 MULTI-ENGINE ARCHITECTURE (GROQ + NVIDIA ONLY) 🌟
             // =========================================================
+            // Tentukan mode default dulu
             $activeMode = 'fast';
             if ($manualMode !== 'auto') {
                 $activeMode = $manualMode;
@@ -69,6 +71,12 @@ class ChatController extends Controller
                 elseif ($hasGithub) $activeMode = 'coding';
                 elseif (!$isSimple) $activeMode = 'smart';
                 else $activeMode = 'fast';
+            }
+
+            // Override dengan force_mode kalau ada (fitur "Beralih ke Cerdas/Cepat")
+            $validForceModes = ['fast', 'smart', 'coding', 'alpha'];
+            if ($forceMode && in_array($forceMode, $validForceModes, true)) {
+                $activeMode = $forceMode;
             }
 
             $aiConfig = $this->getAiConfiguration($activeMode);
