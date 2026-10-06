@@ -68,7 +68,9 @@ class DeepResearchController extends Controller
             $research->update(['status' => 'mencari_data', 'logs' => $logs]);
 
             try {
-                $response = Http::withoutVerifying()->timeout(60)->post('https://api.tavily.com/search', [
+                $response = Http::withOptions(['verify' => env('SSL_CA_BUNDLE', true)])
+                    ->timeout(60)
+                    ->post('https://api.tavily.com/search', [
                     'api_key' => env('TAVILY_API_KEY'),
                     'query' => $research->topic,
                     'search_depth' => 'advanced',
@@ -127,7 +129,10 @@ class DeepResearchController extends Controller
                     'Authorization' => 'Bearer ' . env('MISTRAL_API_KEY'),
                     'Content-Type' => 'application/json',
                     'Accept' => 'application/json'
-                ])->withoutVerifying()->timeout(150)->post($endpointAlpha, [
+                ])
+                ->withOptions(['verify' => env('SSL_CA_BUNDLE', true)])
+                ->timeout(150)
+                ->post($endpointAlpha, [
                     'model' => $modelAlpha,
                     'messages' => [['role' => 'user', 'content' => $systemPrompt]],
                     'max_tokens' => 4000,

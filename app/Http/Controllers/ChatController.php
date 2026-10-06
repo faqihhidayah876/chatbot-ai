@@ -338,7 +338,7 @@ class ChatController extends Controller
     private function callOpenAiCompatible($endpoint, $key, $model, $messages, $timeout, $maxTokens = 4096)
     {
         $response = Http::withOptions([
-            'verify' => false,
+            'verify' => env('SSL_CA_BUNDLE', true),
             'http_errors' => true,
             'timeout' => $timeout,
             'connect_timeout' => 10
@@ -438,7 +438,7 @@ class ChatController extends Controller
             $owner = $repoPath[0];
             $repo = $repoPath[1];
 
-            $repoInfo = Http::withOptions(['verify' => false, 'timeout' => 10])
+            $repoInfo = Http::withOptions(['verify' => env('SSL_CA_BUNDLE', true), 'timeout' => 10])
                 ->withHeaders(['User-Agent' => 'SAHAJA-AI'])
                 ->get("https://api.github.com/repos/{$owner}/{$repo}");
             if (!$repoInfo->successful()) {
@@ -448,7 +448,7 @@ class ChatController extends Controller
             $defaultBranch = $repoInfo->json()['default_branch'] ?? 'main';
 
             $treeUrl = "https://api.github.com/repos/{$owner}/{$repo}/git/trees/{$defaultBranch}?recursive=1";
-            $treeResponse = Http::withOptions(['verify' => false, 'timeout' => 15])
+            $treeResponse = Http::withOptions(['verify' => env('SSL_CA_BUNDLE', true), 'timeout' => 15])
                 ->withHeaders(['User-Agent' => 'SAHAJA-AI'])
                 ->get($treeUrl);
             if (!$treeResponse->successful()) return "SISTEM ERROR: Gagal membaca struktur folder GitHub.";
@@ -509,7 +509,7 @@ class ChatController extends Controller
             $megaContent = $treeMap . "\n\n📄 KODE DARI FILE YANG RELEVAN:\n\n";
             foreach ($filesToFetch as $filePath) {
                 $rawUrl = "https://raw.githubusercontent.com/{$owner}/{$repo}/{$defaultBranch}/{$filePath}";
-                $fileContent = Http::withOptions(['verify' => false, 'timeout' => 5])->get($rawUrl);
+                $fileContent = Http::withOptions(['verify' => env('SSL_CA_BUNDLE', true), 'timeout' => 5])->get($rawUrl);
 
                 if ($fileContent->successful()) {
                     $content = $fileContent->body();
@@ -548,7 +548,7 @@ class ChatController extends Controller
     private function fetchTavilyContext($query)
     {
         try {
-            $response = Http::withOptions(['verify' => false, 'timeout' => 10])->post('https://api.tavily.com/search', [
+            $response = Http::withOptions(['verify' => env('SSL_CA_BUNDLE', true), 'timeout' => 10])->post('https://api.tavily.com/search', [
                 'api_key' => env('TAVILY_API_KEY'),
                 'query' => $query,
                 'search_depth' => 'basic',
@@ -623,7 +623,10 @@ class ChatController extends Controller
                     'Authorization' => 'Bearer ' . $apiKey,
                     'Accept' => 'application/json',
                     'Content-Type' => 'application/json'
-                ])->withoutVerifying()->timeout(120)->post($invokeUrl, $payload);
+                ])
+                ->withOptions(['verify' => env('SSL_CA_BUNDLE', true)])
+                ->timeout(120)
+                ->post($invokeUrl, $payload);
 
                 if (!$response->successful()) {
                     throw new \Exception("FreeTheAI Edit Server Error: " . $response->status());
@@ -662,7 +665,7 @@ class ChatController extends Controller
 
                 // Tembak Server Cloudflare dengan format JSON standar (tanpa multipart)
                 $response = Http::withToken($apiToken)
-                    ->withoutVerifying()
+                    ->withOptions(['verify' => env('SSL_CA_BUNDLE', true)])
                     ->timeout(120)
                     ->post($cfUrl, [
                         'prompt' => $cleanPrompt
