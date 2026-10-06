@@ -517,7 +517,17 @@ async function sendMessage() {
             const bubble = aiMessageDiv.querySelector('.message-bubble'); if (bubble) animateGeminiStyle(bubble, data.ai_response); scrollToBottom();
         }
 
-        if (!currentSessionId && data.session_id) { window.history.pushState({}, '', `/chat/${data.session_id}`); currentSessionId = data.session_id; }
+        // Update URL & sidebar jika ini session baru
+        if (!currentSessionId && data.session_id) {
+            window.history.pushState({}, '', `/chat/${data.session_id}`);
+            currentSessionId = data.session_id;
+
+            // Tambahkan item baru ke sidebar (tanpa refresh)
+            addSessionToSidebar(data.session_id, lastUserMessage);
+
+            // Update state aktif di sidebar
+            setActiveSidebarItem(data.session_id);
+        }
         window.activeForceMode = null;
 
         currentGithubRepo = "";
@@ -551,6 +561,93 @@ function appendMessage(sender, text) {
     messageDiv.innerHTML = `${avatarHtml}<div class="message-content"><div class="message-bubble">${safeText}</div></div>`;
     document.getElementById('messagesContainer').appendChild(messageDiv);
     scrollToBottom();
+}
+
+/**
+ * Tambahkan session baru ke sidebar tanpa refresh
+ */
+function addSessionToSidebar(sessionId, title) {
+    const container = document.querySelector('.history-container');
+    if (!container) return;
+
+    // Bersihkan prefix teknis (/imagen, attachment) jika ada
+    let cleanTitle = (title || 'Chat Baru').trim();
+    if (cleanTitle.startsWith('/imagen ')) {
+        cleanTitle = cleanTitle.replace('/imagen ', '').trim();
+    }
+    cleanTitle = cleanTitle.replace(/^(?:🖼️|📎|📦).*?\n+/s, '').trim();
+
+    // Potong title max 40 char, fallback ke "Chat Baru"
+    let displayTitle = (cleanTitle || 'Chat Baru').trim();
+    if (displayTitle.length > 40) {
+        displayTitle = displayTitle.substring(0, 40).trim() + '...';
+    }
+
+    // Escape HTML biar aman dari XSS
+    const escapeHtml = (str) => str.replace(/[&<>"']/g, (m) => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[m]));
+    displayTitle = escapeHtml(displayTitle);
+
+    // Buat elemen history-item-wrapper baru
+    const wrapper = document.createElement('div');
+    wrapper.className = 'history-item-wrapper';
+    wrapper.id = `session-${sessionId}`;
+    wrapper.innerHTML = `
+        <a href="/chat/${sessionId}" class="history-item" aria-label="${displayTitle}">
+            <div class="history-link">
+                <span class="history-text text-label" id="title-${sessionId}">${displayTitle}</span>
+            </div>
+        </a>
+        <button class="options-btn" onclick="toggleMenu(event, 'menu-${sessionId}')" 
+            aria-label="Opsi percakapan">
+            <i class="fas fa-ellipsis" style="font-size: 14px;"></i>
+        </button>
+        <div class="options-menu" id="menu-${sessionId}">
+            <button class="option-item" onclick="shareSession(${sessionId})">
+                <i class="fas fa-share-nodes"></i> Bagikan
+            </button>
+            <button class="option-item" onclick="renameSession(${sessionId})">
+                <i class="fas fa-pen"></i> Ganti Nama
+            </button>
+            <div class="dropdown-divider" style="margin: 4px 0; border-top: 1px solid var(--border-subtle);"></div>
+            <button class="option-item delete" onclick="deleteSession(${sessionId})">
+                <i class="fas fa-trash-can"></i> Hapus
+            </button>
+        </div>
+    `;
+
+    // Sisipkan di paling atas daftar riwayat (setelah label Riwayat jika ada)
+    const label = container.querySelector('.history-label');
+    if (label && label.nextSibling) {
+        container.insertBefore(wrapper, label.nextSibling);
+    } else {
+        container.insertBefore(wrapper, container.firstChild);
+    }
+
+    // Animasi entrance halus
+    wrapper.style.opacity = '0';
+    wrapper.style.transform = 'translateY(-8px)';
+    requestAnimationFrame(() => {
+        wrapper.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+        wrapper.style.opacity = '1';
+        wrapper.style.transform = 'translateY(0)';
+    });
+}
+
+/**
+ * Set item sidebar sebagai active
+ */
+function setActiveSidebarItem(sessionId) {
+    // Hapus active dari semua
+    document.querySelectorAll('.history-item-wrapper').forEach(el => {
+        el.classList.remove('active');
+    });
+    // Set active pada session yang baru dibuat
+    const newItem = document.getElementById(`session-${sessionId}`);
+    if (newItem) {
+        newItem.classList.add('active');
+    }
 }
 
 function appendLoadingWithMode(mode) {
