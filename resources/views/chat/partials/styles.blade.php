@@ -476,10 +476,16 @@ button {
   background: var(--bg-elevated);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
-  padding: 16px;
+  padding: 14px;
   margin: 8px 12px 12px;
   position: relative;
   transition: opacity var(--duration-base) var(--ease);
+  width: auto;
+  white-space: normal;
+}
+
+.sidebar.collapsed .sahaja-banner-container {
+  display: none !important;
 }
 
 .banner-header {
@@ -493,6 +499,8 @@ button {
   font-weight: 600;
   font-size: 13px;
   color: var(--text-primary);
+  white-space: normal;
+  overflow-wrap: break-word;
 }
 
 .close-btn {
@@ -513,6 +521,10 @@ button {
   color: var(--text-secondary);
   margin-bottom: 12px;
   line-height: 1.5;
+  white-space: normal;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  display: block;
 }
 
 .banner-buttons {

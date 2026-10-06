@@ -15,6 +15,8 @@
         href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap"
         rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/html-docx-js@0.3.1/dist/html-docx.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script>
         (function() {
@@ -803,9 +805,10 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     <script>
-        marked.setOptions({ sanitize: false, breaks: true, gfm: true });
+        marked.setOptions({ breaks: true, gfm: true });
         mermaid.initialize({
             startOnLoad: false,
             theme: 'dark',
@@ -859,6 +862,15 @@
             rawText = rawText.replace(/\$([^$\n]*?)\$/g, function(match) { const placeholder = `@@MATH_INLINE_${mathIndex}@@`; mathBlocks[placeholder] = match; mathIndex++; return placeholder; });
 
             let htmlContent = marked.parse(rawText);
+
+            if (typeof DOMPurify !== 'undefined') {
+                htmlContent = DOMPurify.sanitize(htmlContent, {
+                    ADD_ATTR: ['class', 'target'],
+                    FORBID_TAGS: ['script', 'style', 'object', 'embed', 'iframe'],
+                    FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover', 
+                                  'onmouseenter', 'onfocus']
+                });
+            }
 
             // Kembalikan Matematika
             for (const [key, val] of Object.entries(mathBlocks)) {
