@@ -68,10 +68,10 @@ class DeepResearchController extends Controller
             $research->update(['status' => 'mencari_data', 'logs' => $logs]);
 
             try {
-                $response = Http::withOptions(['verify' => env('SSL_CA_BUNDLE', true)])
+                $response = Http::withOptions(['verify' => config('services.ssl.ca_bundle')])
                     ->timeout(60)
                     ->post('https://api.tavily.com/search', [
-                    'api_key' => env('TAVILY_API_KEY'),
+                    'api_key' => config('services.tavily.key'),
                     'query' => $research->topic,
                     'search_depth' => 'advanced',
                     'include_answer' => true,
@@ -121,16 +121,16 @@ class DeepResearchController extends Controller
                 DATA WEB UNTUK DIOLAH:
                 " . $context;
 
-                $modelAlpha = env('MODEL_ALPHA');
-                $endpointAlpha = env('MISTRAL_ENDPOINT');
-                $providerAlpha = env('PROVIDER_ALPHA');
+                $modelAlpha = config('sahaja_ai.models.alpha');
+                $endpointAlpha = config('services.mistral.endpoint');
+                $providerAlpha = config('sahaja_ai.providers.alpha');
 
                 $response = Http::withHeaders([
-                    'Authorization' => 'Bearer ' . env('MISTRAL_API_KEY'),
+                    'Authorization' => 'Bearer ' . config('services.mistral.key'),
                     'Content-Type' => 'application/json',
                     'Accept' => 'application/json'
                 ])
-                ->withOptions(['verify' => env('SSL_CA_BUNDLE', true)])
+                ->withOptions(['verify' => config('services.ssl.ca_bundle')])
                 ->timeout(150)
                 ->post($endpointAlpha, [
                     'model' => $modelAlpha,

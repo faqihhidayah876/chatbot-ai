@@ -291,45 +291,45 @@ class ChatController extends Controller
     {
         return match ($mode) {
             'smart' => [
-                'provider' => env('PROVIDER_SMART'),
-                'model'    => env('MODEL_SMART'),
-                'endpoint' => env('NVIDIA_ENDPOINT'),
-                'key'      => env('NVIDIA_API_KEY'),
+                'provider' => config('sahaja_ai.providers.smart'),
+                'model'    => config('sahaja_ai.models.smart'),
+                'endpoint' => config('services.nvidia.endpoint'),
+                'key'      => config('services.nvidia.key'),
                 'timeout'  => 300
             ],
             'alpha' => [
-                'provider' => env('PROVIDER_ALPHA'),
-                'model'    => env('MODEL_ALPHA'),
-                'endpoint' => env('MISTRAL_ENDPOINT'),
-                'key'      => env('MISTRAL_API_KEY'),
+                'provider' => config('sahaja_ai.providers.alpha'),
+                'model'    => config('sahaja_ai.models.alpha'),
+                'endpoint' => config('services.mistral.endpoint'),
+                'key'      => config('services.mistral.key'),
                 'timeout'  => 300
             ],
             'vision' => [
-                'provider' => env('PROVIDER_VISION'),
-                'model'    => env('MODEL_VISION'),
-                'endpoint' => env('NVIDIA_ENDPOINT'),
-                'key'      => env('NVIDIA_API_KEY'),
+                'provider' => config('sahaja_ai.providers.vision'),
+                'model'    => config('sahaja_ai.models.vision'),
+                'endpoint' => config('services.nvidia.endpoint'),
+                'key'      => config('services.nvidia.key'),
                 'timeout'  => 300
             ],
             'coding' => [
-                'provider' => env('PROVIDER_CODING'),
-                'model'    => env('MODEL_CODING'),
-                'endpoint' => env('NVIDIA_ENDPOINT'),
-                'key'      => env('NVIDIA_API_KEY'),
+                'provider' => config('sahaja_ai.providers.coding'),
+                'model'    => config('sahaja_ai.models.coding'),
+                'endpoint' => config('services.nvidia.endpoint'),
+                'key'      => config('services.nvidia.key'),
                 'timeout'  => 300
             ],
             'workspace' => [
-                'provider' => env('SAHAJA_LLM_PROVIDER'),
-                'model'    => env('SAHAJA_LLM_MODEL'),
-                'endpoint' => env('NVIDIA_ENDPOINT'),
-                'key'      => env('NVIDIA_API_KEY'),
+                'provider' => config('sahaja_ai.providers.workspace'),
+                'model'    => config('sahaja_ai.models.workspace'),
+                'endpoint' => config('services.nvidia.endpoint'),
+                'key'      => config('services.nvidia.key'),
                 'timeout'  => 300
             ],
             default => [
-                'provider' => env('PROVIDER_FAST'),
-                'model'    => env('MODEL_FAST'),
-                'endpoint' => env('MISTRAL_ENDPOINT'),
-                'key'      => env('MISTRAL_API_KEY'),
+                'provider' => config('sahaja_ai.providers.fast'),
+                'model'    => config('sahaja_ai.models.fast'),
+                'endpoint' => config('services.mistral.endpoint'),
+                'key'      => config('services.mistral.key'),
                 'timeout'  => 300
             ],
         };
@@ -338,7 +338,7 @@ class ChatController extends Controller
     private function callOpenAiCompatible($endpoint, $key, $model, $messages, $timeout, $maxTokens = 4096)
     {
         $response = Http::withOptions([
-            'verify' => env('SSL_CA_BUNDLE', true),
+            'verify' => config('services.ssl.ca_bundle'),
             'http_errors' => true,
             'timeout' => $timeout,
             'connect_timeout' => 10
@@ -438,7 +438,7 @@ class ChatController extends Controller
             $owner = $repoPath[0];
             $repo = $repoPath[1];
 
-            $repoInfo = Http::withOptions(['verify' => env('SSL_CA_BUNDLE', true), 'timeout' => 10])
+            $repoInfo = Http::withOptions(['verify' => config('services.ssl.ca_bundle'), 'timeout' => 10])
                 ->withHeaders(['User-Agent' => 'SAHAJA-AI'])
                 ->get("https://api.github.com/repos/{$owner}/{$repo}");
             if (!$repoInfo->successful()) {
@@ -448,7 +448,7 @@ class ChatController extends Controller
             $defaultBranch = $repoInfo->json()['default_branch'] ?? 'main';
 
             $treeUrl = "https://api.github.com/repos/{$owner}/{$repo}/git/trees/{$defaultBranch}?recursive=1";
-            $treeResponse = Http::withOptions(['verify' => env('SSL_CA_BUNDLE', true), 'timeout' => 15])
+            $treeResponse = Http::withOptions(['verify' => config('services.ssl.ca_bundle'), 'timeout' => 15])
                 ->withHeaders(['User-Agent' => 'SAHAJA-AI'])
                 ->get($treeUrl);
             if (!$treeResponse->successful()) return "SISTEM ERROR: Gagal membaca struktur folder GitHub.";
@@ -509,7 +509,7 @@ class ChatController extends Controller
             $megaContent = $treeMap . "\n\n📄 KODE DARI FILE YANG RELEVAN:\n\n";
             foreach ($filesToFetch as $filePath) {
                 $rawUrl = "https://raw.githubusercontent.com/{$owner}/{$repo}/{$defaultBranch}/{$filePath}";
-                $fileContent = Http::withOptions(['verify' => env('SSL_CA_BUNDLE', true), 'timeout' => 5])->get($rawUrl);
+                $fileContent = Http::withOptions(['verify' => config('services.ssl.ca_bundle'), 'timeout' => 5])->get($rawUrl);
 
                 if ($fileContent->successful()) {
                     $content = $fileContent->body();
@@ -548,8 +548,8 @@ class ChatController extends Controller
     private function fetchTavilyContext($query)
     {
         try {
-            $response = Http::withOptions(['verify' => env('SSL_CA_BUNDLE', true), 'timeout' => 10])->post('https://api.tavily.com/search', [
-                'api_key' => env('TAVILY_API_KEY'),
+            $response = Http::withOptions(['verify' => config('services.ssl.ca_bundle'), 'timeout' => 10])->post('https://api.tavily.com/search', [
+                'api_key' => config('services.tavily.key'),
                 'query' => $query,
                 'search_depth' => 'basic',
                 'include_answer' => false,
@@ -606,12 +606,12 @@ class ChatController extends Controller
                 // ========================================================
                 // JALUR 1: MODE EDIT GAMBAR (Tetap Pakai FreeTheAI)
                 // ========================================================
-                $apiKey = env('FREETHEAI_API_KEY');
+                $apiKey = config('services.freetheai.key');
                 if (empty($apiKey)) throw new \Exception("API Key belum terpasang!");
 
-                $baseUrl = rtrim(env('FREETHEAI_BASE_URL'), '/');
+                $baseUrl = rtrim(config('services.freetheai.base_url'), '/');
                 $invokeUrl = $baseUrl . '/images/edits';
-                $modelName = env('FREETHEAI_MODEL');
+                $modelName = config('services.freetheai.model');
 
                 $payload = [
                     'model' => $modelName,
@@ -624,7 +624,7 @@ class ChatController extends Controller
                     'Accept' => 'application/json',
                     'Content-Type' => 'application/json'
                 ])
-                ->withOptions(['verify' => env('SSL_CA_BUNDLE', true)])
+                ->withOptions(['verify' => config('services.ssl.ca_bundle')])
                 ->timeout(120)
                 ->post($invokeUrl, $payload);
 
@@ -656,8 +656,8 @@ class ChatController extends Controller
                 // ========================================================
                 // JALUR 2: MODE GENERATE (CLOUDFLARE - FLUX 1 SCHNELL)
                 // ========================================================
-                $apiToken = env('CLOUDFLARE_API_TOKEN');
-                $cfUrl = env('CLOUDFLARE_IMAGEN_ENDPOINT');
+                $apiToken = config('services.cloudflare.api_token');
+                $cfUrl = config('services.cloudflare.imagen_endpoint');
 
                 if (empty($apiToken) || empty($cfUrl)) {
                     throw new \Exception("Konfigurasi Cloudflare (Token / Endpoint Imagen) di .env belum lengkap!");
@@ -665,7 +665,7 @@ class ChatController extends Controller
 
                 // Tembak Server Cloudflare dengan format JSON standar (tanpa multipart)
                 $response = Http::withToken($apiToken)
-                    ->withOptions(['verify' => env('SSL_CA_BUNDLE', true)])
+                    ->withOptions(['verify' => config('services.ssl.ca_bundle')])
                     ->timeout(120)
                     ->post($cfUrl, [
                         'prompt' => $cleanPrompt
