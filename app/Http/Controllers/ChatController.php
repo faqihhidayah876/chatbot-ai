@@ -2,20 +2,52 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Support\Facades\Http;
 use Illuminate\Http\Request;
 use App\Models\Chat;
 use App\Models\Session;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use App\Services\Ai\AiRouterService;
+use App\Services\Ai\AiProviderService;
+use App\Services\Ai\QueryAnalyzerService;
+use App\Services\Integrations\GithubService;
+use App\Services\Integrations\TavilyService;
+use App\Services\Integrations\ImagenService;
+use App\Services\Chat\ChatPersistenceService;
 
 class ChatController extends Controller
 {
+    protected AiRouterService $aiRouter;
+    protected AiProviderService $aiProvider;
+    protected QueryAnalyzerService $queryAnalyzer;
+    protected GithubService $github;
+    protected TavilyService $tavily;
+    protected ImagenService $imagen;
+    protected ChatPersistenceService $chatPersistence;
+
+    public function __construct(
+        AiRouterService $aiRouter,
+        AiProviderService $aiProvider,
+        QueryAnalyzerService $queryAnalyzer,
+        GithubService $github,
+        TavilyService $tavily,
+        ImagenService $imagen,
+        ChatPersistenceService $chatPersistence
+    ) {
+        $this->aiRouter = $aiRouter;
+        $this->aiProvider = $aiProvider;
+        $this->queryAnalyzer = $queryAnalyzer;
+        $this->github = $github;
+        $this->tavily = $tavily;
+        $this->imagen = $imagen;
+        $this->chatPersistence = $chatPersistence;
+    }
+
     public function index($sessionId = null)
     {
         $userId = Auth::id();
-        \App\Models\Session::where('user_id', \Illuminate\Support\Facades\Auth::id())->doesntHave('chats')->delete();
+        Session::where('user_id', $userId)->doesntHave('chats')->delete();
         $sessions = Session::where('user_id', $userId)->orderBy('updated_at', 'desc')->get();
         $currentSession = null;
         $chats = [];
@@ -46,68 +78,42 @@ class ChatController extends Controller
             $maxTokensReq = (int) $request->input('max_tokens', 4096);
             $enableThinkingReq = filter_var($request->input('enable_thinking', false), FILTER_VALIDATE_BOOLEAN);
             $enableWebSearchReq = filter_var($request->input('web_search', false), FILTER_VALIDATE_BOOLEAN);
-
-            // 1. DETEKSI MODE & INPUT
-            $isSimple = $this->isSimpleQuery($userMessage);
-            $hasImage = $request->has('image_data_array') && !empty($request->image_data_array);
-            $hasGithub = $request->has('github_repo') && !empty($request->github_repo);
             $manualMode = $request->input('manual_mode', 'auto');
-            $isWorkspace = str_contains($userMessage, '[REFERENSI DOKUMEN]');
 
-            $maxTokensReq = (int) $request->input('max_tokens', 4096);
-            $enableThinkingReq = filter_var($request->input('enable_thinking', false), FILTER_VALIDATE_BOOLEAN);
+            // 1. ANALYZE INPUT & DETERMINE MODE
+            $inputType = $this->queryAnalyzer->detectInputType([
+                'message' => $userMessage,
+                'image_data_array' => $request->image_data_array,
+                'github_repo' => $request->github_repo,
+            ]);
 
-            // =========================================================
-            // 🌟 MULTI-ENGINE ARCHITECTURE (GROQ + NVIDIA ONLY) 🌟
-            // =========================================================
-            // Tentukan mode default dulu
-            $activeMode = 'fast';
-            if ($manualMode !== 'auto') {
-                $activeMode = $manualMode;
-            } else {
-                if ($isWorkspace) $activeMode = 'workspace';
-                if ($hasImage) $activeMode = 'fast';
-                elseif ($hasGithub) $activeMode = 'coding';
-                elseif (!$isSimple) $activeMode = 'smart';
-                else $activeMode = 'fast';
-            }
+            $activeMode = $this->queryAnalyzer->determineActiveMode(
+                $userMessage,
+                $manualMode,
+                $inputType
+            );
 
-            $aiConfig = $this->getAiConfiguration($activeMode);
+            // 2. GET AI CONFIGURATION
+            $aiConfig = $this->aiRouter->getAiConfiguration($activeMode);
             $selectedModel = $aiConfig['model'];
             $timeout = $aiConfig['timeout'];
 
-            // 2. HANDLE SESSION
-            if (!$sessionId) {
-                $title = Str::words($userMessage, 5, '...');
-                $recentSession = Session::where('user_id', $userId)
-                    ->where('title', $title)
-                    ->where('created_at', '>=', now()->subSeconds(15))
-                    ->first();
+            // 3. HANDLE SESSION
+            $sessionId = $this->chatPersistence->findOrCreateSession(
+                $userId,
+                $sessionId ? (int)$sessionId : null,
+                $userMessage
+            );
 
-                if ($recentSession) {
-                    $sessionId = $recentSession->id;
-                } else {
-                    $session = Session::create(['user_id' => $userId, 'title' => $title]);
-                    $sessionId = $session->id;
-                }
-            } else {
-                $session = Session::where('id', $sessionId)->where('user_id', $userId)->first();
-                if ($session) $session->touch();
-            }
-            // =========================================================
-            // INTERCEPTOR: DETEKSI JIKA USER MINTA BIKIN ATAU EDIT GAMBAR
-            // =========================================================
-            if (\Illuminate\Support\Str::startsWith(strtolower(trim($userMessage)), '/imagen')) {
-
-                // Siapkan teks riwayat untuk disimpan di database
+            // 4. INTERCEPT IMAGEN
+            if (Str::startsWith(strtolower(trim($userMessage)), '/imagen')) {
                 $dbMsgImagen = $userMessage;
-                if ($hasImage) {
+                if ($inputType['has_image']) {
                     $imgCount = count($request->image_data_array);
                     $dbMsgImagen = "🖼️ [{$imgCount} Gambar Terlampir untuk Diedit]\n" . $userMessage;
                 }
 
-                // Lempar ke mesin Sahaja Imagen dan bawa foto kiriman user (parameter ke-4)
-                return $this->generateSahajaImagen(
+                return $this->imagen->generate(
                     $userMessage,
                     $sessionId,
                     $dbMsgImagen,
@@ -115,126 +121,38 @@ class ChatController extends Controller
                 );
             }
 
-            // 3. KONSTRUKSI PESAN & PANGGIL API
+            // 5. FETCH GITHUB CONTENT IF PRESENT
             $aiReply = "";
             $githubContent = "";
 
-            if ($hasGithub) {
-                $githubContent = $this->fetchGithubRepoContent($request->github_repo, $userMessage);
-                if (\Illuminate\Support\Str::startsWith($githubContent, 'SISTEM ERROR')) {
+            if ($inputType['has_github']) {
+                $githubContent = $this->github->fetchRepoContent($request->github_repo, $userMessage);
+                if (Str::startsWith($githubContent, 'SISTEM ERROR')) {
                     $aiReply = "**GitHub Scanner Terblokir**\n\n" . $githubContent;
                 }
             }
 
+            // 6. BUILD MESSAGES & CALL AI PROVIDER
             if (empty($aiReply)) {
                 try {
-                    $configSahaja = config('sahaja');
-                    $systemPrompt = is_array($configSahaja) ? ($configSahaja['personality'] ?? "Kamu adalah SAHAJA AI.") : ($configSahaja ?? "Kamu adalah SAHAJA AI.");
-                    $aturanKode = "\n\nATURAN KODE & FORMATTING:\n1. Anda WAJIB membungkus kodingan menggunakan Markdown standar (3 backticks).\n2. [CRITICAL] JIKA MEMBUAT DIAGRAM MERMAID: Anda WAJIB secara eksplisit menggunakan tag pembuka
-                    http://googleusercontent.com/immersive_entry_chip/0.";
+                    $messages = $this->buildMessages(
+                        $userMessage,
+                        $sessionId,
+                        $inputType,
+                        $request,
+                        $enableWebSearchReq,
+                        $enableThinkingReq,
+                        $githubContent
+                    );
 
-                    if ($enableWebSearchReq && !$hasGithub && !$hasImage) {
-                        $webContext = $this->fetchTavilyContext($userMessage);
-                        if (!empty($webContext)) {
-                            $systemPrompt .= "\n\n[INFORMASI INTERNET TERBARU]\nKamu memiliki akses ke hasil pencarian web berikut untuk membantu menjawab:\n" . $webContext . "\n\nInstruksi: Gunakan informasi di atas jika relevan dengan pertanyaan user. Jawablah secara natural seperti asisten percakapan biasa (JANGAN membuat format laporan formal/riset).";
-                        }
-                    }
-
-                    // SUNTIKAN JURUS THINKING MODE DENGAN CoT (Chain of Thought)
-                    if ($enableThinkingReq) {
-                        $aturanKode .= "\n\n[CRITICAL INSTRUCTION - CHAIN OF THOUGHT]: You MUST use the Chain of Thought (CoT) reasoning process. Sebelum memberikan jawaban akhir, kamu WAJIB memecah
-                        masalah dan berpikir selangkah demi selangkah (step-by-step).
-                        \n1. Chain-of-Thought (CoT) Advanced
-                        Untuk SEMUA pertanyaan kompleks (matematika, logika, coding, analisis), WAJIB melakukan reasoning eksplisit:
-                        \nParse & deconstruct problem
-                        \nIdentify relevant knowledge domains
-                        \nApply appropriate methodology/framework
-                        \nExecute step-by-step solution
-                        \nValidate & cross-check results
-                        \nSynthesize final answer dengan konteks user
-
-                        \n2. Self-Correction Mechanism
-                        Selalu tanyakan diri sendiri: 'Apakah ini sudah benar? Ada sudut pandang lain?' sebelum finalisasi jawaban.
-
-                        \n3. Multi-Perspective Analysis
-                        Untuk topik kompleks, berikan analisis dari 2-3 sudut pandang berbeda (technical, business, ethical, dll) lalu synthesize.
-                        \nLakukan juga langkah ini jika memungkinkan:
-                        \n1. Analisis masalahnya secara mendalam.
-                        \n2. Evaluasi berbagai kemungkinan pendekatan.
-                        \n3. Jabarkan logika penyelesaiannya.
-                        \n\nBungkus seluruh proses berpikirmu secara eksklusif di dalam tag <thinking> dan ditutup dengan </thinking>.
-                        Setelah tag ditutup, barulah berikan jawaban finalmu kepada user secara rapi.";
-                    }
-
-                    $messages = [];
-
-                    // JALUR KHUSUS VISION (Format NVIDIA / OpenAI)
-                    if ($hasImage) {
-                        $messages[] = ["role" => "system", "content" => $systemPrompt];
-
-                        $contentArray = [
-                            ["type" => "text", "text" => $userMessage ?: "Tolong analisis gambar-gambar ini secara detail."]
-                        ];
-
-                        // Looping menjejali AI dengan kelima gambar sekaligus!
-                        foreach ($request->image_data_array as $imgBase64) {
-                            $contentArray[] = ["type" => "image_url", "image_url" => ["url" => $imgBase64]];
-                        }
-
-                        $messages[] = ["role" => "user", "content" => $contentArray];
-                    }
-
-                    // JALUR GITHUB
-                    elseif ($hasGithub) {
-                        $messages[] = ["role" => "system", "content" => "Kamu adalah SAHAJA AI, Senior Software Engineer. Jawablah berdasarkan [DATA REPOSITORY] di bawah. Jika tertulis 'SISTEM ERROR', jelaskan error tersebut.\n" . $aturanKode];
-                        $messages[] = ["role" => "user", "content" => "[URL]: " . $request->github_repo . "\n\n[DATA REPOSITORY]:\n" . $githubContent . "\n\n[PERTANYAAN USER]: " . $userMessage];
-                    }
-                    // JALUR CHAT STANDAR (Fast / Smart)
-                    else {
-                        $messages[] = ["role" => "system", "content" => $systemPrompt . $aturanKode];
-
-                        if ($sessionId) {
-                            $allChats = Chat::where('session_id', $sessionId)->orderBy('created_at', 'asc')->get();
-                            if ($allChats->count() > 0) {
-                                $recentChats = $allChats->slice(-4);
-                                $olderChats = $allChats->slice(-14, 14);
-                                $stopWords = ['dan', 'atau', 'yang', 'di', 'ke', 'dari', 'ini', 'itu', 'untuk', 'dengan', 'apakah', 'bagaimana', 'buatkan', 'tolong', 'saya', 'kamu', 'anda'];
-                                $userWords = array_diff(str_word_count(strtolower($userMessage), 1), $stopWords);
-
-                                foreach ($olderChats as $chat) {
-                                    $chatWords = str_word_count(strtolower($chat->user_message . ' ' . $chat->ai_response), 1);
-                                    $intersection = array_intersect($userWords, $chatWords);
-
-                                    // Jika ada minimal 2 kata kunci yang sama, masukkan ke memori!
-                                    if (count($intersection) >= 2) {
-                                        $cleanUserMsg = preg_replace('/🖼️ \[Gambar Terlampir\]\n/', '', $chat->user_message);
-                                        $cleanUserMsg = preg_replace('/📦 \[GitHub: .*\]\n/', '', $cleanUserMsg);
-                                        $cleanUserMsg = preg_replace('/\[Dokumen \d+: .*?\]\n"""\n.*?\n"""\n\n/s', '[Dokumen Terlampir]', $cleanUserMsg);
-                                        $cleanUserMsg = preg_replace('/\[REFERENSI DOKUMEN\]\n"""\n.*?\n"""\n\n/s', "📎 [Dokumen Workspace SAHAJA LLM]\n", $cleanUserMsg);
-
-                                        $messages[] = ["role" => "user", "content" => "[Konteks Relevan Masa Lalu]: " . $cleanUserMsg];
-                                        $messages[] = ["role" => "assistant", "content" => $chat->ai_response];
-                                    }
-                                }
-
-                                // 5. Masukkan 2 obrolan terbaru secara utuh
-                                foreach ($recentChats as $chat) {
-                                    $cleanUserMsg = preg_replace('/🖼️ \[Gambar Terlampir\]\n/', '', $chat->user_message);
-                                    $cleanUserMsg = preg_replace('/📦 \[GitHub: .*\]\n/', '', $cleanUserMsg);
-                                    $cleanUserMsg = preg_replace('/\[Dokumen \d+: .*?\]\n"""\n.*?\n"""\n\n/s', '[Dokumen Terlampir]', $cleanUserMsg);
-                                    $cleanUserMsg = preg_replace('/\[REFERENSI DOKUMEN\]\n"""\n.*?\n"""\n\n/s', "📎 [Dokumen Workspace SAHAJA LLM]\n", $cleanUserMsg);
-
-                                    $messages[] = ["role" => "user", "content" => $cleanUserMsg];
-                                    $messages[] = ["role" => "assistant", "content" => $chat->ai_response];
-                                }
-                            }
-                        }
-                        $messages[] = ["role" => "user", "content" => $userMessage];
-                    }
-
-                    // Panggil API (Groq atau Nvidia)
-                    $aiReply = $this->callOpenAiCompatible($aiConfig['endpoint'], $aiConfig['key'], $selectedModel, $messages, $timeout, $maxTokensReq);
-
+                    $aiReply = $this->aiProvider->callOpenAiCompatible(
+                        $aiConfig['endpoint'],
+                        $aiConfig['key'],
+                        $selectedModel,
+                        $messages,
+                        $timeout,
+                        $maxTokensReq
+                    );
                 } catch (\Exception $e) {
                     Log::error('AI Provider Error', [
                         'message' => $e->getMessage(),
@@ -252,30 +170,23 @@ class ChatController extends Controller
                 }
             }
 
+            // 7. CLEANUP
             if ($aiReply) {
                 $aiReply = preg_replace('/@```/', '```', $aiReply);
                 $aiReply = preg_replace('/````/', '```', $aiReply);
             }
 
-            // 5. SIMPAN CHAT
-            $dbUserMessage = $userMessage;
-            if ($hasImage) {
-                $imgCount = count($request->image_data_array);
-                $dbUserMessage = "🖼️ [{$imgCount} Gambar Terlampir]\n" . $userMessage;
-            }
-            else if ($hasGithub) {
-                $repoName = str_replace(['https://github.com/', '.git'], '', rtrim($request->github_repo, '/'));
-                $dbUserMessage = "📦 [GitHub: {$repoName}]\n" . $userMessage;
-            }
+            // 8. SAVE & RETURN
+            $dbUserMessage = $this->prepareDbMessage($userMessage, $inputType, $request);
 
-            Chat::create([
-                'session_id' => $sessionId,
-                'user_message' => $dbUserMessage,
-                'ai_response' => $aiReply,
-                'mode' => $activeMode,
-                'provider' => strtolower($aiConfig['provider'] ?? 'unknown'),
-                'model' => $selectedModel,
-            ]);
+            $this->chatPersistence->saveChat(
+                $sessionId,
+                $dbUserMessage,
+                $aiReply,
+                $activeMode,
+                strtolower($aiConfig['provider'] ?? 'unknown'),
+                $selectedModel
+            );
 
             return response()->json([
                 'session_id' => $sessionId,
@@ -300,102 +211,128 @@ class ChatController extends Controller
         }
     }
 
-    // ==========================================
-    // FUNGSI ROUTER & API MULTI-ENGINE
-    // ==========================================
-    private function getAiConfiguration($mode)
-    {
-        return match ($mode) {
-            'smart' => [
-                'provider' => config('sahaja_ai.providers.smart'),
-                'model'    => config('sahaja_ai.models.smart'),
-                'endpoint' => config('services.nvidia.endpoint'),
-                'key'      => config('services.nvidia.key'),
-                'timeout'  => 300
-            ],
-            'alpha' => [
-                'provider' => config('sahaja_ai.providers.alpha'),
-                'model'    => config('sahaja_ai.models.alpha'),
-                'endpoint' => config('services.mistral.endpoint'),
-                'key'      => config('services.mistral.key'),
-                'timeout'  => 300
-            ],
-            'vision' => [
-                'provider' => config('sahaja_ai.providers.vision'),
-                'model'    => config('sahaja_ai.models.vision'),
-                'endpoint' => config('services.nvidia.endpoint'),
-                'key'      => config('services.nvidia.key'),
-                'timeout'  => 300
-            ],
-            'coding' => [
-                'provider' => config('sahaja_ai.providers.coding'),
-                'model'    => config('sahaja_ai.models.coding'),
-                'endpoint' => config('services.nvidia.endpoint'),
-                'key'      => config('services.nvidia.key'),
-                'timeout'  => 300
-            ],
-            'workspace' => [
-                'provider' => config('sahaja_ai.providers.workspace'),
-                'model'    => config('sahaja_ai.models.workspace'),
-                'endpoint' => config('services.nvidia.endpoint'),
-                'key'      => config('services.nvidia.key'),
-                'timeout'  => 300
-            ],
-            default => [
-                'provider' => config('sahaja_ai.providers.fast'),
-                'model'    => config('sahaja_ai.models.fast'),
-                'endpoint' => config('services.mistral.endpoint'),
-                'key'      => config('services.mistral.key'),
-                'timeout'  => 300
-            ],
-        };
-    }
+    private function buildMessages(
+        string $userMessage,
+        int $sessionId,
+        array $inputType,
+        Request $request,
+        bool $enableWebSearch,
+        bool $enableThinking,
+        string $githubContent = ""
+    ): array {
+        $configSahaja = config('sahaja');
+        $systemPrompt = is_array($configSahaja) ? ($configSahaja['personality'] ?? "Kamu adalah SAHAJA AI.") : ($configSahaja ?? "Kamu adalah SAHAJA AI.");
+        $aturanKode = "\n\nATURAN KODE & FORMATTING:\n1. Anda WAJIB membungkus kodingan menggunakan Markdown standar (3 backticks).\n2. [CRITICAL] JIKA MEMBUAT DIAGRAM MERMAID: Anda WAJIB secara eksplisit menggunakan tag pembuka
+        http://googleusercontent.com/immersive_entry_chip/0.";
 
-    private function callOpenAiCompatible($endpoint, $key, $model, $messages, $timeout, $maxTokens = 4096)
-    {
-        $response = Http::withOptions([
-            'verify' => config('services.ssl.ca_bundle'),
-            'http_errors' => true,
-            'timeout' => $timeout,
-            'connect_timeout' => 10
-        ])
-        ->withToken($key)
-        ->withHeaders(['Content-Type' => 'application/json'])
-        ->post($endpoint, [
-            "model" => $model,
-            "messages" => $messages,
-            "temperature" => 0.6,
-            "max_tokens" => $maxTokens,
-        ]);
-
-        if (!$response->successful()) {
-            throw new \Exception("HTTP {$response->status()} | Response: " . $response->body());
-        }
-
-        $data = $response->json();
-        return $data['choices'][0]['message']['content'] ?? null;
-    }
-
-    private function isSimpleQuery($text)
-    {
-        $text = strtolower(trim($text));
-        $complexIndicators = [
-            'coding', 'program', 'script', 'aplikasi', 'website', 'sistem',
-            'database', 'query', 'error', 'debug', 'laravel', 'react', 'vue',
-            'algoritma', 'api', 'server', 'deploy', 'hosting',
-            'generate', 'source code'
-        ];
-        foreach ($complexIndicators as $ind) {
-            if (str_contains($text, $ind)) {
-                return false;
+        if ($enableWebSearch && !$inputType['has_github'] && !$inputType['has_image']) {
+            $webContext = $this->tavily->fetchContext($userMessage);
+            if (!empty($webContext)) {
+                $systemPrompt .= "\n\n[INFORMASI INTERNET TERBARU]\nKamu memiliki akses ke hasil pencarian web berikut untuk membantu menjawab:\n" . $webContext . "\n\nInstruksi: Gunakan informasi di atas jika relevan dengan pertanyaan user. Jawablah secara natural seperti asisten percakapan biasa (JANGAN membuat format laporan formal/riset).";
             }
         }
 
-        $wordCount = str_word_count($text);
-        if ($wordCount <= 15) {
-            return true;
+        if ($enableThinking) {
+            $aturanKode .= "\n\n[CRITICAL INSTRUCTION - CHAIN OF THOUGHT]: You MUST use the Chain of Thought (CoT) reasoning process. Sebelum memberikan jawaban akhir, kamu WAJIB memecah
+            masalah dan berpikir selangkah demi selangkah (step-by-step).
+            \n1. Chain-of-Thought (CoT) Advanced
+            Untuk SEMUA pertanyaan kompleks (matematika, logika, coding, analisis), WAJIB melakukan reasoning eksplisit:
+            \nParse & deconstruct problem
+            \nIdentify relevant knowledge domains
+            \nApply appropriate methodology/framework
+            \nExecute step-by-step solution
+            \nValidate & cross-check results
+            \nSynthesize final answer dengan konteks user
+
+            \n2. Self-Correction Mechanism
+            Selalu tanyakan diri sendiri: 'Apakah ini sudah benar? Ada sudut pandang lain?' sebelum finalisasi jawaban.
+
+            \n3. Multi-Perspective Analysis
+            Untuk topik kompleks, berikan analisis dari 2-3 sudut pandang berbeda (technical, business, ethical, dll) lalu synthesize.
+            \nLakukan juga langkah ini jika memungkinkan:
+            \n1. Analisis masalahnya secara mendalam.
+            \n2. Evaluasi berbagai kemungkinan pendekatan.
+            \n3. Jabarkan logika penyelesaiannya.
+            \n\nBungkus seluruh proses berpikirmu secara eksklusif di dalam tag <thinking> dan ditutup dengan </thinking>.
+            Setelah tag ditutup, barulah berikan jawaban finalmu kepada user secara rapi.";
         }
-        return false;
+
+        $messages = [];
+
+        // JALUR KHUSUS VISION (Format NVIDIA / OpenAI)
+        if ($inputType['has_image']) {
+            $messages[] = ["role" => "system", "content" => $systemPrompt];
+
+            $contentArray = [
+                ["type" => "text", "text" => $userMessage ?: "Tolong analisis gambar-gambar ini secara detail."]
+            ];
+
+            foreach ($request->image_data_array as $imgBase64) {
+                $contentArray[] = ["type" => "image_url", "image_url" => ["url" => $imgBase64]];
+            }
+
+            $messages[] = ["role" => "user", "content" => $contentArray];
+        }
+        // JALUR GITHUB
+        elseif ($inputType['has_github']) {
+            $messages[] = ["role" => "system", "content" => "Kamu adalah SAHAJA AI, Senior Software Engineer. Jawablah berdasarkan [DATA REPOSITORY] di bawah. Jika tertulis 'SISTEM ERROR', jelaskan error tersebut.\n" . $aturanKode];
+            $messages[] = ["role" => "user", "content" => "[URL]: " . $request->github_repo . "\n\n[DATA REPOSITORY]:\n" . $githubContent . "\n\n[PERTANYAAN USER]: " . $userMessage];
+        }
+        // JALUR CHAT STANDAR (Fast / Smart)
+        else {
+            $messages[] = ["role" => "system", "content" => $systemPrompt . $aturanKode];
+
+            if ($sessionId) {
+                $allChats = Chat::where('session_id', $sessionId)->orderBy('created_at', 'asc')->get();
+                if ($allChats->count() > 0) {
+                    $recentChats = $allChats->slice(-4);
+                    $olderChats = $allChats->slice(-14, 14);
+                    $stopWords = ['dan', 'atau', 'yang', 'di', 'ke', 'dari', 'ini', 'itu', 'untuk', 'dengan', 'apakah', 'bagaimana', 'buatkan', 'tolong', 'saya', 'kamu', 'anda'];
+                    $userWords = array_diff(str_word_count(strtolower($userMessage), 1), $stopWords);
+
+                    foreach ($olderChats as $chat) {
+                        $chatWords = str_word_count(strtolower($chat->user_message . ' ' . $chat->ai_response), 1);
+                        $intersection = array_intersect($userWords, $chatWords);
+
+                        if (count($intersection) >= 2) {
+                            $cleanUserMsg = preg_replace('/🖼️ \[Gambar Terlampir\]\n/', '', $chat->user_message);
+                            $cleanUserMsg = preg_replace('/📦 \[GitHub: .*\]\n/', '', $cleanUserMsg);
+                            $cleanUserMsg = preg_replace('/\[Dokumen \d+: .*?\]\n"""\n.*?\n"""\n\n/s', '[Dokumen Terlampir]', $cleanUserMsg);
+                            $cleanUserMsg = preg_replace('/\[REFERENSI DOKUMEN\]\n"""\n.*?\n"""\n\n/s', "📎 [Dokumen Workspace SAHAJA LLM]\n", $cleanUserMsg);
+
+                            $messages[] = ["role" => "user", "content" => "[Konteks Relevan Masa Lalu]: " . $cleanUserMsg];
+                            $messages[] = ["role" => "assistant", "content" => $chat->ai_response];
+                        }
+                    }
+
+                    foreach ($recentChats as $chat) {
+                        $cleanUserMsg = preg_replace('/🖼️ \[Gambar Terlampir\]\n/', '', $chat->user_message);
+                        $cleanUserMsg = preg_replace('/📦 \[GitHub: .*\]\n/', '', $cleanUserMsg);
+                        $cleanUserMsg = preg_replace('/\[Dokumen \d+: .*?\]\n"""\n.*?\n"""\n\n/s', '[Dokumen Terlampir]', $cleanUserMsg);
+                        $cleanUserMsg = preg_replace('/\[REFERENSI DOKUMEN\]\n"""\n.*?\n"""\n\n/s', "📎 [Dokumen Workspace SAHAJA LLM]\n", $cleanUserMsg);
+
+                        $messages[] = ["role" => "user", "content" => $cleanUserMsg];
+                        $messages[] = ["role" => "assistant", "content" => $chat->ai_response];
+                    }
+                }
+            }
+            $messages[] = ["role" => "user", "content" => $userMessage];
+        }
+
+        return $messages;
+    }
+
+    private function prepareDbMessage(string $userMessage, array $inputType, Request $request): string
+    {
+        $dbUserMessage = $userMessage;
+        if ($inputType['has_image']) {
+            $imgCount = count($request->image_data_array ?? []);
+            $dbUserMessage = "🖼️ [{$imgCount} Gambar Terlampir]\n" . $userMessage;
+        } elseif ($inputType['has_github']) {
+            $repoName = str_replace(['https://github.com/', '.git'], '', rtrim($request->github_repo, '/'));
+            $dbUserMessage = "📦 [GitHub: {$repoName}]\n" . $userMessage;
+        }
+        return $dbUserMessage;
     }
 
     public function renameSession(Request $request, $id)
@@ -438,116 +375,6 @@ class ChatController extends Controller
         return view('public-chat', compact('session', 'chats'));
     }
 
-    // ==========================================
-    // SATPAM GITHUB V6: HYBRID SMART FETCH
-    // ==========================================
-    private function fetchGithubRepoContent($repoUrl, $userPrompt = "")
-    {
-        try {
-            $repoUrl = str_replace('.git', '', trim($repoUrl));
-            $parts = explode('github.com/', $repoUrl);
-            if (count($parts) < 2) return "SISTEM ERROR: Link GitHub tidak valid.";
-
-            $repoPath = explode('/', $parts[1]);
-            if (count($repoPath) < 2) return "SISTEM ERROR: Format repository salah.";
-
-            $owner = $repoPath[0];
-            $repo = $repoPath[1];
-
-            $repoInfo = Http::withOptions(['verify' => config('services.ssl.ca_bundle'), 'timeout' => 10])
-                ->withHeaders(['User-Agent' => 'SAHAJA-AI'])
-                ->get("https://api.github.com/repos/{$owner}/{$repo}");
-            if (!$repoInfo->successful()) {
-                return "SISTEM ERROR: Server GitHub membatasi akses (Limit 60 request/jam). Mohon istirahat sejenak dan coba lagi nanti.";
-            }
-
-            $defaultBranch = $repoInfo->json()['default_branch'] ?? 'main';
-
-            $treeUrl = "https://api.github.com/repos/{$owner}/{$repo}/git/trees/{$defaultBranch}?recursive=1";
-            $treeResponse = Http::withOptions(['verify' => config('services.ssl.ca_bundle'), 'timeout' => 15])
-                ->withHeaders(['User-Agent' => 'SAHAJA-AI'])
-                ->get($treeUrl);
-            if (!$treeResponse->successful()) return "SISTEM ERROR: Gagal membaca struktur folder GitHub.";
-
-            $files = $treeResponse->json()['tree'] ?? [];
-            $blockedFolders = ['vendor/', 'node_modules/', 'storage/', 'public/build/', '.git/', 'tests/'];
-
-            $treeMap = "📂 STRUKTUR FOLDER PROJECT:\n";
-            $coreFiles = [];
-            $priorityFiles = [];
-
-            $cleanPrompt = preg_replace('/[^a-zA-Z0-9]/', ' ', strtolower($userPrompt));
-            $userWords = array_filter(explode(' ', $cleanPrompt), function($word) {
-                return strlen($word) >= 3;
-            });
-
-            foreach ($files as $file) {
-                if ($file['type'] !== 'blob') continue;
-                $path = $file['path'];
-                $isBlocked = false;
-                foreach ($blockedFolders as $blocked) {
-                    if (\Illuminate\Support\Str::startsWith($path, $blocked)) {
-                        $isBlocked = true;
-                        break;
-                    }
-                }
-                if ($isBlocked) continue;
-
-                $extension = pathinfo($path, PATHINFO_EXTENSION);
-                if (\Illuminate\Support\Str::endsWith($path, '.blade.php')) $extension = 'blade.php';
-
-
-                if (in_array(strtolower($extension), ['php', 'blade.php', 'js', 'jsx', 'ts', 'tsx', 'css', 'json', 'md', 'kt', 'java', 'xml', 'gradle', 'swift', 'dart', 'yaml'])) {
-                    $pathLower = strtolower($path);
-                    $treeMap .= "- {$path}\n";
-
-                    if (in_array(basename($pathLower), ['readme.md', 'routes/web.php', 'composer.json', 'package.json', 'build.gradle', 'build.gradle.kts', 'androidmanifest.xml', 'pubspec.yaml'])) {
-                        $coreFiles[] = $path;
-                    }
-
-                    foreach ($userWords as $word) {
-                        if (strpos($pathLower, $word) !== false) {
-                            $priorityFiles[] = $path;
-                            break;
-                        }
-                    }
-                }
-            }
-
-            if (strlen($treeMap) > 3000) {
-                $treeMap = substr($treeMap, 0, 3000) . "\n... [STRUKTUR LAINNYA DISINGKAT]";
-            }
-
-            $filesToFetch = array_merge($priorityFiles, $coreFiles);
-            $filesToFetch = array_unique($filesToFetch);
-            $filesToFetch = array_slice($filesToFetch, 0, 20);
-
-            $megaContent = $treeMap . "\n\n📄 KODE DARI FILE YANG RELEVAN:\n\n";
-            foreach ($filesToFetch as $filePath) {
-                $rawUrl = "https://raw.githubusercontent.com/{$owner}/{$repo}/{$defaultBranch}/{$filePath}";
-                $fileContent = Http::withOptions(['verify' => config('services.ssl.ca_bundle'), 'timeout' => 5])->get($rawUrl);
-
-                if ($fileContent->successful()) {
-                    $content = $fileContent->body();
-                    if (strlen($content) > 45000) {
-                        $content = substr($content, 0, 45000) . "\n... [KODE DIPOTONG UNTUK MENGHEMAT MEMORI]";
-                    }
-                    $megaContent .= "--- FILE: {$filePath} ---\n```\n{$content}\n```\n\n";
-                }
-            }
-
-            return $megaContent;
-        } catch (\Exception $e) {
-            Log::error('GitHub Scanner Error', [
-                'message' => $e->getMessage(),
-                'file'    => $e->getFile(),
-                'line'    => $e->getLine(),
-                'repo'    => $repoUrl ?? null,
-            ]);
-            return "SISTEM ERROR: Gagal membaca isi file dari repository GitHub.";
-        }
-    }
-    // FUNGSI PENERIMA UMPAN BALIK
     public function storeFeedback(Request $request)
     {
         $request->validate([
@@ -564,232 +391,30 @@ class ChatController extends Controller
             'message' => 'Umpan balik berhasil dikirim!'
         ]);
     }
-    // ==========================================
-    // FUNGSI WEB SEARCH (TAVILY GROUNDING)
-    // ==========================================
-    private function fetchTavilyContext($query)
-    {
-        try {
-            $response = Http::withOptions(['verify' => config('services.ssl.ca_bundle'), 'timeout' => 10])->post('https://api.tavily.com/search', [
-                'api_key' => config('services.tavily.key'),
-                'query' => $query,
-                'search_depth' => 'basic',
-                'include_answer' => false,
-                'max_results' => 5,
-            ]);
-
-            if ($response->successful()) {
-                $results = $response->json()['results'] ?? [];
-                if (count($results) > 0) {
-                    $context = "REFERENSI WEB REAL-TIME:\n";
-                    foreach ($results as $res) {
-                        $context .= "- " . ($res['title'] ?? 'Artikel') . ": " . ($res['content'] ?? '') . "\n";
-                    }
-                    return $context;
-                }
-            }
-        } catch (\Exception $e) {
-            // Jika Tavily error/timeout, abaikan saja agar AI tetap bisa menjawab normal
-            return "";
-        }
-        return "";
-    }
-    // ==========================================
-    // FITUR SAHAJA IMAGEN (HYBRID CLOUDFLARE)
-    // ==========================================
-    private function generateSahajaImagen($prompt, $sessionId, $userMessage, $imageArray = null)
-    {
-        try {
-            // 1. Bersihkan prompt
-            $cleanPrompt = trim(str_ireplace('/imagen', '', $prompt));
-            if (empty($cleanPrompt)) {
-                $cleanPrompt = "A beautiful futuristic city landscape";
-            }
-
-            // ========================================================
-            // ROBOT OTOMATIS
-            // ========================================================
-            $destinationPath = public_path('uploads/imagen');
-            if (file_exists($destinationPath)) {
-                $files = glob($destinationPath . '/*');
-                $now   = time();
-                foreach ($files as $file) {
-                    if (is_file($file)) {
-                        if ($now - filemtime($file) >= 60 * 60 * 24) {
-                            unlink($file);
-                        }
-                    }
-                }
-            }
-
-            // 2. LOGIKA ROUTING HYBRID
-            if (!empty($imageArray) && count($imageArray) > 0) {
-
-                // ========================================================
-                // JALUR 1: MODE EDIT GAMBAR (Tetap Pakai FreeTheAI)
-                // ========================================================
-                $apiKey = config('services.freetheai.key');
-                if (empty($apiKey)) throw new \Exception("API Key belum terpasang!");
-
-                $baseUrl = rtrim(config('services.freetheai.base_url'), '/');
-                $invokeUrl = $baseUrl . '/images/edits';
-                $modelName = config('services.freetheai.model');
-
-                $payload = [
-                    'model' => $modelName,
-                    'prompt' => $cleanPrompt,
-                    'image' => $imageArray[0]
-                ];
-
-                $response = Http::withHeaders([
-                    'Authorization' => 'Bearer ' . $apiKey,
-                    'Accept' => 'application/json',
-                    'Content-Type' => 'application/json'
-                ])
-                ->withOptions(['verify' => config('services.ssl.ca_bundle')])
-                ->timeout(120)
-                ->post($invokeUrl, $payload);
-
-                if (!$response->successful()) {
-                    throw new \Exception("FreeTheAI Edit Server Error: " . $response->status());
-                }
-
-                $data = $response->json();
-                $base64 = $data['data'][0]['b64_json'] ?? null;
-                $imageUrl = $data['data'][0]['url'] ?? null;
-
-                if ($base64) {
-                    $imageName = 'imagen_edit_' . time() . '_' . rand(1000, 9999) . '.jpg';
-                    if (!file_exists($destinationPath)) mkdir($destinationPath, 0755, true);
-                    file_put_contents($destinationPath . '/' . $imageName, base64_decode($base64));
-                    $publicUrl = url('uploads/imagen/' . $imageName);
-                    $markdownImage = "![Hasil Edit Imagen](" . $publicUrl . ")";
-                } elseif ($imageUrl) {
-                    $markdownImage = "![Hasil Edit Imagen](" . $imageUrl . ")";
-                } else {
-                    throw new \Exception("Gagal membaca struktur respons edit dari FreeTheAI.");
-                }
-
-                $aiReply = "**Sahaja Imagen** berhasil mengedit gambar anda!\n\n" . $markdownImage;
-                $modelUsedLabel = 'Sahaja Imagen';
-
-            } else {
-
-                // ========================================================
-                // JALUR 2: MODE GENERATE (CLOUDFLARE - FLUX 1 SCHNELL)
-                // ========================================================
-                $apiToken = config('services.cloudflare.api_token');
-                $cfUrl = config('services.cloudflare.imagen_endpoint');
-
-                if (empty($apiToken) || empty($cfUrl)) {
-                    throw new \Exception("Konfigurasi Cloudflare (Token / Endpoint Imagen) di .env belum lengkap!");
-                }
-
-                // Tembak Server Cloudflare dengan format JSON standar (tanpa multipart)
-                $response = Http::withToken($apiToken)
-                    ->withOptions(['verify' => config('services.ssl.ca_bundle')])
-                    ->timeout(120)
-                    ->post($cfUrl, [
-                        'prompt' => $cleanPrompt
-                    ]);
-
-                if (!$response->successful()) {
-                    throw new \Exception("Server AI Error. Status: " . $response->status() . " | " . $response->body());
-                }
-
-                // DETEKTOR PINTAR: Cek tipe data balasan Cloudflare
-                $contentType = $response->header('Content-Type');
-                $imageContent = null;
-
-                if (str_contains($contentType, 'application/json')) {
-                    $data = $response->json();
-                    if (isset($data['result']['image'])) {
-                        $imageContent = base64_decode($data['result']['image']);
-                    } else {
-                        throw new \Exception("Server membalas dengan JSON yang bukan gambar: " . json_encode($data));
-                    }
-                } else {
-                    $imageContent = $response->body();
-                }
-
-                $imageName = 'cf_flux_' . time() . '_' . rand(1000, 9999) . '.png';
-
-                if (!file_exists($destinationPath)) mkdir($destinationPath, 0755, true);
-
-                // Simpan file ke server AlwaysData (Aman karena ada robot penyapu)
-                file_put_contents($destinationPath . '/' . $imageName, $imageContent);
-                $publicUrl = url('uploads/imagen/' . $imageName);
-
-                // FIX BUG MARKDOWN
-                $safeAltText = htmlspecialchars(substr(str_replace(["\r", "\n", "[", "]"], ' ', $cleanPrompt), 0, 40));
-
-                $markdownImage = "![" . $safeAltText . "...](" . $publicUrl . ")";
-                $aiReply = "**Sahaja Imagen** berhasil membuat gambar anda!\n\n" . $markdownImage;
-                $modelUsedLabel = 'Sahaja Imagen (CF Flux)';
-            }
-
-            // ========================================================
-            // PENYIMPANAN KE DATABASE CHAT
-            // ========================================================
-            Chat::create([
-                'session_id' => $sessionId,
-                'user_message' => $userMessage,
-                'ai_response' => $aiReply,
-                'mode' => 'imagen',
-                'provider' => str_contains($modelUsedLabel, 'CF') ? 'cloudflare' : 'freetheai',
-                'model' => $modelUsedLabel,
-            ]);
-
-            return response()->json([
-                'session_id' => $sessionId,
-                'user_message' => $userMessage,
-                'ai_response' => $aiReply,
-                'model_used' => $modelUsedLabel
-            ]);
-
-        } catch (\Exception $e) {
-            Log::error('Sahaja Imagen Error', [
-                'message' => $e->getMessage(),
-                'file'    => $e->getFile(),
-                'line'    => $e->getLine(),
-                'user_id' => Auth::id(),
-                'prompt'  => $cleanPrompt ?? null,
-            ]);
-
-            $errorMsg = "**Sahaja Imagen Mengalami Kendala Teknis**\n\n"
-                      . "Layanan gambar sedang sibuk. Silakan coba lagi dalam beberapa saat.";
-            return response()->json([
-                'session_id' => $sessionId,
-                'user_message' => $userMessage,
-                'ai_response' => $errorMsg,
-                'model_used' => 'Sahaja Imagen (Error)'
-            ]);
-        }
-    }
 
     public function exportSession($id)
     {
         $userId = Auth::id();
         $format = request()->input('format', 'json'); // 'json' atau 'markdown'
-        
+
         $session = Session::where('id', $id)
             ->where('user_id', $userId)
             ->with(['chats' => function ($q) {
                 $q->orderBy('created_at', 'asc');
             }])
             ->firstOrFail();
-        
+
         $timestamp = now()->format('Y-m-d_H-i-s');
         $safeTitle = Str::slug($session->title ?? 'chat', '_', 'id');
         $filename = "sahaja_chat_{$safeTitle}_{$timestamp}";
-        
+
         if ($format === 'markdown') {
             return $this->exportSessionAsMarkdown($session, $filename);
         }
-        
+
         return $this->exportSessionAsJson($session, $filename);
     }
-    
+
     private function exportSessionAsJson($session, $filename)
     {
         $data = [
@@ -813,12 +438,12 @@ class ChatController extends Controller
                 ];
             }),
         ];
-        
+
         return response()
             ->json($data, 200, [], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
             ->header('Content-Disposition', "attachment; filename=\"{$filename}.json\"");
     }
-    
+
     private function exportSessionAsMarkdown($session, $filename)
     {
         $md = "# SAHAJA AI — Percakapan\n\n";
@@ -827,15 +452,15 @@ class ChatController extends Controller
         $md .= "**Total Pesan:** " . $session->chats->count() . "  \n";
         $md .= "**Diekspor:** " . now()->format('d F Y, H:i') . "\n\n";
         $md .= "---\n\n";
-        
+
         foreach ($session->chats as $index => $chat) {
             $num = $index + 1;
-            
+
             // User message
             $md .= "## 💬 Pesan #{$num} — Anda\n\n";
             $md .= "_" . $chat->created_at->format('d M Y, H:i') . "_\n\n";
             $md .= $chat->user_message . "\n\n";
-            
+
             // AI response
             $md .= "### 🤖 SAHAJA AI\n\n";
             if ($chat->mode) {
@@ -846,9 +471,9 @@ class ChatController extends Controller
             $md .= $chat->ai_response . "\n\n";
             $md .= "---\n\n";
         }
-        
+
         $md .= "\n_Diekspor dari SAHAJA AI — https://sahaja-ai.my.id_\n";
-        
+
         return response($md, 200, [
             'Content-Type' => 'text/markdown; charset=UTF-8',
             'Content-Disposition' => "attachment; filename=\"{$filename}.md\"",
@@ -858,14 +483,14 @@ class ChatController extends Controller
     public function exportAllSessions()
     {
         $userId = Auth::id();
-        
+
         $sessions = Session::where('user_id', $userId)
             ->with(['chats' => function ($q) {
                 $q->orderBy('created_at', 'asc');
             }])
             ->orderBy('updated_at', 'desc')
             ->get();
-        
+
         $data = [
             'exported_at' => now()->toIso8601String(),
             'app' => 'SAHAJA AI',
@@ -892,9 +517,9 @@ class ChatController extends Controller
                 ];
             }),
         ];
-        
+
         $filename = 'sahaja_all_chats_' . now()->format('Y-m-d_H-i-s') . '.json';
-        
+
         return response()
             ->json($data, 200, [], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
             ->header('Content-Disposition', "attachment; filename=\"{$filename}\"");
