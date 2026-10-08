@@ -206,6 +206,20 @@
             <div id="tab-data" class="tab-pane">
                 <h3 style="margin-bottom: 20px;">Data</h3>
 
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <div>
+                        <strong style="display: block;">Export semua obrolan</strong>
+                        <span style="font-size: 0.8rem; color: var(--text-secondary);">
+                            Download semua percakapan Anda sebagai file JSON.
+                        </span>
+                    </div>
+                    <button class="option-item" 
+                        style="width: auto; padding: 8px 15px; border: 1px solid var(--border-medium); border-radius: var(--radius-md);"
+                        onclick="exportAllChats()">
+                        <i class="fas fa-download"></i> Export All
+                    </button>
+                </div>
+
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <div>
                         <strong style="display: block;">Hapus semua obrolan</strong>

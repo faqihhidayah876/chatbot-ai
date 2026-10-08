@@ -46,11 +46,16 @@ Route::middleware('auth')->group(function () {
     Route::put('/session/{id}/rename', [ChatController::class, 'renameSession'])->name('session.rename');
     Route::delete('/session/{id}/delete', [ChatController::class, 'deleteSession'])->name('session.delete');
     Route::delete('/sahaja-llm/document/{id}', [SahajaLlmController::class, 'deleteDocument'])->name('sahaja-llm.delete');
+
+    // Export routes
+    Route::get('/session/{id}/export', [ChatController::class, 'exportSession'])->name('chat.export');
+    Route::get('/export/all', [ChatController::class, 'exportAllSessions'])->name('chat.exportAll');
 });
 
 // 5. Khusus Admin
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [AdminController::class, 'index'])->name('dashboard');
+    Route::get('/analytics', [AdminController::class, 'analytics'])->name('analytics');
     Route::delete('/user/{id}', [AdminController::class, 'deleteUser'])->name('deleteUser');
     Route::delete('/user/{id}/chats', [AdminController::class, 'clearUserChats'])->name('clearChats');
 });

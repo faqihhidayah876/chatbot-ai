@@ -287,6 +287,123 @@ button {
   padding: 16px 8px 8px;
 }
 
+/* ===== HISTORY SEARCH ===== */
+.history-search {
+  position: relative;
+  margin: 8px 4px 8px;
+  display: flex;
+  align-items: center;
+}
+
+.history-search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 13px;
+  color: var(--text-tertiary);
+  pointer-events: none;
+  transition: color 150ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.history-search-input {
+  width: 100%;
+  height: 36px;
+  padding: 0 32px 0 34px;
+  background: var(--bg-base);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-size: 13px;
+  font-family: var(--font-sans);
+  outline: none;
+  transition: 
+    border-color 150ms cubic-bezier(0.4, 0, 0.2, 1),
+    background 150ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.history-search-input::placeholder {
+  color: var(--text-tertiary);
+}
+
+.history-search-input:focus {
+  border-color: var(--accent);
+  background: var(--bg-subtle);
+}
+
+.history-search-input:focus + .history-search-icon,
+.history-search:focus-within .history-search-icon {
+  color: var(--accent);
+}
+
+.history-search-clear {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--text-tertiary);
+  cursor: pointer;
+  font-size: 11px;
+  transition: 
+    color 150ms cubic-bezier(0.4, 0, 0.2, 1),
+    background 150ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.history-search-clear:hover {
+  color: var(--text-primary);
+  background: var(--bg-hover);
+}
+
+/* ===== HISTORY EMPTY STATE ===== */
+.history-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  text-align: center;
+  color: var(--text-tertiary);
+}
+
+.history-empty i {
+  font-size: 24px;
+  margin-bottom: 12px;
+  opacity: 0.4;
+}
+
+.history-empty p {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+
+.history-empty span {
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+
+/* ===== HISTORY ITEM HIGHLIGHT (matched text) ===== */
+.history-text mark {
+  background: var(--accent-subtle);
+  color: var(--accent);
+  padding: 0 2px;
+  border-radius: 3px;
+}
+
+/* ===== SIDEBAR COLLAPSED STATE ===== */
+.sidebar.collapsed .history-search {
+  display: none;
+}
+
 .history-item-wrapper {
   position: relative;
   margin-bottom: 2px;
@@ -606,10 +723,37 @@ button {
   color: var(--text-primary);
 }
 
-/* Settings container */
-.settings-container {
+/* Settings & Header actions */
+.settings-container,
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
   position: relative;
   z-index: 200;
+}
+
+.export-dropdown-wrapper {
+  position: relative;
+}
+
+.header-export-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 220px;
+  background: var(--bg-overlay);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-md);
+  padding: 4px;
+  box-shadow: var(--shadow-lg);
+  z-index: 100;
+  display: none;
+}
+
+.header-export-menu.show {
+  display: block;
+  animation: menuFadeIn 150ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .icon-btn {
@@ -2321,4 +2465,28 @@ html.light-mode .markdown-body pre::-webkit-scrollbar-thumb:hover {
 body.light-mode .markdown-body pre,
 html.light-mode .markdown-body pre {
   scrollbar-color: rgba(0, 0, 0, 0.15) transparent;
+}
+
+/* ===== TYPEWRITER CURSOR ===== */
+.typewriter-cursor {
+  display: inline-block;
+  color: var(--accent);
+  font-weight: 400;
+  margin-left: 2px;
+  animation: typewriterBlink 1s step-end infinite;
+  user-select: none;
+  pointer-events: none;
+}
+
+@keyframes typewriterBlink {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0; }
+}
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .typewriter-cursor {
+    animation: none;
+    opacity: 0.6;
+  }
 }

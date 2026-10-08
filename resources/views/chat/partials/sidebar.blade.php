@@ -30,35 +30,67 @@
     {{-- History --}}
     <div class="history-container">
         <div class="history-label text-label">Riwayat</div>
-        @foreach ($sessions as $session)
-            <div class="history-item-wrapper{{ isset($currentSession) && $currentSession->id == $session->id ? ' active' : '' }}"
-                id="session-{{ $session->id }}">
-                <a href="{{ route('chat.show', $session->id) }}"
-                    class="history-item"
-                    aria-label="{{ $session->title ?? 'Chat Baru' }}">
-                    <div class="history-link">
-                        <span class="history-text text-label"
-                            id="title-{{ $session->id }}">{{ $session->title ?? 'Chat Baru' }}</span>
+        
+        {{-- Search Input --}}
+        <div class="history-search">
+            <i class="fas fa-magnifying-glass history-search-icon" aria-hidden="true"></i>
+            <input 
+                type="text" 
+                id="historySearchInput" 
+                class="history-search-input"
+                placeholder="Cari percakapan..." 
+                autocomplete="off"
+                aria-label="Cari riwayat percakapan">
+            <button 
+                type="button" 
+                id="historySearchClear"
+                class="history-search-clear"
+                aria-label="Hapus pencarian"
+                style="display: none;">
+                <i class="fas fa-xmark"></i>
+            </button>
+        </div>
+        
+        {{-- Container untuk history items --}}
+        <div class="history-items" id="historyItems">
+            @foreach ($sessions as $session)
+                <div class="history-item-wrapper{{ isset($currentSession) && $currentSession->id == $session->id ? ' active' : '' }}"
+                    id="session-{{ $session->id }}"
+                    data-title="{{ strtolower($session->title ?? 'Chat Baru') }}">
+                    <a href="{{ route('chat.show', $session->id) }}"
+                        class="history-item"
+                        aria-label="{{ $session->title ?? 'Chat Baru' }}">
+                        <div class="history-link">
+                            <span class="history-text text-label"
+                                id="title-{{ $session->id }}">{{ $session->title ?? 'Chat Baru' }}</span>
+                        </div>
+                    </a>
+                    <button class="options-btn" onclick="toggleMenu(event, 'menu-{{ $session->id }}')"
+                        aria-label="Opsi percakapan">
+                        <i class="fas fa-ellipsis" style="font-size: 14px;"></i>
+                    </button>
+                    <div class="options-menu" id="menu-{{ $session->id }}">
+                        <button class="option-item" onclick="shareSession({{ $session->id }})">
+                            <i class="fas fa-share-nodes"></i> Bagikan
+                        </button>
+                        <button class="option-item" onclick="renameSession({{ $session->id }})">
+                            <i class="fas fa-pen"></i> Ganti Nama
+                        </button>
+                        <div class="dropdown-divider" style="margin: 4px 0; border-top: 1px solid var(--border-subtle);"></div>
+                        <button class="option-item delete" onclick="deleteSession({{ $session->id }})">
+                            <i class="fas fa-trash-can"></i> Hapus
+                        </button>
                     </div>
-                </a>
-                <button class="options-btn" onclick="toggleMenu(event, 'menu-{{ $session->id }}')"
-                    aria-label="Opsi percakapan">
-                    <i class="fas fa-ellipsis" style="font-size: 14px;"></i>
-                </button>
-                <div class="options-menu" id="menu-{{ $session->id }}">
-                    <button class="option-item" onclick="shareSession({{ $session->id }})">
-                        <i class="fas fa-share-nodes"></i> Bagikan
-                    </button>
-                    <button class="option-item" onclick="renameSession({{ $session->id }})">
-                        <i class="fas fa-pen"></i> Ganti Nama
-                    </button>
-                    <div class="dropdown-divider" style="margin: 4px 0; border-top: 1px solid var(--border-subtle);"></div>
-                    <button class="option-item delete" onclick="deleteSession({{ $session->id }})">
-                        <i class="fas fa-trash-can"></i> Hapus
-                    </button>
                 </div>
-            </div>
-        @endforeach
+            @endforeach
+        </div>
+        
+        {{-- Empty state (muncul kalau tidak ada hasil) --}}
+        <div class="history-empty" id="historyEmpty" style="display: none;">
+            <i class="fas fa-magnifying-glass"></i>
+            <p>Tidak ada percakapan yang cocok</p>
+            <span>Coba kata kunci lain</span>
+        </div>
     </div>
 
     {{-- Product Banner --}}

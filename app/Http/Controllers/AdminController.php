@@ -79,4 +79,87 @@ class AdminController extends Controller
 
         return redirect()->back()->with('success', 'Riwayat obrolan pengguna berhasil dibersihkan.');
     }
+
+    public function analytics()
+    {
+        // 1. Distribusi mode AI (untuk pie chart)
+        $modeDistribution = \App\Models\Chat::query()
+            ->whereNotNull('mode')
+            ->select('mode', \DB::raw('count(*) as total'))
+            ->groupBy('mode')
+            ->orderByDesc('total')
+            ->get();
+
+        // 2. Top 5 model populer (untuk bar chart)
+        $topModels = \App\Models\Chat::query()
+            ->whereNotNull('model')
+            ->where('created_at', '>=', now()->subDays(30))
+            ->select('model', 'provider', \DB::raw('count(*) as total'))
+            ->groupBy('model', 'provider')
+            ->orderByDesc('total')
+            ->limit(5)
+            ->get();
+
+        // 3. Aktivitas chat 30 hari terakhir (untuk line chart)
+        $dailyActivity = \App\Models\Chat::query()
+            ->where('created_at', '>=', now()->subDays(30))
+            ->select(
+                \DB::raw('DATE(created_at) as date'),
+                \DB::raw('count(*) as total')
+            )
+            ->groupBy('date')
+            ->orderBy('date')
+            ->get()
+            ->keyBy('date');
+
+        // Isi tanggal yang kosong dengan 0
+        $chartLabels = [];
+        $chartData = [];
+        for ($i = 29; $i >= 0; $i--) {
+            $date = now()->subDays($i)->format('Y-m-d');
+            $chartLabels[] = now()->subDays($i)->format('d M');
+            $chartData[] = $dailyActivity->get($date)->total ?? 0;
+        }
+
+        // 4. Stat cards
+        $stats = [
+            'chats_today' => \App\Models\Chat::whereDate('created_at', today())->count(),
+            'chats_week' => \App\Models\Chat::where('created_at', '>=', now()->startOfWeek())->count(),
+            'chats_month' => \App\Models\Chat::where('created_at', '>=', now()->startOfMonth())->count(),
+            'active_users_week' => \App\Models\Chat::where('created_at', '>=', now()->subDays(7))
+                ->join('chat_sessions', 'chats.session_id', '=', 'chat_sessions.id')
+                ->distinct('chat_sessions.user_id')
+                ->count('chat_sessions.user_id'),
+        ];
+
+        // 5. Top 10 user paling aktif (30 hari terakhir)
+        $topUsers = \App\Models\User::query()
+            ->where('role', 'user')
+            ->join('chat_sessions', 'users.id', '=', 'chat_sessions.user_id')
+            ->join('chats', 'chats.session_id', '=', 'chat_sessions.id')
+            ->where('chats.created_at', '>=', now()->subDays(30))
+            ->select(
+                'users.id',
+                'users.name',
+                'users.email',
+                'users.avatar',
+                \DB::raw('count(chats.id) as chat_count')
+            )
+            ->groupBy('users.id', 'users.name', 'users.email', 'users.avatar')
+            ->orderByDesc('chat_count')
+            ->limit(10)
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'mode_distribution' => $modeDistribution,
+            'top_models' => $topModels,
+            'daily_activity' => [
+                'labels' => $chartLabels,
+                'data' => $chartData,
+            ],
+            'stats' => $stats,
+            'top_users' => $topUsers,
+        ]);
+    }
 }

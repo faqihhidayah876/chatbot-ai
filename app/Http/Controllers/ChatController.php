@@ -766,4 +766,137 @@ class ChatController extends Controller
             ]);
         }
     }
+
+    public function exportSession($id)
+    {
+        $userId = Auth::id();
+        $format = request()->input('format', 'json'); // 'json' atau 'markdown'
+        
+        $session = Session::where('id', $id)
+            ->where('user_id', $userId)
+            ->with(['chats' => function ($q) {
+                $q->orderBy('created_at', 'asc');
+            }])
+            ->firstOrFail();
+        
+        $timestamp = now()->format('Y-m-d_H-i-s');
+        $safeTitle = Str::slug($session->title ?? 'chat', '_', 'id');
+        $filename = "sahaja_chat_{$safeTitle}_{$timestamp}";
+        
+        if ($format === 'markdown') {
+            return $this->exportSessionAsMarkdown($session, $filename);
+        }
+        
+        return $this->exportSessionAsJson($session, $filename);
+    }
+    
+    private function exportSessionAsJson($session, $filename)
+    {
+        $data = [
+            'exported_at' => now()->toIso8601String(),
+            'app' => 'SAHAJA AI',
+            'version' => '5.0',
+            'session' => [
+                'title' => $session->title,
+                'created_at' => $session->created_at->toIso8601String(),
+                'updated_at' => $session->updated_at->toIso8601String(),
+                'message_count' => $session->chats->count(),
+            ],
+            'messages' => $session->chats->map(function ($chat) {
+                return [
+                    'timestamp' => $chat->created_at->toIso8601String(),
+                    'user_message' => $chat->user_message,
+                    'ai_response' => $chat->ai_response,
+                    'mode' => $chat->mode,
+                    'provider' => $chat->provider,
+                    'model' => $chat->model,
+                ];
+            }),
+        ];
+        
+        return response()
+            ->json($data, 200, [], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
+            ->header('Content-Disposition', "attachment; filename=\"{$filename}.json\"");
+    }
+    
+    private function exportSessionAsMarkdown($session, $filename)
+    {
+        $md = "# SAHAJA AI — Percakapan\n\n";
+        $md .= "**Judul:** " . ($session->title ?? 'Tanpa Judul') . "  \n";
+        $md .= "**Dibuat:** " . $session->created_at->format('d F Y, H:i') . "  \n";
+        $md .= "**Total Pesan:** " . $session->chats->count() . "  \n";
+        $md .= "**Diekspor:** " . now()->format('d F Y, H:i') . "\n\n";
+        $md .= "---\n\n";
+        
+        foreach ($session->chats as $index => $chat) {
+            $num = $index + 1;
+            
+            // User message
+            $md .= "## 💬 Pesan #{$num} — Anda\n\n";
+            $md .= "_" . $chat->created_at->format('d M Y, H:i') . "_\n\n";
+            $md .= $chat->user_message . "\n\n";
+            
+            // AI response
+            $md .= "### 🤖 SAHAJA AI\n\n";
+            if ($chat->mode) {
+                $modeLabel = ucfirst($chat->mode);
+                $modelLabel = $chat->model ?? 'unknown';
+                $md .= "_Mode: **{$modeLabel}** | Model: `{$modelLabel}`_\n\n";
+            }
+            $md .= $chat->ai_response . "\n\n";
+            $md .= "---\n\n";
+        }
+        
+        $md .= "\n_Diekspor dari SAHAJA AI — https://sahaja-ai.my.id_\n";
+        
+        return response($md, 200, [
+            'Content-Type' => 'text/markdown; charset=UTF-8',
+            'Content-Disposition' => "attachment; filename=\"{$filename}.md\"",
+        ]);
+    }
+
+    public function exportAllSessions()
+    {
+        $userId = Auth::id();
+        
+        $sessions = Session::where('user_id', $userId)
+            ->with(['chats' => function ($q) {
+                $q->orderBy('created_at', 'asc');
+            }])
+            ->orderBy('updated_at', 'desc')
+            ->get();
+        
+        $data = [
+            'exported_at' => now()->toIso8601String(),
+            'app' => 'SAHAJA AI',
+            'version' => '5.0',
+            'total_sessions' => $sessions->count(),
+            'total_messages' => $sessions->sum(function ($s) {
+                return $s->chats->count();
+            }),
+            'sessions' => $sessions->map(function ($session) {
+                return [
+                    'title' => $session->title,
+                    'created_at' => $session->created_at->toIso8601String(),
+                    'updated_at' => $session->updated_at->toIso8601String(),
+                    'messages' => $session->chats->map(function ($chat) {
+                        return [
+                            'timestamp' => $chat->created_at->toIso8601String(),
+                            'user_message' => $chat->user_message,
+                            'ai_response' => $chat->ai_response,
+                            'mode' => $chat->mode,
+                            'provider' => $chat->provider,
+                            'model' => $chat->model,
+                        ];
+                    }),
+                ];
+            }),
+        ];
+        
+        $filename = 'sahaja_all_chats_' . now()->format('Y-m-d_H-i-s') . '.json';
+        
+        return response()
+            ->json($data, 200, [], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
+            ->header('Content-Disposition', "attachment; filename=\"{$filename}\"");
+    }
 }

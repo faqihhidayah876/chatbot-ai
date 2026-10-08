@@ -9,6 +9,8 @@ if (typeof marked !== 'undefined') {
 let currentSessionId = "{{ $currentSession ? $currentSession->id : '' }}";
 let currentController = null;
 let lastUserMessage = "";
+let isUserAtBottom = true; // Track apakah user di posisi bawah
+let autoScrollEnabled = true; // Flag untuk enable/disable auto-scroll
 
 let attachedFiles = []; let fileIdCounter = 0; let currentGithubRepo = "";
 let pendingAvatarBase64 = null; let targetActionId = null; let targetActionType = '';
@@ -71,7 +73,15 @@ async function executeRename() {
     if(!newName) return showToast("Nama tidak boleh kosong", "error");
     try {
         await fetch(`/session/${targetActionId}/rename`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken }, body: JSON.stringify({ title: newName }) });
-        document.getElementById(`title-${targetActionId}`).innerText = newName;
+        const titleEl = document.getElementById(`title-${targetActionId}`);
+        if (titleEl) {
+            titleEl.innerText = newName;
+            titleEl.dataset.originalText = newName;
+        }
+        const sessionWrapper = document.getElementById(`session-${targetActionId}`);
+        if (sessionWrapper) {
+            sessionWrapper.dataset.title = newName.toLowerCase();
+        }
         closeCustomModal('renameRoomModal'); showToast("Nama berhasil diubah", "success");
     } catch(e) { showToast("Gagal mengganti nama", "error"); }
 }
@@ -413,6 +423,10 @@ async function sendMessage() {
     appendMessage('user', displayMessage);
     formatAttachmentIcons();
 
+    // Force scroll ke bawah setelah user kirim pesan
+    isUserAtBottom = true;
+    smartScrollToBottom(true);
+
     // 5. SIAPKAN PAYLOAD UNTUK LARAVEL (ANTI-GAGAL)
     const maxTokensEl = document.getElementById('maxTokensInput');
     const thinkingEl = document.getElementById('enableThinkingInput');
@@ -444,7 +458,8 @@ async function sendMessage() {
         if (currentGithubRepo) mode = 'github';
     }
 
-    const loadingId = appendLoadingWithMode(mode); scrollToBottom();
+    const loadingId = appendLoadingWithMode(mode);
+    smartScrollToBottom(true); // force scroll untuk loading
     removeFile();
     if (currentController) currentController.abort(); 
     currentController = new AbortController();
@@ -493,10 +508,35 @@ async function sendMessage() {
             }
             // else → default: Mode Cepat
 
-            aiMessageDiv.innerHTML = `<div class="message-avatar ai-avatar-msg" style="background: transparent; padding: 0;"><img src="https://i.ibb.co.com/jZZ0648R/Logo-SAHAJA-AI.png" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;"></div><div class="message-content"><div class="mode-badge ${finalBadgeClass}" style="${extraStyle}">${finalModelLabel}</div><div class="message-bubble markdown-body"></div><div class="ai-actions" style="position: relative; display: flex; gap: 5px; align-items: center;"><button class="action-btn" onclick="copyText(this)"><i class="far fa-copy"></i> Salin</button><div class="export-dropdown-container"><button class="action-btn" onclick="toggleExportMenu(this)"><i class="fas fa-ellipsis-v"></i></button><div class="export-menu" style="display: none; position: absolute; bottom: 100%; left: 0; background: var(--sidebar-bg); border: 1px solid var(--glass-border); border-radius: 8px; padding: 5px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); z-index: 50; width: 140px; margin-bottom: 5px;"><div class="option-item" style="font-size: 0.8rem; padding: 6px 10px;" onclick="exportToDoc(this)"><i class="fas fa-file-word" style="color: #3b82f6;"></i> Unduh DOCS</div></div></div></div></div>`;
+            aiMessageDiv.innerHTML = `<div class="message-avatar ai-avatar-msg" style="background: transparent; padding: 0;"><img src="https://i.ibb.co.com/jZZ0648R/Logo-SAHAJA-AI.png" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;"></div><div class="message-content"><div class="mode-badge ${finalBadgeClass}" style="${extraStyle}">${finalModelLabel}</div><div class="message-bubble markdown-body"></div><div class="ai-actions" style="position: relative; display: flex; gap: 5px; align-items: center; opacity: 0; transition: opacity 200ms ease;"><button class="action-btn" onclick="copyText(this)"><i class="far fa-copy"></i> Salin</button><div class="export-dropdown-container"><button class="action-btn" onclick="toggleExportMenu(this)"><i class="fas fa-ellipsis-v"></i></button><div class="export-menu" style="display: none; position: absolute; bottom: 100%; left: 0; background: var(--sidebar-bg); border: 1px solid var(--glass-border); border-radius: 8px; padding: 5px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); z-index: 50; width: 140px; margin-bottom: 5px;"><div class="option-item" style="font-size: 0.8rem; padding: 6px 10px;" onclick="exportToDoc(this)"><i class="fas fa-file-word" style="color: #3b82f6;"></i> Unduh DOCS</div></div></div></div></div>`;
             loadingBubble.parentNode.replaceChild(aiMessageDiv, loadingBubble);
 
-            const bubble = aiMessageDiv.querySelector('.message-bubble'); if (bubble) animateGeminiStyle(bubble, data.ai_response); scrollToBottom();
+            const bubble = aiMessageDiv.querySelector('.message-bubble');
+            const actions = aiMessageDiv.querySelector('.ai-actions');
+            if (bubble) {
+                typewriterResponse(bubble, data.ai_response, () => {
+                    addCopyButtonsToCodeBlocks();
+                    processMermaidDiagrams(bubble);
+                    if (window.renderMathInElement) {
+                        window.renderMathInElement(bubble, {
+                            delimiters: [
+                                { left: '$$', right: '$$', display: true },
+                                { left: '$', right: '$', display: false }
+                            ],
+                            throwOnError: false
+                        });
+                    }
+                    if (isUserAtBottom) {
+                        smartScrollToBottom();
+                    }
+                    if (actions) {
+                        actions.style.opacity = '1';
+                    }
+                });
+            }
+            if (isUserAtBottom) {
+                smartScrollToBottom();
+            }
         }
 
         // Update URL & sidebar jika ini session baru
@@ -573,6 +613,7 @@ function addSessionToSidebar(sessionId, title) {
     const wrapper = document.createElement('div');
     wrapper.className = 'history-item-wrapper';
     wrapper.id = `session-${sessionId}`;
+    wrapper.dataset.title = (displayTitle || 'Chat Baru').toLowerCase();
     wrapper.innerHTML = `
         <a href="/chat/${sessionId}" class="history-item" aria-label="${displayTitle}">
             <div class="history-link">
@@ -597,12 +638,27 @@ function addSessionToSidebar(sessionId, title) {
         </div>
     `;
 
-    // Sisipkan di paling atas daftar riwayat (setelah label Riwayat jika ada)
-    const label = container.querySelector('.history-label');
-    if (label && label.nextSibling) {
-        container.insertBefore(wrapper, label.nextSibling);
+    // Sisipkan di paling atas daftar riwayat (di dalam #historyItems jika ada)
+    const historyItemsContainer = document.getElementById('historyItems');
+    if (historyItemsContainer) {
+        historyItemsContainer.insertBefore(wrapper, historyItemsContainer.firstChild);
     } else {
-        container.insertBefore(wrapper, container.firstChild);
+        const label = container.querySelector('.history-label');
+        if (label && label.nextSibling) {
+            container.insertBefore(wrapper, label.nextSibling);
+        } else {
+            container.insertBefore(wrapper, container.firstChild);
+        }
+    }
+
+    // Cek apakah sedang ada filter aktif
+    const searchQuery = document.getElementById('historySearchInput')?.value;
+    if (searchQuery) {
+        const q = searchQuery.toLowerCase().trim();
+        const newItemTitle = (displayTitle || '').toLowerCase();
+        if (!newItemTitle.includes(q)) {
+            wrapper.style.display = 'none';
+        }
     }
 
     // Animasi entrance halus
@@ -629,6 +685,169 @@ function setActiveSidebarItem(sessionId) {
         newItem.classList.add('active');
     }
 }
+
+// ==========================================
+// HISTORY SEARCH (Client-side filter)
+// ==========================================
+(function() {
+    function initHistorySearch() {
+        const searchInput = document.getElementById('historySearchInput');
+        const clearBtn = document.getElementById('historySearchClear');
+        const historyItems = document.getElementById('historyItems');
+        const emptyState = document.getElementById('historyEmpty');
+
+        if (!searchInput || !historyItems) return;
+
+        // Gunakan event delegation — panggil getItems() setiap kali filter
+        function getItems() {
+            return historyItems.querySelectorAll('.history-item-wrapper');
+        }
+
+        function filterHistory(query) {
+            const q = query.toLowerCase().trim();
+            const items = getItems();
+            let visibleCount = 0;
+
+            items.forEach((item) => {
+                const title = (item.dataset.title || '').toLowerCase();
+                const titleEl = item.querySelector('.history-text');
+                const originalTitle = titleEl?.dataset.originalText || titleEl?.textContent || '';
+
+                if (!q || title.includes(q)) {
+                    item.style.display = '';
+                    visibleCount++;
+
+                    // Highlight matched text
+                    if (q && titleEl) {
+                        if (!titleEl.dataset.originalText) {
+                            titleEl.dataset.originalText = titleEl.textContent;
+                        }
+                        const regex = new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+                        titleEl.innerHTML = originalTitle.replace(regex, '<mark>$1</mark>');
+                    } else if (titleEl && titleEl.dataset.originalText) {
+                        titleEl.textContent = titleEl.dataset.originalText;
+                    }
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+
+            // Show/hide empty state
+            if (emptyState) {
+                emptyState.style.display = (visibleCount === 0 && q) ? 'flex' : 'none';
+            }
+
+            // Show/hide clear button
+            if (clearBtn) {
+                clearBtn.style.display = q ? 'flex' : 'none';
+            }
+        }
+
+        // Event: input (real-time filter)
+        searchInput.addEventListener('input', (e) => {
+            filterHistory(e.target.value);
+        });
+
+        // Event: clear button
+        clearBtn?.addEventListener('click', () => {
+            searchInput.value = '';
+            filterHistory('');
+            searchInput.focus();
+        });
+
+        // Event: ESC untuk clear
+        searchInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                searchInput.value = '';
+                filterHistory('');
+            }
+        });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initHistorySearch);
+    } else {
+        initHistorySearch();
+    }
+})();
+
+// ==========================================
+// EXPORT CHAT
+// ==========================================
+function toggleHeaderExportMenu(event) {
+    event?.stopPropagation();
+    const menu = document.getElementById('headerExportMenu');
+    if (!menu) return;
+    
+    const isOpen = menu.classList.contains('show');
+    
+    // Close other menus
+    document.querySelectorAll('.header-export-menu').forEach(m => {
+        m.classList.remove('show');
+    });
+    
+    if (!isOpen) {
+        menu.classList.add('show');
+    }
+}
+
+function exportSession(format, sessionId = null) {
+    const targetId = sessionId || currentSessionId;
+    const menu = document.getElementById('headerExportMenu');
+    menu?.classList.remove('show');
+    
+    if (!targetId) {
+        showToast('Tidak ada percakapan yang bisa diekspor', 'error');
+        return;
+    }
+    
+    showToast('Menyiapkan file export...', 'info');
+    
+    // Trigger download via browser
+    const url = `/session/${targetId}/export?format=${format}`;
+    
+    // Buat anchor sementara untuk download
+    const a = document.createElement('a');
+    a.href = url;
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    
+    // Toast sukses (delay biar tidak muncul terlalu cepat)
+    setTimeout(() => {
+        showToast(
+            format === 'markdown' 
+                ? 'Export Markdown berhasil diunduh!' 
+                : 'Export JSON berhasil diunduh!', 
+            'success'
+        );
+    }, 500);
+}
+
+function exportAllChats() {
+    showToast('Menyiapkan export semua percakapan...', 'info');
+    
+    const a = document.createElement('a');
+    a.href = '/export/all';
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    
+    setTimeout(() => {
+        showToast('Semua percakapan berhasil diunduh!', 'success');
+    }, 500);
+}
+
+// Close export menu saat klik di luar
+document.addEventListener('click', (e) => {
+    if (!e.target.closest('.export-dropdown-wrapper')) {
+        document.querySelectorAll('.header-export-menu').forEach(m => {
+            m.classList.remove('show');
+        });
+    }
+});
 
 function appendLoadingWithMode(mode) {
     const id = 'loading-' + Date.now();
@@ -667,6 +886,185 @@ function copyText(btn) { try { const messageContent = btn.closest('.message-cont
 function copyCode(button, codeElement) { if (!codeElement) return; const textToCopy = codeElement.textContent || codeElement.innerText; const showSuccess = () => { button.innerHTML = '<i class="fas fa-check"></i> Disalin'; button.style.background = 'rgba(74, 222, 128, 0.9)'; button.style.color = 'white'; setTimeout(() => { button.innerHTML = '<i class="far fa-copy"></i> Salin'; button.style.background = ''; button.style.color = ''; }, 2000); }; if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(textToCopy).then(showSuccess).catch(() => fallbackCopyText(textToCopy, showSuccess)); else fallbackCopyText(textToCopy, showSuccess); }
 function fallbackCopyText(text, callback) { const textArea = document.createElement('textarea'); textArea.value = text; textArea.style.position = 'fixed'; textArea.style.left = '-9999px'; document.body.appendChild(textArea); textArea.focus(); textArea.select(); try { if (document.execCommand('copy') && callback) callback(); else showToast('Gagal menyalin', 'error'); } catch (err) {} document.body.removeChild(textArea); }
 function addCopyButtonsToCodeBlocks() { document.querySelectorAll('.markdown-body pre').forEach((pre) => { if (pre.previousElementSibling?.classList.contains('code-header')) return; const code = pre.querySelector('code'); if (!code) return; let language = 'plaintext'; const langClass = code.className.match(/language-(\w+)/); if (langClass) language = langClass[1]; const header = document.createElement('div'); header.className = 'code-header'; header.innerHTML = `<span class="code-lang">${language}</span><button class="code-copy-btn" aria-label="Salin kode"><i class="far fa-copy"></i> Salin</button>`; pre.parentNode.insertBefore(header, pre); pre.style.borderRadius = '0 0 8px 8px'; pre.style.marginTop = '0'; const copyBtn = header.querySelector('.code-copy-btn'); copyBtn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); copyCode(copyBtn, code); }); }); }
+// ==========================================
+// SIMULATED STREAMING (TYPEWRITER EFFECT)
+// ==========================================
+
+/**
+ * Animate AI response dengan efek typewriter.
+ * Render markdown dulu, baru tampilkan text-nya blok per blok / bertahap.
+ * 
+ * @param {HTMLElement} container - Element untuk render response
+ * @param {string} markdownText - Response AI dalam markdown
+ * @param {Function} onComplete - Callback setelah selesai
+ */
+function typewriterResponse(container, markdownText, onComplete) {
+    if (!container || !markdownText) {
+        onComplete?.();
+        return;
+    }
+
+    // Respect reduced motion
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReducedMotion) {
+        renderAIContent(markdownText, container);
+        addCopyButtonsToCodeBlocks();
+        processMermaidDiagrams(container);
+        if (window.renderMathInElement) {
+            window.renderMathInElement(container, {
+                delimiters: [
+                    { left: '$$', right: '$$', display: true },
+                    { left: '$', right: '$', display: false }
+                ],
+                throwOnError: false
+            });
+        }
+        onComplete?.();
+        return;
+    }
+
+    // Skip animasi untuk response yang sangat pendek (< 30 char) atau sangat panjang (> 5000 char)
+    if (markdownText.length < 30 || markdownText.length > 5000) {
+        renderAIContent(markdownText, container);
+        addCopyButtonsToCodeBlocks();
+        processMermaidDiagrams(container);
+        if (window.renderMathInElement) {
+            window.renderMathInElement(container, {
+                delimiters: [
+                    { left: '$$', right: '$$', display: true },
+                    { left: '$', right: '$', display: false }
+                ],
+                throwOnError: false
+            });
+        }
+        onComplete?.();
+        return;
+    }
+
+    // 1. Render markdown dulu ke DOM sementara
+    const tempDiv = document.createElement('div');
+    renderAIContent(markdownText, tempDiv);
+
+    // 2. Tampilkan container kosong
+    container.innerHTML = '';
+    container.style.opacity = '1';
+    container.style.display = 'block';
+
+    // 3. Clone tempDiv content ke container (semua element ter-render dengan rapi)
+    container.innerHTML = tempDiv.innerHTML;
+
+    // 4. Hitung blocks untuk typewriter
+    const totalText = markdownText.replace(/\s+/g, ' ').trim();
+    const totalChars = totalText.length;
+    const CHARS_PER_SECOND = 250; // Kecepatan ~250 char/detik
+
+    const blocks = [];
+    let blockStartChar = 0;
+
+    container.querySelectorAll('p, h1, h2, h3, h4, h5, h6, ul, ol, pre, blockquote, table, .thinking-container').forEach(block => {
+        const text = block.textContent || '';
+        const charCount = text.length || 1;
+        blocks.push({
+            node: block,
+            startChar: blockStartChar,
+            endChar: blockStartChar + charCount,
+            charCount: charCount,
+        });
+        blockStartChar += charCount;
+    });
+
+    if (blocks.length === 0) {
+        onComplete?.();
+        return;
+    }
+
+    const totalBlockChars = blockStartChar || totalChars;
+
+    // Awalnya semua block di-hide
+    blocks.forEach(b => {
+        b.node.style.opacity = '0';
+        b.node.style.transform = 'translateY(4px)';
+        b.node.style.transition = 'opacity 200ms ease, transform 200ms ease';
+    });
+
+    // Tambahkan cursor blinking element
+    const cursor = document.createElement('span');
+    cursor.className = 'typewriter-cursor';
+    cursor.textContent = '▍';
+
+    // 5. Animation loop
+    let lastTimestamp = 0;
+    let accumulated = 0;
+
+    function finishAnimation() {
+        cursor.remove();
+
+        // Pastikan semua block full visible dan reset style inline agar formatting bersih
+        blocks.forEach(b => {
+            b.node.style.opacity = '';
+            b.node.style.transform = '';
+            b.node.style.transition = '';
+        });
+
+        // Setelah selesai, kalau user di bawah, scroll ke bawah
+        if (isUserAtBottom) {
+            setTimeout(() => smartScrollToBottom(), 100);
+        }
+
+        onComplete?.();
+    }
+
+    function animate(timestamp) {
+        if (!lastTimestamp) lastTimestamp = timestamp;
+        const delta = timestamp - lastTimestamp;
+        lastTimestamp = timestamp;
+
+        accumulated += delta;
+
+        // Hitung chars yang harus di-reveal
+        const charsToReveal = (accumulated / 1000) * CHARS_PER_SECOND;
+        const revealedChars = Math.min(Math.floor(charsToReveal), totalBlockChars);
+
+        // Reveal block yang sudah tercakup
+        let lastRevealedBlock = null;
+        blocks.forEach(b => {
+            if (revealedChars >= b.endChar) {
+                if (b.node.style.opacity !== '1') {
+                    b.node.style.opacity = '1';
+                    b.node.style.transform = 'translateY(0)';
+                }
+                lastRevealedBlock = b;
+            } else if (revealedChars > b.startChar) {
+                b.node.style.opacity = '1';
+                b.node.style.transform = 'translateY(0)';
+                lastRevealedBlock = b;
+            }
+        });
+
+        // Update cursor position: letakkan di akhir block terakhir yang visible
+        if (lastRevealedBlock && lastRevealedBlock.node) {
+            if (!lastRevealedBlock.node.contains(cursor)) {
+                lastRevealedBlock.node.appendChild(cursor);
+            }
+        }
+
+        // Setelah reveal block:
+        if (isUserAtBottom) {
+            smartScrollToBottom();
+        }
+
+        // Kalau semua block ter-reveal, selesai
+        if (revealedChars >= totalBlockChars) {
+            finishAnimation();
+            return;
+        }
+
+        requestAnimationFrame(animate);
+    }
+
+    requestAnimationFrame(animate);
+}
+
 function animateGeminiStyle(element, markdownText) {
     const tempDiv = document.createElement('div'); renderAIContent(markdownText, tempDiv);
     element.innerHTML = '';
@@ -814,7 +1212,46 @@ function toggleThinking(header) {
     icon.style.transform = isVisible ? 'none' : 'rotate(90deg)';
 }
 function scrollToBottom() { const c = document.getElementById('messagesContainer'); if(c) c.scrollTop = c.scrollHeight; }
-function scrollToBottomSmooth() { const c = document.getElementById('messagesContainer'); if(c) c.scrollTo({ top: c.scrollHeight, behavior: 'smooth' }); }
+
+/**
+ * Cek apakah user sedang di posisi bawah (radius 200px).
+ */
+function checkUserAtBottom() {
+    const container = document.getElementById('messagesContainer');
+    if (!container) return true;
+    
+    const threshold = 200; // px tolerance
+    const scrollBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
+    return scrollBottom <= threshold;
+}
+
+/**
+ * Smart scroll: hanya scroll ke bawah kalau user di bawah.
+ * @param {boolean} force - Kalau true, selalu scroll (untuk user message)
+ */
+function smartScrollToBottom(force = false) {
+    if (force || isUserAtBottom) {
+        const container = document.getElementById('messagesContainer');
+        if (container) {
+            container.scrollTop = container.scrollHeight;
+        }
+    }
+}
+
+function scrollToBottomSmooth() {
+    const c = document.getElementById('messagesContainer');
+    if (!c) return;
+    
+    // Update status — karena user klik tombol, force scroll
+    c.scrollTo({ top: c.scrollHeight, behavior: 'smooth' });
+    
+    // Set isUserAtBottom = true (karena user mau ke bawah)
+    isUserAtBottom = true;
+    
+    // Hide tombol scroll to bottom
+    const btn = document.getElementById('scrollToBottomBtn');
+    if (btn) btn.style.display = 'none';
+}
 function formatAttachmentIcons() { document.querySelectorAll('.message.user .message-bubble').forEach(el => { let html = el.innerHTML; html = html.replace(/📎 \[(.*?)\]/g, '<i class="fas fa-file-pdf" style="color: #3b82f6; margin-right: 5px;"></i> <b>[Dokumen: $1]</b>'); html = html.replace(/🖼️ \[(.*?)\]/g, '<i class="fas fa-image" style="color: #10b981; margin-right: 5px;"></i> <b>[$1]</b>'); html = html.replace(/📦 \[GitHub: (.*?)\]/g, '<i class="fab fa-github" style="color: #a855f7; margin-right: 5px;"></i> <b>[GitHub: $1]</b>'); el.innerHTML = html; }); }
 function useShortcut(text) { chatInput.value = text; chatInput.focus(); }
 
@@ -829,9 +1266,38 @@ window.addEventListener('click', e => {
 });
 
 const chatContainerBox = document.getElementById('messagesContainer');
-if (chatContainerBox) { chatContainerBox.addEventListener('scroll', () => { if (chatContainerBox.scrollTop + chatContainerBox.clientHeight < chatContainerBox.scrollHeight - 150) document.getElementById('scrollToBottomBtn').style.display = 'block'; else document.getElementById('scrollToBottomBtn').style.display = 'none'; }); }
+if (chatContainerBox) {
+    chatContainerBox.addEventListener('scroll', () => {
+        // Update status user
+        isUserAtBottom = checkUserAtBottom();
+        
+        // Update tombol scroll to bottom
+        const scrollBtn = document.getElementById('scrollToBottomBtn');
+        if (scrollBtn) {
+            if (!isUserAtBottom && chatContainerBox.scrollHeight > chatContainerBox.clientHeight + 100) {
+                scrollBtn.style.display = 'flex';
+            } else {
+                scrollBtn.style.display = 'none';
+            }
+        }
+    }, { passive: true });
+}
 
 document.addEventListener('DOMContentLoaded', () => {
+    // Initialize user at bottom state
+    const initialContainer = document.getElementById('messagesContainer');
+    if (initialContainer) {
+        // Kalau sudah scroll di bawah, set true
+        isUserAtBottom = checkUserAtBottom();
+    }
+
+    // Scroll ke bawah saat load (kalau dari session lama)
+    if (typeof currentSessionId !== 'undefined' && currentSessionId) {
+        setTimeout(() => {
+            scrollToBottom();
+        }, 100);
+    }
+
     formatAttachmentIcons();
     document.querySelectorAll('.message.ai').forEach((el) => {
         const rawDiv = el.querySelector('.ai-raw-data');

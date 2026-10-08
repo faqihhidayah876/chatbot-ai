@@ -9,7 +9,27 @@
             SAHAJA AI
         </div>
     </div>
-    <div class="settings-container">
+    <div class="header-actions">
+        @if(isset($currentSession) && $currentSession)
+            {{-- Tombol Export (hanya muncul kalau ada session aktif) --}}
+            <div class="export-dropdown-wrapper">
+                <button class="icon-btn" id="exportBtn" 
+                    onclick="toggleHeaderExportMenu(event)"
+                    aria-label="Export percakapan" 
+                    title="Export Percakapan">
+                    <i class="fas fa-download" style="font-size: 18px;"></i>
+                </button>
+                <div class="header-export-menu" id="headerExportMenu">
+                    <button class="option-item" onclick="exportSession('markdown')">
+                        <i class="fas fa-file-lines"></i> Export ke Markdown (.md)
+                    </button>
+                    <button class="option-item" onclick="exportSession('json')">
+                        <i class="fas fa-file-code"></i> Export ke JSON (.json)
+                    </button>
+                </div>
+            </div>
+        @endif
+        
         <button class="icon-btn" id="settingsBtn" onclick="openSettingsModal()"
             aria-label="Buka pengaturan" title="Pengaturan">
             <i class="fas fa-gear" style="font-size: 18px;"></i>
