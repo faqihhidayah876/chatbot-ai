@@ -105,3 +105,7 @@ Route::middleware('auth')->group(function () {
 
 Route::get('/terms', function () { return view('terms'); })->name('terms');
 Route::get('/privacy', function () { return view('privacy'); })->name('privacy');
+Route::get('/offline', function () {
+    return view('offline');
+})->name('offline');
+

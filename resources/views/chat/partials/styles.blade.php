@@ -2490,3 +2490,108 @@ html.light-mode .markdown-body pre {
     opacity: 0.6;
   }
 }
+
+/* ===== PWA INSTALL PROMPT ===== */
+.pwa-install-prompt {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 9999;
+    background: var(--bg-overlay);
+    border: 1px solid var(--border-medium);
+    border-radius: var(--radius-lg);
+    padding: 14px 18px;
+    max-width: 400px;
+    width: calc(100% - 32px);
+    box-shadow: var(--shadow-lg);
+    animation: pwaPromptSlideUp 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes pwaPromptSlideUp {
+    from { opacity: 0; transform: translateX(-50%) translateY(20px); }
+    to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+.pwa-prompt-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.pwa-prompt-logo {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-md);
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+.pwa-prompt-text {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.pwa-prompt-text strong {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.pwa-prompt-text span {
+    font-size: 12px;
+    color: var(--text-secondary);
+    line-height: 1.4;
+}
+
+.pwa-prompt-actions {
+    display: flex;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.pwa-btn-dismiss,
+.pwa-btn-install {
+    padding: 6px 12px;
+    border-radius: var(--radius-md);
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: var(--font-sans);
+    transition: background 150ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.pwa-btn-dismiss {
+    background: transparent;
+    border: 1px solid var(--border-medium);
+    color: var(--text-secondary);
+}
+
+.pwa-btn-dismiss:hover {
+    color: var(--text-primary);
+    background: var(--bg-hover);
+}
+
+.pwa-btn-install {
+    background: var(--accent);
+    border: 1px solid var(--accent);
+    color: #fff;
+}
+
+.pwa-btn-install:hover {
+    background: var(--accent-hover);
+}
+
+@media (max-width: 480px) {
+    .pwa-install-prompt {
+        padding: 12px 14px;
+        bottom: 12px;
+    }
+    .pwa-prompt-text span {
+        display: none;
+    }
+}
+

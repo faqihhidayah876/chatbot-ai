@@ -7,6 +7,7 @@
     <title>SAHAJA AI — Chat</title>
     <meta name="description" content="Asisten cerdas untuk brainstorming, coding, dan analisis dokumen.">
     <link rel="icon" type="image/png" href="https://i.ibb.co.com/jZZ0648R/Logo-SAHAJA-AI.png">
+    @include('partials.pwa')
 
     {{-- Fonts --}}
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -58,5 +59,6 @@
     <script>
         @include('chat.partials.scripts')
     </script>
+    @include('partials.install-prompt')
 </body>
 </html>

@@ -1955,3 +1955,84 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     }
 });
+
+// ==========================================
+// PWA — Service Worker Registration
+// ==========================================
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+            .then((registration) => {
+                console.log('[PWA] Service Worker registered:', registration.scope);
+                
+                // Detect update
+                registration.addEventListener('updatefound', () => {
+                    const newWorker = registration.installing;
+                    newWorker.addEventListener('statechange', () => {
+                        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                            // Ada update — tampilkan notif
+                            if (typeof showToast === 'function') {
+                                showToast('Versi baru SAHAJA AI tersedia. Refresh untuk update.', 'info');
+                            }
+                        }
+                    });
+                });
+            })
+            .catch((err) => {
+                console.log('[PWA] Service Worker registration failed:', err);
+            });
+    });
+}
+
+// ==========================================
+// PWA — Install Prompt
+// ==========================================
+let deferredPrompt = null;
+
+window.addEventListener('beforeinstallprompt', (e) => {
+    // Prevent default mini-infobar
+    e.preventDefault();
+    deferredPrompt = e;
+    
+    // Show custom prompt (setelah 30 detik atau saat user belum dismiss)
+    const dismissed = localStorage.getItem('pwa-prompt-dismissed');
+    if (!dismissed) {
+        setTimeout(() => {
+            const promptEl = document.getElementById('pwaInstallPrompt');
+            if (promptEl) promptEl.style.display = 'block';
+        }, 30000); // 30 detik
+    }
+});
+
+function triggerInstallPrompt() {
+    if (!deferredPrompt) return;
+    
+    deferredPrompt.prompt();
+    
+    deferredPrompt.userChoice.then((choiceResult) => {
+        if (choiceResult.outcome === 'accepted') {
+            console.log('[PWA] User accepted install');
+            if (typeof showToast === 'function') {
+                showToast('SAHAJA AI berhasil di-install!', 'success');
+            }
+        }
+        deferredPrompt = null;
+        const promptEl = document.getElementById('pwaInstallPrompt');
+        if (promptEl) promptEl.style.display = 'none';
+    });
+}
+
+function dismissInstallPrompt() {
+    const promptEl = document.getElementById('pwaInstallPrompt');
+    if (promptEl) promptEl.style.display = 'none';
+    localStorage.setItem('pwa-prompt-dismissed', 'true');
+}
+
+// Detect sudah install
+window.addEventListener('appinstalled', () => {
+    console.log('[PWA] App installed');
+    localStorage.setItem('pwa-installed', 'true');
+    const promptEl = document.getElementById('pwaInstallPrompt');
+    if (promptEl) promptEl.style.display = 'none';
+});
+
