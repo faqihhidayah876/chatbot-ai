@@ -50,6 +50,11 @@ class User extends Authenticatable
         return $this->hasMany(Session::class);
     }
 
+    public function apiKeys()
+    {
+        return $this->hasMany(ApiKey::class);
+    }
+
     // Relasi Chat (Lewat Session - Optional, tapi untuk statistik sederhana kita hitung manual di view/controller bisa)
     // Cara mudah hitung chat user:
     public function getChatCountAttribute()
