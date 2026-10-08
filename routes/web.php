@@ -10,6 +10,7 @@ use App\Http\Controllers\DeepResearchController;
 use App\Http\Controllers\SahajaLlmController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\DeveloperController;
+use App\Http\Controllers\UserApiKeyController;
 
 // 1. Halaman Depan (Welcome)
 Route::get('/', function () {
@@ -59,6 +60,13 @@ Route::middleware('auth')->group(function () {
     Route::post('/developer/keys/{id}/toggle', [DeveloperController::class, 'toggle'])->name('developer.toggle');
     Route::delete('/developer/keys/{id}', [DeveloperController::class, 'destroy'])->name('developer.destroy');
     Route::get('/docs/api', [DeveloperController::class, 'docs'])->name('docs.api');
+
+    // BYOK Routes
+    Route::get('/profile/api-keys', [UserApiKeyController::class, 'index'])->name('user.api-keys.index');
+    Route::post('/profile/api-keys', [UserApiKeyController::class, 'store'])->name('user.api-keys.store');
+    Route::post('/profile/api-keys/{id}/test', [UserApiKeyController::class, 'test'])->name('user.api-keys.test');
+    Route::post('/profile/api-keys/{id}/toggle', [UserApiKeyController::class, 'toggle'])->name('user.api-keys.toggle');
+    Route::delete('/profile/api-keys/{id}', [UserApiKeyController::class, 'destroy'])->name('user.api-keys.destroy');
 });
 
 // 5. Khusus Admin
