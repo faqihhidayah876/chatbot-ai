@@ -16,7 +16,6 @@
             --accent: #3B82F6;
             --accent-hover: #60A5FA;
             --radius-md: 10px;
-            --radius-lg: 14px;
             --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -39,9 +38,15 @@
             gap: 20px;
         }
         .offline-icon {
-            font-size: 64px;
+            width: 80px;
+            height: 80px;
+            background: rgba(95, 99, 104, 0.15);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
             color: var(--text-tertiary);
-            opacity: 0.4;
             margin-bottom: 8px;
         }
         .offline-title {
@@ -76,10 +81,20 @@
         .offline-btn:hover {
             background: var(--accent-hover);
         }
+        .offline-logo {
+            width: 48px;
+            height: 48px;
+            border-radius: var(--radius-md);
+            object-fit: contain;
+            margin-bottom: 8px;
+        }
     </style>
 </head>
 <body>
     <div class="offline-container">
+        <img src="https://i.ibb.co.com/jZZ0648R/Logo-SAHAJA-AI.png" 
+            alt="SAHAJA AI" 
+            class="offline-logo">
         <div class="offline-icon">
             <i class="fas fa-wifi"></i>
         </div>
