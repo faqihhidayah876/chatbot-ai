@@ -13,6 +13,8 @@ class UserApiKey extends Model
     protected $fillable = [
         'user_id',
         'provider',
+        'base_url',
+        'default_model',
         'label',
         'encrypted_key',
         'key_preview',
@@ -41,25 +43,107 @@ class UserApiKey extends Model
      * Provider yang didukung.
      */
     public const SUPPORTED_PROVIDERS = [
+        // ===== TIER 1: PRESET (OpenAI-compatible populer) =====
         'openai' => [
             'name' => 'OpenAI',
+            'tier' => 'preset',
             'test_endpoint' => 'https://api.openai.com/v1/models',
-            'test_method' => 'GET',
+            'auth_type' => 'bearer',
+            'auth_header' => 'Authorization',
+            'auth_prefix' => 'Bearer ',
+            'icon' => 'fa-robot',
+            'placeholder' => 'sk-...',
         ],
         'anthropic' => [
             'name' => 'Anthropic (Claude)',
+            'tier' => 'preset',
             'test_endpoint' => 'https://api.anthropic.com/v1/models',
-            'test_method' => 'GET',
+            'auth_type' => 'header',
+            'auth_header' => 'x-api-key',
+            'auth_prefix' => '',
+            'extra_headers' => [
+                'anthropic-version' => '2023-06-01',
+            ],
+            'icon' => 'fa-feather',
+            'placeholder' => 'sk-ant-...',
         ],
         'google' => [
             'name' => 'Google AI (Gemini)',
+            'tier' => 'preset',
             'test_endpoint' => 'https://generativelanguage.googleapis.com/v1beta/models',
-            'test_method' => 'GET',
+            'auth_type' => 'header',
+            'auth_header' => 'x-goog-api-key',
+            'auth_prefix' => '',
+            'icon' => 'fa-google',
+            'placeholder' => 'AIza...',
         ],
         'groq' => [
             'name' => 'Groq',
+            'tier' => 'preset',
             'test_endpoint' => 'https://api.groq.com/openai/v1/models',
-            'test_method' => 'GET',
+            'auth_type' => 'bearer',
+            'auth_header' => 'Authorization',
+            'auth_prefix' => 'Bearer ',
+            'icon' => 'fa-bolt',
+            'placeholder' => 'gsk_...',
+        ],
+
+        // ===== TIER 2: EXTENDED (OpenAI-compatible tambahan) =====
+        'mistral' => [
+            'name' => 'Mistral AI',
+            'tier' => 'extended',
+            'test_endpoint' => 'https://api.mistral.ai/v1/models',
+            'auth_type' => 'bearer',
+            'auth_header' => 'Authorization',
+            'auth_prefix' => 'Bearer ',
+            'icon' => 'fa-wind',
+            'placeholder' => 'AIza... atau API key Mistral',
+        ],
+        'openrouter' => [
+            'name' => 'OpenRouter',
+            'tier' => 'extended',
+            'test_endpoint' => 'https://openrouter.ai/api/v1/models',
+            'auth_type' => 'bearer',
+            'auth_header' => 'Authorization',
+            'auth_prefix' => 'Bearer ',
+            'extra_headers' => [
+                'HTTP-Referer' => 'https://sahaja-ai.my.id',
+                'X-Title' => 'SAHAJA AI',
+            ],
+            'icon' => 'fa-route',
+            'placeholder' => 'sk-or-v1-...',
+        ],
+        'cerebras' => [
+            'name' => 'Cerebras',
+            'tier' => 'extended',
+            'test_endpoint' => 'https://api.cerebras.ai/v1/models',
+            'auth_type' => 'bearer',
+            'auth_header' => 'Authorization',
+            'auth_prefix' => 'Bearer ',
+            'icon' => 'fa-microchip',
+            'placeholder' => 'csk-...',
+        ],
+        'deepseek' => [
+            'name' => 'DeepSeek',
+            'tier' => 'extended',
+            'test_endpoint' => 'https://api.deepseek.com/v1/models',
+            'auth_type' => 'bearer',
+            'auth_header' => 'Authorization',
+            'auth_prefix' => 'Bearer ',
+            'icon' => 'fa-water',
+            'placeholder' => 'sk-...',
+        ],
+
+        // ===== TIER 3: CUSTOM (OpenAI-compatible endpoint apapun) =====
+        'custom' => [
+            'name' => 'Custom (OpenAI-compatible)',
+            'tier' => 'custom',
+            'test_endpoint' => null, // User input manual
+            'auth_type' => 'bearer',
+            'auth_header' => 'Authorization',
+            'auth_prefix' => 'Bearer ',
+            'icon' => 'fa-sliders',
+            'placeholder' => 'sk-... atau key apapun',
         ],
     ];
 
@@ -74,13 +158,21 @@ class UserApiKey extends Model
     /**
      * Simpan key baru dengan enkripsi.
      */
-    public static function store(int $userId, string $provider, string $plainKey, ?string $label = null): self
-    {
+    public static function store(
+        int $userId, 
+        string $provider, 
+        string $plainKey, 
+        ?string $label = null,
+        ?string $baseUrl = null,
+        ?string $defaultModel = null
+    ): self {
         $keyPreview = self::generatePreview($plainKey);
 
         return self::create([
             'user_id' => $userId,
             'provider' => $provider,
+            'base_url' => $baseUrl,
+            'default_model' => $defaultModel,
             'label' => $label,
             'encrypted_key' => Crypt::encryptString($plainKey),
             'key_preview' => $keyPreview,

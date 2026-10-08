@@ -139,6 +139,7 @@
             <button class="nav-btn active" onclick="switchTab('umum')"><i class="fas fa-cog"></i> Umum</button>
             <button class="nav-btn" onclick="switchTab('profil')"><i class="fas fa-user"></i> Profil</button>
             <button class="nav-btn" onclick="switchTab('data')"><i class="fas fa-database"></i> Data</button>
+            <button class="nav-btn" onclick="switchTab('api-keys')"><i class="fas fa-key"></i> API Keys</button>
             <button class="nav-btn" onclick="switchTab('tentang')"><i class="fas fa-info-circle"></i>
                 Tentang</button>
         </div>
@@ -269,6 +270,49 @@
                         <input type="checkbox" id="enableWebSearchInput">
                         <span class="toggle-slider"></span>
                     </label>
+                </div>
+            </div>
+
+            <div id="tab-api-keys" class="tab-pane">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <div>
+                        <h3 style="margin: 0;">API Keys</h3>
+                        <p style="font-size: 13px; color: var(--text-secondary); margin-top: 4px;">
+                            Gunakan API key Anda sendiri untuk menghemat kuota SAHAJA AI.
+                        </p>
+                    </div>
+                    <button type="button" class="btn-add-key" id="btnAddApiKey">
+                        <i class="fas fa-plus" style="font-size: 12px;"></i> Tambah
+                    </button>
+                </div>
+
+                <!-- Info banner -->
+                <div class="byok-info-banner">
+                    <i class="fas fa-info-circle" style="font-size: 14px; flex-shrink: 0;"></i>
+                    <span>
+                        API key Anda dienkripsi dengan AES-256 dan tidak akan pernah dibagikan. 
+                        <a href="{{ route('docs.api') }}" target="_blank" style="color: var(--accent);">
+                            Pelajari selengkapnya
+                        </a>
+                    </span>
+                </div>
+
+                <!-- List API keys -->
+                <div id="apiKeysList" style="margin-top: 16px;">
+                    <!-- Akan di-populate via JS -->
+                    <div class="loading-state">
+                        <i class="fas fa-circle-notch fa-spin"></i>
+                        <span>Memuat...</span>
+                    </div>
+                </div>
+
+                <!-- Empty state -->
+                <div id="apiKeysEmpty" style="display: none;">
+                    <div class="empty-state">
+                        <i class="fas fa-key"></i>
+                        <p>Belum ada API key</p>
+                        <span>Tambahkan key pertama Anda untuk mulai menggunakan BYOK</span>
+                    </div>
                 </div>
             </div>
 
@@ -457,3 +501,103 @@
         animation: fa-spin 3s infinite linear;
     }
 </style>
+
+<!-- MODAL: Add API Key -->
+<div class="modal-overlay" id="addKeyModal" style="z-index: 100010;">
+    <div class="modal-content" style="max-width: 480px;">
+        <button class="modal-close" onclick="closeAddKeyModal()" type="button">
+            <i class="fas fa-times"></i>
+        </button>
+
+        <h2 style="font-size: 18px; margin-bottom: 8px; display: flex; align-items: center; gap: 8px;">
+            <i class="fas fa-key" style="color: var(--accent);"></i>
+            Tambah API Key
+        </h2>
+        <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 20px;">
+            Pilih provider dan masukkan API key Anda. Key akan divalidasi sebelum disimpan.
+        </p>
+
+        <form id="addKeyForm" onsubmit="submitAddKey(event)">
+            <div style="margin-bottom: 16px;">
+                <label style="font-size: 13px; font-weight: 500; color: var(--text-secondary); margin-bottom: 6px; display: block;">
+                    Provider
+                </label>
+                <select id="keyProviderSelect" class="github-input" style="width: 100%; height: 40px; cursor: pointer;" onchange="onProviderChange(this.value)">
+                    <optgroup label="Populer">
+                        <option value="openai">OpenAI (GPT-4, GPT-4o)</option>
+                        <option value="anthropic">Anthropic (Claude)</option>
+                        <option value="google">Google AI (Gemini)</option>
+                        <option value="groq">Groq (Llama, Mixtral)</option>
+                    </optgroup>
+                    <optgroup label="Extended">
+                        <option value="mistral">Mistral AI</option>
+                        <option value="openrouter">OpenRouter</option>
+                        <option value="cerebras">Cerebras</option>
+                        <option value="deepseek">DeepSeek</option>
+                    </optgroup>
+                    <optgroup label="Advanced">
+                        <option value="custom">Custom (OpenAI-compatible)</option>
+                    </optgroup>
+                </select>
+            </div>
+
+            <!-- Custom fields (muncul hanya kalau provider = custom) -->
+            <div id="customProviderFields" style="display: none; margin-bottom: 16px;">
+                <div style="margin-bottom: 16px;">
+                    <label style="font-size: 13px; font-weight: 500; color: var(--text-secondary); margin-bottom: 6px; display: block;">
+                        Base URL <span style="color: var(--danger);">*</span>
+                    </label>
+                    <input type="url" id="keyBaseUrlInput" class="github-input" 
+                        placeholder="https://api.example.com/v1" 
+                        style="width: 100%;">
+                    <p style="font-size: 11px; color: var(--text-tertiary); margin-top: 4px;">
+                        Endpoint OpenAI-compatible (harus support <code>/models</code> untuk test).
+                    </p>
+                </div>
+
+                <div style="margin-bottom: 16px;">
+                    <label style="font-size: 13px; font-weight: 500; color: var(--text-secondary); margin-bottom: 6px; display: block;">
+                        Default Model <span style="color: var(--text-tertiary); font-weight: 400;">(opsional)</span>
+                    </label>
+                    <input type="text" id="keyDefaultModelInput" class="github-input" 
+                        placeholder="gpt-4o-mini, mistral-medium, dll" 
+                        style="width: 100%;">
+                </div>
+            </div>
+
+            <div style="margin-bottom: 16px;">
+                <label style="font-size: 13px; font-weight: 500; color: var(--text-secondary); margin-bottom: 6px; display: block;">
+                    API Key
+                </label>
+                <input type="password" id="keyValueInput" class="github-input" 
+                    placeholder="sk-..." style="width: 100%;" required autocomplete="off">
+                <p style="font-size: 11px; color: var(--text-tertiary); margin-top: 4px;">
+                    Key tidak akan ditampilkan lagi setelah disimpan.
+                </p>
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <label style="font-size: 13px; font-weight: 500; color: var(--text-secondary); margin-bottom: 6px; display: block;">
+                    Label <span style="color: var(--text-tertiary); font-weight: 400;">(opsional)</span>
+                </label>
+                <input type="text" id="keyLabelInput" class="github-input" 
+                    placeholder="Contoh: Akun Kerja" style="width: 100%;" maxlength="100">
+            </div>
+
+            <div id="addKeyError" style="display: none; padding: 10px 12px; background: var(--danger-subtle); border: 1px solid var(--danger); border-radius: var(--radius-md); font-size: 13px; color: var(--danger); margin-bottom: 16px;"></div>
+
+            <div style="display: flex; gap: 10px;">
+                <button type="button" class="github-submit-btn" 
+                    style="flex: 1; background: transparent; border: 1px solid var(--border-medium); color: var(--text-primary);"
+                    onclick="closeAddKeyModal()">
+                    Batal
+                </button>
+                <button type="submit" id="addKeySubmitBtn" class="github-submit-btn" style="flex: 1;">
+                    <span class="btn-text">Test & Simpan</span>
+                    <i class="fas fa-circle-notch fa-spin btn-loading" style="display: none;"></i>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+

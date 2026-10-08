@@ -44,7 +44,13 @@ class UserApiKeyController extends Controller
             'success' => true,
             'keys' => $keys,
             'supported_providers' => collect(UserApiKey::SUPPORTED_PROVIDERS)
-                ->map(fn($p, $k) => ['id' => $k, 'name' => $p['name']])
+                ->map(fn($p, $k) => [
+                    'id' => $k,
+                    'name' => $p['name'],
+                    'tier' => $p['tier'] ?? 'preset',
+                    'icon' => $p['icon'] ?? 'fa-key',
+                    'placeholder' => $p['placeholder'] ?? '',
+                ])
                 ->values(),
         ]);
     }
@@ -56,30 +62,33 @@ class UserApiKeyController extends Controller
     {
         try {
             $request->validate([
-                'provider' => 'required|string|in:openai,anthropic,google,groq',
-                'api_key' => 'required|string|min:20|max:500',
+                'provider' => 'required|string|in:' . implode(',', array_keys(UserApiKey::SUPPORTED_PROVIDERS)),
+                'api_key' => 'required|string|min:10|max:500',
                 'label' => 'nullable|string|max:100',
+                'base_url' => 'nullable|required_if:provider,custom|url|max:255',
+                'default_model' => 'nullable|string|max:100',
             ]);
 
             $userId = Auth::id();
             $provider = $request->input('provider');
             $plainKey = trim($request->input('api_key'));
             $label = $request->input('label');
+            $baseUrl = $request->input('base_url');
+            $defaultModel = $request->input('default_model');
 
-            // Cek limit: max 2 key per provider
-            $existingCount = UserApiKey::where('user_id', $userId)
-                ->where('provider', $provider)
-                ->count();
+            // Cek limit: max 5 key total per user (bukan per provider, 
+            // supaya user bisa coba banyak provider)
+            $existingCount = UserApiKey::where('user_id', $userId)->count();
 
-            if ($existingCount >= 2) {
+            if ($existingCount >= 5) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Maksimal 2 API key per provider. Hapus salah satu dulu.',
+                    'message' => 'Maksimal 5 API key. Hapus salah satu dulu.',
                 ], 400);
             }
 
-            // Validasi key dengan test request
-            $validation = $this->byokService->validateKey($provider, $plainKey);
+            // Validasi key
+            $validation = $this->byokService->validateKey($provider, $plainKey, $baseUrl);
 
             if (!$validation['valid']) {
                 return response()->json([
@@ -88,8 +97,8 @@ class UserApiKeyController extends Controller
                 ], 400);
             }
 
-            // Simpan dengan enkripsi
-            $key = UserApiKey::store($userId, $provider, $plainKey, $label);
+            // Simpan
+            $key = UserApiKey::store($userId, $provider, $plainKey, $label, $baseUrl, $defaultModel);
 
             Log::info('User API key stored', [
                 'user_id' => $userId,
@@ -148,7 +157,7 @@ class UserApiKeyController extends Controller
                 ], 500);
             }
 
-            $validation = $this->byokService->validateKey($key->provider, $plainKey);
+            $validation = $this->byokService->validateKey($key->provider, $plainKey, $key->base_url);
 
             if ($validation['valid']) {
                 $key->markValid();

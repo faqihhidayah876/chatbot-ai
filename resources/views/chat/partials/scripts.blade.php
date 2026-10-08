@@ -103,6 +103,8 @@ async function executeDangerAction() {
         } else if (targetActionType === 'deleteAvatar') {
             await fetch('/profile/update', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken }, body: JSON.stringify({ avatar: null }) });
             showToast("Foto profil dihapus", "success"); setTimeout(() => window.location.reload(), 1000);
+        } else if (targetActionType === 'deleteUserApiKey') {
+            await window.executeDeleteUserApiKey(targetActionId);
         }
     } catch(e) { showToast("Kesalahan server", "error"); }
 }
@@ -112,8 +114,404 @@ function closeSettingsModal() { document.getElementById('settingsModal').classLi
 function switchTab(tabId) {
     document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
     document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
-    document.getElementById('tab-' + tabId).classList.add('active'); event.currentTarget.classList.add('active');
+    document.getElementById('tab-' + tabId)?.classList.add('active'); 
+    if (window.event && window.event.currentTarget && window.event.currentTarget.classList) {
+        window.event.currentTarget.classList.add('active');
+    }
+    
+    // Hook: load API keys ketika tab dibuka
+    if (tabId === 'api-keys' && typeof window.loadUserApiKeys === 'function') {
+        window.loadUserApiKeys();
+    }
 }
+
+// ==========================================
+// BYOK - User API Keys Management
+// ==========================================
+
+const PROVIDER_ICONS = {
+    'openai': 'fa-robot',
+    'anthropic': 'fa-feather',
+    'google': 'fa-google',
+    'groq': 'fa-bolt',
+    'mistral': 'fa-wind',
+    'openrouter': 'fa-route',
+    'cerebras': 'fa-microchip',
+    'deepseek': 'fa-water',
+    'custom': 'fa-sliders',
+};
+
+const PROVIDER_NAMES = {
+    'openai': 'OpenAI',
+    'anthropic': 'Anthropic',
+    'google': 'Google AI',
+    'groq': 'Groq',
+    'mistral': 'Mistral AI',
+    'openrouter': 'OpenRouter',
+    'cerebras': 'Cerebras',
+    'deepseek': 'DeepSeek',
+    'custom': 'Custom',
+};
+
+/**
+ * Handle perubahan pilihan provider di modal Add Key.
+ */
+window.onProviderChange = function(provider) {
+    const customFields = document.getElementById('customProviderFields');
+    const placeholderMap = {
+        'openai': 'sk-...',
+        'anthropic': 'sk-ant-...',
+        'google': 'AIza...',
+        'groq': 'gsk_...',
+        'mistral': 'AIza... atau API key Mistral',
+        'openrouter': 'sk-or-v1-...',
+        'cerebras': 'csk-...',
+        'deepseek': 'sk-...',
+        'custom': 'sk-... atau key apapun',
+    };
+    
+    const input = document.getElementById('keyValueInput');
+    if (input) input.placeholder = placeholderMap[provider] || 'API key';
+    
+    if (customFields) {
+        customFields.style.display = provider === 'custom' ? 'block' : 'none';
+    }
+};
+
+/**
+ * Load list API keys dari server.
+ */
+window.loadUserApiKeys = async function() {
+    const listEl = document.getElementById('apiKeysList');
+    const emptyEl = document.getElementById('apiKeysEmpty');
+    
+    if (!listEl) return;
+    
+    listEl.innerHTML = `
+        <div class="loading-state">
+            <i class="fas fa-circle-notch fa-spin"></i>
+            <span>Memuat...</span>
+        </div>
+    `;
+    
+    try {
+        const res = await fetch('/profile/api-keys', {
+            headers: {
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': csrfToken,
+            },
+        });
+        
+        const data = await res.json();
+        
+        if (!data.success || !data.keys) {
+            throw new Error('Gagal memuat API keys');
+        }
+        
+        if (data.keys.length === 0) {
+            listEl.innerHTML = '';
+            if (emptyEl) emptyEl.style.display = 'block';
+            return;
+        }
+        
+        if (emptyEl) emptyEl.style.display = 'none';
+        
+        listEl.innerHTML = data.keys.map(key => {
+            const providerIcon = PROVIDER_ICONS[key.provider] || 'fa-key';
+            const iconPrefix = key.provider === 'google' ? 'fab' : 'fas';
+            const providerName = PROVIDER_NAMES[key.provider] || key.provider;
+            const validBadge = key.is_valid
+                ? '<span class="apikey-badge valid"><i class="fas fa-check"></i> Valid</span>'
+                : '<span class="apikey-badge invalid"><i class="fas fa-xmark"></i> Invalid</span>';
+            const activeBadge = key.is_active
+                ? '<span class="apikey-badge active">Aktif</span>'
+                : '<span class="apikey-badge inactive">Nonaktif</span>';
+            
+            return `
+                <div class="apikey-card" data-key-id="${key.id}">
+                    <div class="apikey-header">
+                        <div>
+                            <div class="apikey-provider">
+                                <div class="apikey-provider-icon">
+                                    <i class="${iconPrefix} ${providerIcon}"></i>
+                                </div>
+                                <div>
+                                    <div>${providerName}</div>
+                                    ${key.label ? `<div class="apikey-label">${window.escapeHtml(key.label)}</div>` : ''}
+                                </div>
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 6px;">
+                            ${validBadge}
+                            ${activeBadge}
+                        </div>
+                    </div>
+                    <div class="apikey-preview">${window.escapeHtml(key.key_preview)}</div>
+                    <div class="apikey-meta">
+                        <span><i class="fas fa-paper-plane" style="font-size: 10px;"></i> ${key.usage_count} kali dipakai</span>
+                        ${key.last_used_at ? `<span><i class="fas fa-clock" style="font-size: 10px;"></i> ${key.last_used_at}</span>` : ''}
+                    </div>
+                    <div class="apikey-actions">
+                        <button class="apikey-action-btn" onclick="window.testUserApiKey(${key.id})">
+                            <i class="fas fa-vial"></i> Test
+                        </button>
+                        <button class="apikey-action-btn" onclick="window.toggleUserApiKey(${key.id})">
+                            <i class="fas fa-power-off"></i> ${key.is_active ? 'Disable' : 'Enable'}
+                        </button>
+                        <button class="apikey-action-btn danger" onclick="window.deleteUserApiKey(${key.id})">
+                            <i class="fas fa-trash-can"></i> Hapus
+                        </button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+        
+    } catch (e) {
+        console.error(e);
+        listEl.innerHTML = `
+            <div class="empty-state" style="color: var(--danger);">
+                <i class="fas fa-exclamation-triangle"></i>
+                <p>Gagal memuat API keys</p>
+                <span>Coba refresh halaman</span>
+            </div>
+        `;
+    }
+};
+
+/**
+ * Buka modal tambah key.
+ */
+window.openAddKeyModal = function() {
+    const modal = document.getElementById('addKeyModal');
+    if (!modal) {
+        console.error('[BYOK] Modal addKeyModal tidak ditemukan di DOM!');
+        if (typeof showToast === 'function') {
+            showToast('Error: Modal tidak ditemukan. Refresh halaman.', 'error');
+        }
+        return;
+    }
+    
+    const form = document.getElementById('addKeyForm');
+    if (form) form.reset();
+    
+    const errorEl = document.getElementById('addKeyError');
+    if (errorEl) errorEl.style.display = 'none';
+    
+    // Sembunyikan custom fields & reset placeholder
+    const customFields = document.getElementById('customProviderFields');
+    if (customFields) customFields.style.display = 'none';
+    
+    const providerSelect = document.getElementById('keyProviderSelect');
+    if (providerSelect && typeof window.onProviderChange === 'function') {
+        window.onProviderChange(providerSelect.value);
+    }
+    
+    modal.classList.add('show');
+};
+
+/**
+ * Tutup modal tambah key.
+ */
+window.closeAddKeyModal = function() {
+    const modal = document.getElementById('addKeyModal');
+    if (modal) modal.classList.remove('show');
+};
+
+/**
+ * Submit form tambah key.
+ */
+window.submitAddKey = async function(event) {
+    event.preventDefault();
+    
+    const provider = document.getElementById('keyProviderSelect').value;
+    const apiKey = document.getElementById('keyValueInput').value.trim();
+    const label = document.getElementById('keyLabelInput').value.trim();
+    const baseUrl = document.getElementById('keyBaseUrlInput')?.value.trim() || null;
+    const defaultModel = document.getElementById('keyDefaultModelInput')?.value.trim() || null;
+    const errorEl = document.getElementById('addKeyError');
+    const submitBtn = document.getElementById('addKeySubmitBtn');
+    const btnText = submitBtn.querySelector('.btn-text');
+    const btnLoading = submitBtn.querySelector('.btn-loading');
+    
+    // Validasi custom fields
+    if (provider === 'custom' && !baseUrl) {
+        errorEl.textContent = 'Base URL wajib diisi untuk custom provider.';
+        errorEl.style.display = 'block';
+        return;
+    }
+    
+    if (!apiKey) {
+        errorEl.textContent = 'API key tidak boleh kosong.';
+        errorEl.style.display = 'block';
+        return;
+    }
+    
+    // Loading state
+    errorEl.style.display = 'none';
+    submitBtn.disabled = true;
+    btnText.style.display = 'none';
+    btnLoading.style.display = 'inline-block';
+    
+    try {
+        const res = await fetch('/profile/api-keys', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': csrfToken,
+            },
+            body: JSON.stringify({
+                provider: provider,
+                api_key: apiKey,
+                label: label || null,
+                base_url: baseUrl,
+                default_model: defaultModel,
+            }),
+        });
+        
+        const data = await res.json();
+        
+        if (data.success) {
+            window.closeAddKeyModal();
+            showToast('API key berhasil disimpan!', 'success');
+            window.loadUserApiKeys();
+        } else {
+            errorEl.textContent = data.message || 'Gagal menyimpan API key.';
+            errorEl.style.display = 'block';
+        }
+    } catch (e) {
+        console.error(e);
+        errorEl.textContent = 'Terjadi kesalahan. Coba lagi.';
+        errorEl.style.display = 'block';
+    } finally {
+        submitBtn.disabled = false;
+        btnText.style.display = 'inline';
+        btnLoading.style.display = 'none';
+    }
+};
+
+/**
+ * Test API key (re-validate).
+ */
+window.testUserApiKey = async function(id) {
+    showToast('Testing API key...', 'info');
+    
+    try {
+        const res = await fetch(`/profile/api-keys/${id}/test`, {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': csrfToken,
+            },
+        });
+        
+        const data = await res.json();
+        
+        if (data.is_valid) {
+            showToast('API key valid!', 'success');
+        } else {
+            showToast(data.message || 'API key tidak valid.', 'error');
+        }
+        window.loadUserApiKeys();
+    } catch (e) {
+        showToast('Gagal test API key.', 'error');
+    }
+};
+
+/**
+ * Toggle active status.
+ */
+window.toggleUserApiKey = async function(id) {
+    try {
+        const res = await fetch(`/profile/api-keys/${id}/toggle`, {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': csrfToken,
+            },
+        });
+        
+        const data = await res.json();
+        if (data.success) {
+            showToast(data.is_active ? 'Key diaktifkan' : 'Key dinonaktifkan', 'success');
+            window.loadUserApiKeys();
+        }
+    } catch (e) {
+        showToast('Gagal mengubah status.', 'error');
+    }
+};
+
+/**
+ * Delete API key.
+ */
+window.deleteUserApiKey = function(id) {
+    openConfirmModal(
+        'Hapus API Key?',
+        'API key ini akan dihapus permanen dan tidak bisa dikembalikan.',
+        'deleteUserApiKey',
+        id
+    );
+};
+
+/**
+ * Execute delete (dipanggil dari modal konfirmasi).
+ */
+window.executeDeleteUserApiKey = async function(id) {
+    try {
+        const res = await fetch(`/profile/api-keys/${id}`, {
+            method: 'DELETE',
+            headers: {
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': csrfToken,
+            },
+        });
+        
+        const data = await res.json();
+        if (data.success) {
+            showToast('API key berhasil dihapus', 'success');
+            window.loadUserApiKeys();
+        } else {
+            showToast(data.message || 'Gagal menghapus', 'error');
+        }
+    } catch (e) {
+        showToast('Gagal menghapus API key.', 'error');
+    }
+};
+
+/**
+ * Escape HTML untuk XSS prevention.
+ */
+window.escapeHtml = function(str) {
+    if (!str) return '';
+    return String(str).replace(/[&<>"']/g, (m) => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;',
+    }[m]));
+};
+
+// Fallback: pasang event listener manual untuk tombol "+ Tambah" API Key
+// (untuk handle kasus onclick inline tidak bekerja)
+document.addEventListener('DOMContentLoaded', () => {
+    const addKeyBtn = document.getElementById('btnAddApiKey') || document.querySelector('.btn-add-key');
+    if (addKeyBtn && typeof window.openAddKeyModal === 'function') {
+        // Hapus onclick inline (kalau ada) untuk cegah double trigger
+        addKeyBtn.removeAttribute('onclick');
+        
+        // Pasang event listener
+        addKeyBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            window.openAddKeyModal();
+        });
+        
+        console.log('[BYOK] Event listener terpasang untuk tombol + Tambah');
+    } else if (addKeyBtn) {
+        console.warn('[BYOK] Tombol + Tambah ada, tapi openAddKeyModal belum terdefinisi');
+    }
+});
 function setTheme(mode) {
     const isLight = mode === 'light';
     document.body.classList.toggle('light-mode', isLight);

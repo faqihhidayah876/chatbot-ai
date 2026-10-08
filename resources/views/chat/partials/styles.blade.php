@@ -2595,3 +2595,187 @@ html.light-mode .markdown-body pre {
     }
 }
 
+/* ===== BYOK API KEY LIST ===== */
+.btn-add-key {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-md);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 150ms cubic-bezier(0.4, 0, 0.2, 1);
+    font-family: var(--font-sans);
+}
+.btn-add-key:hover {
+    background: var(--accent-hover);
+}
+
+.byok-info-banner {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px 14px;
+    background: var(--accent-subtle);
+    border: 1px solid var(--accent-border);
+    border-radius: var(--radius-md);
+    font-size: 12px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+.byok-info-banner i {
+    color: var(--accent);
+}
+
+.apikey-card {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    padding: 16px;
+    margin-bottom: 10px;
+    transition: border-color 150ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.apikey-card:hover {
+    border-color: var(--border-medium);
+}
+
+.apikey-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+.apikey-provider {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+.apikey-provider-icon {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-subtle);
+    border-radius: var(--radius-md);
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+.apikey-label {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    margin-top: 2px;
+}
+
+.apikey-preview {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-secondary);
+    padding: 6px 10px;
+    background: var(--bg-subtle);
+    border-radius: var(--radius-sm);
+    display: inline-block;
+    margin-bottom: 10px;
+}
+
+.apikey-meta {
+    display: flex;
+    gap: 16px;
+    font-size: 11px;
+    color: var(--text-tertiary);
+    margin-bottom: 12px;
+}
+
+.apikey-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: var(--radius-sm);
+    font-size: 10px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+.apikey-badge.valid { background: var(--success-subtle); color: var(--success); }
+.apikey-badge.invalid { background: var(--danger-subtle); color: var(--danger); }
+.apikey-badge.active { background: var(--accent-subtle); color: var(--accent); }
+.apikey-badge.inactive { background: var(--warning-subtle); color: var(--warning); }
+
+.apikey-actions {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+.apikey-action-btn {
+    padding: 6px 10px;
+    background: transparent;
+    border: 1px solid var(--border-medium);
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary);
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
+    font-family: var(--font-sans);
+}
+.apikey-action-btn:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+    border-color: var(--border-strong);
+}
+.apikey-action-btn.danger:hover {
+    background: var(--danger-subtle);
+    color: var(--danger);
+    border-color: var(--danger);
+}
+
+.loading-state {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 30px;
+    color: var(--text-tertiary);
+    font-size: 13px;
+}
+.loading-state i {
+    font-size: 16px;
+}
+
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    text-align: center;
+    color: var(--text-tertiary);
+}
+.empty-state i {
+    font-size: 32px;
+    margin-bottom: 12px;
+    opacity: 0.3;
+}
+.empty-state p {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin-bottom: 4px;
+}
+.empty-state span {
+    font-size: 12px;
+}
+
+
