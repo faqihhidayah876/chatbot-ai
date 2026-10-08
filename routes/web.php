@@ -8,6 +8,7 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\Fase2Controller;
 use App\Http\Controllers\DeepResearchController;
 use App\Http\Controllers\SahajaLlmController;
+use App\Http\Controllers\ProfileController;
 
 // 1. Halaman Depan (Welcome)
 Route::get('/', function () {
@@ -76,31 +77,11 @@ Route::middleware('auth')->group(function () {
     Route::post('/feedback/send', [App\Http\Controllers\ChatController::class, 'storeFeedback'])->name('feedback.send');
 
     // Update Profil (Nama & Foto sekaligus)
-    Route::post('/profile/update', function(\Illuminate\Http\Request $request) {
-        $user = \App\Models\User::find(\Illuminate\Support\Facades\Auth::id());
-        if ($request->has('name')) {
-            $user->name = $request->name;
-        }
-        if ($request->has('avatar')) {
-            $user->avatar = $request->avatar; // Bisa bernilai null jika dihapus
-        }
-        $user->save();
-        return response()->json(['success' => true]);
-    });
+    Route::post('/profile/update', [ProfileController::class, 'update'])->name('profile.update');
     // Hapus Semua Obrolan (Chat & Session)
-    Route::delete('/profile/chat/clear', function() {
-        $userId = \Illuminate\Support\Facades\Auth::id();
-        \App\Models\Chat::whereHas('session', function($q) use ($userId) { $q->where('user_id', $userId); })->delete();
-        \App\Models\Session::where('user_id', $userId)->delete();
-        return response()->json(['success' => true]);
-    });
+    Route::delete('/profile/chat/clear', [ProfileController::class, 'clearChats'])->name('profile.clearChats');
     // Hapus Akun Permanen
-    Route::delete('/profile/account/delete', function() {
-        $user = \App\Models\User::find(\Illuminate\Support\Facades\Auth::id());
-        $user->delete();
-        \Illuminate\Support\Facades\Auth::logout();
-        return response()->json(['success' => true]);
-    });
+    Route::delete('/profile/account/delete', [ProfileController::class, 'deleteAccount'])->name('profile.deleteAccount');
 });
 
 Route::get('/terms', function () { return view('terms'); })->name('terms');
