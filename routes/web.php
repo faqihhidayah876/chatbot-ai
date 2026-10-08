@@ -9,6 +9,7 @@ use App\Http\Controllers\Fase2Controller;
 use App\Http\Controllers\DeepResearchController;
 use App\Http\Controllers\SahajaLlmController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\DeveloperController;
 
 // 1. Halaman Depan (Welcome)
 Route::get('/', function () {
@@ -51,6 +52,13 @@ Route::middleware('auth')->group(function () {
     // Export routes
     Route::get('/session/{id}/export', [ChatController::class, 'exportSession'])->name('chat.export');
     Route::get('/export/all', [ChatController::class, 'exportAllSessions'])->name('chat.exportAll');
+
+    // Developer Portal & API Docs
+    Route::get('/developer', [DeveloperController::class, 'index'])->name('developer.index');
+    Route::post('/developer/keys', [DeveloperController::class, 'store'])->name('developer.store');
+    Route::post('/developer/keys/{id}/toggle', [DeveloperController::class, 'toggle'])->name('developer.toggle');
+    Route::delete('/developer/keys/{id}', [DeveloperController::class, 'destroy'])->name('developer.destroy');
+    Route::get('/docs/api', [DeveloperController::class, 'docs'])->name('docs.api');
 });
 
 // 5. Khusus Admin

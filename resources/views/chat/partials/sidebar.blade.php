@@ -25,6 +25,10 @@
             <i class="fas fa-book-open" style="font-size: 16px;"></i>
             <span class="btn-text text-label">SAHAJA LLM</span>
         </a>
+        <a href="{{ route('developer.index') }}" class="new-chat-btn secondary" aria-label="Developer Portal">
+            <i class="fas fa-code" style="font-size: 16px;"></i>
+            <span class="btn-text text-label">Developer</span>
+        </a>
     </div>
 
     {{-- History --}}
