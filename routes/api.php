@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ApiController;
+use App\Http\Controllers\Api\TelegramWebhookController;
 
 Route::prefix('v1')->name('api.')->group(function () {
     Route::middleware('api_key')->group(function () {
@@ -9,3 +10,5 @@ Route::prefix('v1')->name('api.')->group(function () {
         Route::get('/me', [ApiController::class, 'me'])->name('me');
     });
 });
+
+Route::post('/telegram/webhook', [TelegramWebhookController::class, 'handle']);
