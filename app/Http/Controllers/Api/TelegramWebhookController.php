@@ -166,16 +166,21 @@ class TelegramWebhookController extends Controller {
                     $this->tg->sendMessage($chatId, '❌ Fitur rangkum saat ini hanya untuk file PDF.');
                 }
             } else {
-                // 2. Siapkan direktori Cloud Sahaja (Pastikan permission www-data bisa write!)
-                $cloudStoragePath = env('CLOUD_SAHAJA_STORAGE_PATH', '/var/www/cloud-sahaja/storage/app/private/files/');
-                if (!file_exists($cloudStoragePath)) {
-                    @mkdir($cloudStoragePath, 0775, true);
+                // 2. Siapkan direktori Cloud Sahaja (sub-folder 'files/' di private storage)
+                $baseStorage = rtrim(env('CLOUD_SAHAJA_STORAGE_PATH', '/var/www/cloud-sahaja/storage/app/private/'), '/\\');
+                $cloudFilesDir = str_ends_with($baseStorage, 'files') ? $baseStorage : $baseStorage . DIRECTORY_SEPARATOR . 'files';
+
+                if (!file_exists($cloudFilesDir)) {
+                    @mkdir($cloudFilesDir, 0775, true);
                 }
 
-                // 3. Buat nama file unik (UUID) dan simpan
+                // 3. Buat nama file unik (UUID) dan simpan ke folder files/
                 $extension = pathinfo($fileName, PATHINFO_EXTENSION);
-                $storedName = (string) Str::uuid() . ($extension ? '.' . $extension : '');
-                $destinationPath = rtrim($cloudStoragePath, '/\\') . DIRECTORY_SEPARATOR . $storedName;
+                $storedFileName = (string) Str::uuid() . ($extension ? '.' . $extension : '');
+                $destinationPath = $cloudFilesDir . DIRECTORY_SEPARATOR . $storedFileName;
+
+                // Cloud Sahaja mencatat relative path terhadap disk private dengan prefix 'files/'
+                $dbStoredName = 'files/' . $storedFileName;
 
                 if (file_put_contents($destinationPath, $fileContent)) {
                     try {
@@ -188,7 +193,7 @@ class TelegramWebhookController extends Controller {
                             DB::connection('cloud_sahaja')->table('files')->insert([
                                 'user_id' => $cloudUser->id,
                                 'original_name' => $fileName,
-                                'stored_name' => $storedName,
+                                'stored_name' => $dbStoredName,
                                 'mime_type' => @mime_content_type($destinationPath) ?: 'application/octet-stream',
                                 'size' => filesize($destinationPath),
                                 'extension' => $extension,

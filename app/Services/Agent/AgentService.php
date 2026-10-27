@@ -410,12 +410,22 @@ class AgentService {
                 return "File '{$filename}' tidak ditemukan di Cloud Sahaja.";
             }
 
-            // Path file fisik di server
-            $storagePath = env('CLOUD_SAHAJA_STORAGE_PATH', '/var/www/cloud-sahaja/storage/app/private/files/');
-            $filePath = rtrim($storagePath, '/\\') . DIRECTORY_SEPARATOR . $file->stored_name;
+            // Path file fisik di server (base private disk: /var/www/cloud-sahaja/storage/app/private/)
+            $storageBase = rtrim(env('CLOUD_SAHAJA_STORAGE_PATH', '/var/www/cloud-sahaja/storage/app/private/'), '/\\');
+            if (str_ends_with($storageBase, 'files') && str_starts_with($file->stored_name, 'files/')) {
+                $storageBase = dirname($storageBase);
+            }
+
+            $filePath = $storageBase . DIRECTORY_SEPARATOR . $file->stored_name;
 
             if (!file_exists($filePath)) {
-                return "File fisik tidak ditemukan di server.";
+                // Fallback jika stored_name belum diawali 'files/' tapi file berada di subfolder files/
+                $altPath = $storageBase . DIRECTORY_SEPARATOR . 'files' . DIRECTORY_SEPARATOR . $file->stored_name;
+                if (file_exists($altPath)) {
+                    $filePath = $altPath;
+                } else {
+                    return "File fisik tidak ditemukan di server.";
+                }
             }
 
             // Ekstrak teks (asumsi PDF atau TXT)
