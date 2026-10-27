@@ -354,18 +354,25 @@ class AgentService {
             }
 
             $token = Str::random(16);
-            $expiresAt = null;
-            if ($expiry !== 'forever' && !empty($expiry)) {
-                try {
-                    $expiresAt = now()->add($expiry);
-                } catch (\Throwable $te) {
-                    $expiresAt = now()->addDay();
-                }
-            }
+            $normalizedExpiry = strtolower(trim($expiry));
+            $expiresAt = match ($normalizedExpiry) {
+                '1h' => now()->addHour(),
+                '1d' => now()->addDay(),
+                '7d' => now()->addDays(7),
+                'forever' => null,
+                default => !empty($normalizedExpiry) ? (function () use ($normalizedExpiry) {
+                    try {
+                        return now()->add($normalizedExpiry);
+                    } catch (\Throwable $te) {
+                        return now()->addDay();
+                    }
+                })() : now()->addDay(),
+            };
 
             DB::connection('cloud_sahaja')->table('files')
                 ->where('id', $file->id)
                 ->update([
+                    'is_public' => 1,
                     'share_token' => $token,
                     'share_expires_at' => $expiresAt,
                 ]);
