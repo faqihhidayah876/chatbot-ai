@@ -53,7 +53,11 @@ class AgentService {
             . "Pemilik akun: {$user->name} ({$user->email}).\n"
             . "Balas dalam Bahasa Indonesia yang ringkas, jelas, dan ramah.\n"
             . "Gunakan tools yang tersedia jika user menanyakan status server, kuota, daftar file, atau membuat link share Cloud Sahaja.\n"
-            . "Jika user meminta hal di luar kemampuan tools yang ada, katakan apa adanya — jangan mengarang.";
+            . "Jika user meminta hal di luar kemampuan tools yang ada, katakan apa adanya — jangan mengarang.\n\n"
+            . "ATURAN TOOL:\n"
+            . "1. Jika user minta mencari file atau melihat daftar file/folder, gunakan tool 'list_files'.\n"
+            . "2. Jika user minta MEMBUAT LINK SHARE untuk sebuah file (misal: 'buat link share', 'bagikan file'), WAJIB gunakan tool 'create_share_link'. JANGAN gunakan 'list_files'.\n"
+            . "3. Jika user meminta share link, kamu hanya butuh parameter 'filename' dan 'expiry'. JANGAN mencari folder.";
     }
 
     protected function callMistral(array $messages, ?User $user = null): string {
