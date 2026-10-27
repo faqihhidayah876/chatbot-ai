@@ -2459,3 +2459,20 @@ window.addEventListener('appinstalled', () => {
     if (promptEl) promptEl.style.display = 'none';
 });
 
+// Trigger Pop-up Telegram Agent
+document.addEventListener('DOMContentLoaded', () => {
+    const showTelegramPopup = "{{ session('show_telegram_popup') ? 'true' : 'false' }}";
+    const telegramChatId = "{{ Auth::user()?->telegram_chat_id ?? '' }}";
+
+    if (showTelegramPopup === 'true' && !telegramChatId && !sessionStorage.getItem('telegramPopupDismissed')) {
+        setTimeout(() => {
+            const modal = document.getElementById('telegramAnnouncementModal');
+            if (modal) {
+                modal.classList.add('show');
+                sessionStorage.setItem('telegramPopupDismissed', 'true');
+            }
+        }, 1500); // Muncul setelah 1.5 detik
+    }
+});
+
+

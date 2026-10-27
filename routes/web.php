@@ -31,6 +31,10 @@ Route::middleware('guest')->group(function () {
     Route::post('/login', [AuthController::class, 'processLogin'])->name('login.post');
     Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
     Route::post('/register', [AuthController::class, 'processRegister'])->name('register.post');
+
+    // Google OAuth
+    Route::get('/auth/google', [AuthController::class, 'redirectToGoogle'])->name('google.login');
+    Route::get('/auth/google/callback', [AuthController::class, 'handleGoogleCallback']);
 });
 
 // 3. Route Logout (Harus POST demi keamanan)

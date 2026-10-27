@@ -126,4 +126,34 @@ class TelegramClient {
             return false;
         }
     }
+
+    public function getFileUrl(string $fileId): ?string {
+        try {
+            // 1. Minta path file ke Telegram
+            $resp = $this->http(10)->post("{$this->base}/getFile", ['file_id' => $fileId]);
+            if (!$resp->ok() || $resp->json('ok') !== true) return null;
+            
+            $filePath = $resp->json('result.file_path');
+            
+            // 2. Kembalikan URL download lengkap
+            $token = config('telegram.bot_token');
+            return "https://api.telegram.org/file/bot{$token}/{$filePath}";
+        } catch (\Throwable $e) {
+            Log::error('Telegram getFile error', ['msg' => $e->getMessage()]);
+            return null;
+        }
+    }
+
+    public function downloadFile(string $fileUrl): ?string {
+        try {
+            $resp = $this->http(60)->get($fileUrl);
+            if ($resp->ok()) {
+                return $resp->body();
+            }
+            return null;
+        } catch (\Throwable $e) {
+            Log::error('Telegram downloadFile error', ['msg' => $e->getMessage()]);
+            return null;
+        }
+    }
 }

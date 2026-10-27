@@ -610,3 +610,32 @@
     </div>
 </div>
 
+{{-- MODAL TELEGRAM AGENT ANNOUNCEMENT --}}
+<div class="modal-overlay" id="telegramAnnouncementModal" style="z-index: 100050;">
+    <div class="modal-content" style="max-width: 450px; text-align: center; padding: 30px 24px;">
+        <div style="font-size: 3rem; color: #3b82f6; margin-bottom: 15px;">
+            <i class="fab fa-telegram"></i>
+        </div>
+        <h2 style="font-size: 1.4rem; margin-bottom: 10px; font-weight: 700;">Kenalan dengan SAHAJA Agent! 🤖</h2>
+        <p style="color: var(--text-secondary); font-size: 0.95rem; line-height: 1.6; margin-bottom: 20px;">
+            Sekarang Anda bisa berinteraksi dengan asisten pribadi Anda langsung dari Telegram. Cek kuota Cloud, cek status server, atau upload file tanpa harus membuka browser!
+        </p>
+        <div style="background: var(--bg-subtle); padding: 15px; border-radius: 10px; margin-bottom: 20px; text-align: left;">
+            <strong style="display: block; font-size: 13px; color: var(--text-primary);">Cara Menghubungkan:</strong>
+            <ol style="font-size: 13px; color: var(--text-secondary); margin-top: 8px; padding-left: 20px; line-height: 1.6;">
+                <li>Buka Bot Telegram <a href="https://t.me/sahaja_agent_bot" target="_blank" style="color: var(--accent);">@sahaja_agent_bot</a></li>
+                <li>Kirim pesan <b>/start</b></li>
+                <li>Copy Chat ID yang diberikan bot</li>
+                <li>Tempel di menu <b>Profil</b> di web ini</li>
+            </ol>
+        </div>
+        <div style="display: flex; gap: 10px;">
+            <button class="github-submit-btn" style="flex: 1; background: transparent; border: 1px solid var(--border-medium); color: var(--text-primary);" onclick="closeCustomModal('telegramAnnouncementModal')">Nanti Saja</button>
+            <a href="https://t.me/sahaja_agent_bot" target="_blank" class="github-submit-btn" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none;">
+                <i class="fab fa-telegram"></i> Buka Bot
+            </a>
+        </div>
+    </div>
+</div>
+
+

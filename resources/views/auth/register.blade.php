@@ -9,6 +9,7 @@
     <link rel="icon" type="image/png" href="https://i.ibb.co.com/jZZ0648R/Logo-SAHAJA-AI.png">
     @include('partials.pwa')
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 
     {{-- Theme Init (Anti-FOUC) --}}
     <script>
@@ -368,6 +369,17 @@
         <h1 class="auth-title">Buat Akun Baru</h1>
         <p class="auth-subtitle">Bergabung dengan SAHAJA AI sekarang</p>
 
+        <a href="{{ route('google.login') }}" style="display:flex; justify-content:center; align-items:center; gap:10px; width:100%; height:44px; background:#fff; color:#333; border-radius:10px; font-weight:600; text-decoration:none; margin-top:20px; margin-bottom:16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid rgba(0,0,0,0.08); transition: opacity 150ms ease;">
+            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20" alt="Google">
+            Lanjutkan dengan Google
+        </a>
+
+        <div style="display:flex; align-items:center; gap:12px; margin-bottom:20px;">
+            <div style="flex:1; height:1px; background:var(--border-medium);"></div>
+            <span style="font-size:12px; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:0.5px;">atau email</span>
+            <div style="flex:1; height:1px; background:var(--border-medium);"></div>
+        </div>
+
         <form action="{{ route('register.post') }}" method="POST" class="auth-form" novalidate>
             @csrf
 
@@ -441,6 +453,8 @@
                     class="form-input"
                 >
             </div>
+
+            <div class="cf-turnstile" data-sitekey="{{ env('TURNSTILE_SITE_KEY') }}" data-theme="dark" style="margin-bottom: 16px; display: flex; justify-content: center;"></div>
 
             <button type="submit" class="btn-submit">Daftar</button>
         </form>

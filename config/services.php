@@ -35,6 +35,12 @@ return [
         ],
     ],
 
+    'google' => [
+        'client_id'     => env('GOOGLE_CLIENT_ID'),
+        'client_secret' => env('GOOGLE_CLIENT_SECRET'),
+        'redirect'      => env('GOOGLE_REDIRECT_URI', 'https://sahaja-ai.my.id/auth/google/callback'),
+    ],
+
     // ============ AI Providers ============
     'nvidia' => [
         'key'      => env('NVIDIA_API_KEY'),
