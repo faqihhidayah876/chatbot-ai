@@ -87,11 +87,12 @@ class AgentService {
                 'type' => 'function',
                 'function' => [
                     'name' => 'list_files',
-                    'description' => 'Menampilkan 5 file terbaru milik user di Cloud Sahaja. Bisa difilter berdasarkan kategori (pdf, image, dll).',
+                    'description' => 'Menampilkan file milik user. Bisa difilter berdasarkan kategori (pdf, image, dll) dan/atau nama folder spesifik.',
                     'parameters' => [
                         'type' => 'object',
                         'properties' => [
-                            'category' => ['type' => 'string', 'description' => 'Kategori file (opsional)'],
+                            'category' => ['type' => 'string', 'description' => 'Kategori file (opsional), misal: pdf, image'],
+                            'folder_name' => ['type' => 'string', 'description' => 'Nama folder (opsional), misal: aii, Tugas Kuliah'],
                         ],
                     ],
                 ],
@@ -158,7 +159,8 @@ class AgentService {
                     $toolResult = $this->getServerStatus();
                 } elseif ($functionName === 'list_files') {
                     $category = $args['category'] ?? null;
-                    $toolResult = $this->getCloudFiles($user, $category);
+                    $folderName = $args['folder_name'] ?? null;
+                    $toolResult = $this->getCloudFiles($user, $category, $folderName);
                 } elseif ($functionName === 'create_share_link') {
                     $filename = $args['filename'] ?? '';
                     $expiry = $args['expiry'] ?? '1d';
@@ -235,44 +237,68 @@ class AgentService {
         return "Sisa kapasitas Hardisk server: {$freeSpaceMB} MB (~{$freeSpaceGB} GB).";
     }
 
-    // Fungsi Eksekutor Tool: Daftar File Cloud Sahaja User
-    protected function getCloudFiles(?User $user, ?string $category): string {
+    // Fungsi Eksekutor Tool: Daftar File Cloud Sahaja User (Support Nested Folder)
+    protected function getCloudFiles(?User $user, ?string $category = null, ?string $folderName = null): string {
         if (!$user) {
             return "Informasi user tidak ditemukan.";
         }
 
         try {
-            $cloudUser = DB::connection('cloud_sahaja')->table('users')
-                ->where('email', $user->email)
-                ->first();
-
+            // Cari ID user di Cloud Sahaja berdasarkan email
+            $cloudUser = DB::connection('cloud_sahaja')->table('users')->where('email', $user->email)->first();
             if (!$cloudUser) {
-                return "Akun Cloud Sahaja dengan email {$user->email} belum terdaftar atau tidak ditemukan.";
+                return "Akun Cloud Sahaja tidak ditemukan.";
             }
 
             $query = DB::connection('cloud_sahaja')->table('files')
                 ->where('user_id', $cloudUser->id)
                 ->where('is_folder', 0)
-                ->whereNull('deleted_at'); // Abaikan sampah
+                ->whereNull('deleted_at');
+
+            $folderInfo = "";
+            if ($folderName) {
+                // 1. Cari folder berdasarkan namanya
+                $folder = DB::connection('cloud_sahaja')->table('files')
+                    ->where('user_id', $cloudUser->id)
+                    ->where('is_folder', 1)
+                    ->where('original_name', 'LIKE', "%{$folderName}%")
+                    ->whereNull('deleted_at')
+                    ->first();
+
+                if (!$folder) {
+                    return "Folder dengan nama '{$folderName}' tidak ditemukan.";
+                }
+
+                // 2. Filter file berdasarkan parent_id (folder tersebut)
+                $query->where('parent_id', $folder->id);
+                $folderInfo = "di dalam folder **{$folder->original_name}**";
+            } else {
+                // Jika tidak ada folder_name, ambil dari root (parent_id null/0)
+                $query->where(function($q) {
+                    $q->whereNull('parent_id')->orWhere('parent_id', 0);
+                });
+                $folderInfo = "di folder utama (root)";
+            }
 
             if ($category) {
                 $query->where('mime_type', 'LIKE', "%{$category}%");
             }
 
-            $files = $query->orderBy('created_at', 'desc')->limit(5)->get();
+            $files = $query->orderBy('created_at', 'desc')->limit(10)->get();
 
             if ($files->isEmpty()) {
-                return "Tidak ada file ditemukan.";
+                return "Tidak ada file ditemukan {$folderInfo}.";
             }
 
-            $result = "5 File terbaru Anda:\n";
-            foreach ($files as $file) {
-                $sizeMb = round(($file->size ?? 0) / 1048576, 2);
-                $result .= "- {$file->original_name} ({$sizeMb} MB)\n";
+            $result = "Berikut adalah daftar file {$folderInfo}:\n";
+            foreach ($files as $index => $file) {
+                $sizeMB = round(($file->size ?? 0) / 1048576, 2);
+                $result .= ($index + 1) . ". {$file->original_name} ({$sizeMB} MB)\n";
             }
             return trim($result);
+
         } catch (\Throwable $e) {
-            Log::error('Cloud DB getCloudFiles error: ' . $e->getMessage());
+            Log::error('getCloudFiles Error: ' . $e->getMessage());
             return "Gagal mengambil data file dari Cloud Sahaja.";
         }
     }
