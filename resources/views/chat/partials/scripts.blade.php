@@ -511,6 +511,17 @@ document.addEventListener('DOMContentLoaded', () => {
     } else if (addKeyBtn) {
         console.warn('[BYOK] Tombol + Tambah ada, tapi openAddKeyModal belum terdefinisi');
     }
+
+    // Auto-open tab profile if redirected from /profile
+    if (typeof activeTabOnLoad !== 'undefined' && activeTabOnLoad !== 'umum') {
+        openSettingsModal();
+        // Cari tombol nav yang sesuai dan klik
+        document.querySelectorAll('.settings-sidebar .nav-btn').forEach(btn => {
+            if(btn.getAttribute('onclick') && btn.getAttribute('onclick').includes(`'${activeTabOnLoad}'`)) {
+                btn.click();
+            }
+        });
+    }
 });
 function setTheme(mode) {
     const isLight = mode === 'light';
@@ -559,6 +570,20 @@ async function simpanProfil() {
         const data = await res.json();
         if(data.success) { showToast("Profil diperbarui!", "success"); setTimeout(() => window.location.reload(), 1000); }
     } catch(e) { showToast("Gagal menyimpan profil", "error"); }
+}
+
+async function simpanTelegram() {
+    const chatId = document.getElementById('inputTelegramId').value.trim();
+    try {
+        const res = await fetch('/profile/telegram', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken },
+            body: JSON.stringify({ telegram_chat_id: chatId })
+        });
+        const data = await res.json();
+        if(data.success) showToast("Akun Telegram diperbarui!", "success");
+        else showToast("Gagal menyimpan", "error");
+    } catch (e) { showToast("Terjadi kesalahan jaringan", "error"); }
 }
 
 // Mengarahkan kedua tombol menu ke satu Pintu Input Sakti dengan Mode Bunglon

@@ -198,6 +198,15 @@
                         style="opacity: 0.6;">
                 </div>
                 <hr style="border: 0; border-top: 1px solid var(--border-subtle); margin: 20px 0;">
+                <h4 style="font-size: 14px; font-weight: 600; margin-bottom: 10px;">Integrasi Telegram Agent</h4>
+                <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 20px;">
+                    <input type="text" id="inputTelegramId" class="github-input" placeholder="Contoh: 7426673448" value="{{ Auth::user()->telegram_chat_id }}" style="flex: 1;">
+                    <button class="github-submit-btn" onclick="simpanTelegram()">Simpan</button>
+                </div>
+                <p style="font-size: 11px; color: var(--text-tertiary); margin-top: -15px; margin-bottom: 20px;">
+                    Kirim pesan <b>/start</b> ke Bot Telegram SAHAJA Agent untuk melihat Chat ID Anda.
+                </p>
+                <hr style="border: 0; border-top: 1px solid var(--border-subtle); margin: 20px 0;">
                 <button class="option-item delete"
                     style="width: auto; padding: 10px; font-weight: 600; border: 1px solid var(--danger);"
                     onclick="openConfirmModal('Hapus Akun Permanen?', 'Seluruh data akun, foto, dan obrolan akan hilang selamanya.', 'deleteAccount')"><i

@@ -148,4 +148,20 @@ class ProfileController extends Controller
             ], 500);
         }
     }
+
+    public function updateTelegram(Request $request)
+    {
+        try {
+            $request->validate(['telegram_chat_id' => 'nullable|string|max:32']);
+            $user = User::find(Auth::id());
+            
+            // Jika user mengirim string kosong, berarti unlink (putuskan)
+            $user->telegram_chat_id = empty($request->telegram_chat_id) ? null : $request->telegram_chat_id;
+            $user->save();
+
+            return response()->json(['success' => true, 'message' => 'Akun Telegram diperbarui.']);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Gagal update Telegram.'], 500);
+        }
+    }
 }

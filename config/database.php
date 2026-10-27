@@ -43,6 +43,13 @@ return [
             'transaction_mode' => 'DEFERRED',
         ],
 
+        'cloud_sahaja' => [
+            'driver' => 'sqlite',
+            'database' => env('CLOUD_SAHAJA_DB_PATH', '/var/www/cloud-sahaja/database/database.sqlite'),
+            'prefix' => '',
+            'foreign_key_constraints' => env('DB_FOREIGN_KEYS', true),
+        ],
+
         'mysql' => [
             'driver' => 'mysql',
             'url' => env('DB_URL'),

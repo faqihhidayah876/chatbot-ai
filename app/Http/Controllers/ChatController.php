@@ -60,7 +60,8 @@ class ChatController extends Controller
                 return redirect()->route('chat.index');
             }
         }
-        return view('chat', compact('sessions', 'chats', 'currentSession'));
+        $activeTab = request()->query('tab', 'umum');
+        return view('chat', compact('sessions', 'chats', 'currentSession', 'activeTab'));
     }
 
     public function sendMessage(Request $request)

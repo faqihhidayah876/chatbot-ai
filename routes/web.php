@@ -21,6 +21,10 @@ Route::get('/', function () {
     return view('welcome');
 })->name('home');
 
+Route::get('/profile', function () {
+    return redirect()->route('chat.index', ['tab' => 'profile']);
+})->name('profile')->middleware('auth');
+
 // 2. Authentication (Guest Only)
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
@@ -94,6 +98,7 @@ Route::middleware('auth')->group(function () {
 
     // Update Profil (Nama & Foto sekaligus)
     Route::post('/profile/update', [ProfileController::class, 'update'])->name('profile.update');
+    Route::post('/profile/telegram', [ProfileController::class, 'updateTelegram'])->name('profile.telegram');
     // Hapus Semua Obrolan (Chat & Session)
     Route::delete('/profile/chat/clear', [ProfileController::class, 'clearChats'])->name('profile.clearChats');
     // Hapus Akun Permanen
