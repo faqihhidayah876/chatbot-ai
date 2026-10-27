@@ -13,7 +13,7 @@ use Laravel\Socialite\Facades\Socialite;
 class AuthController extends Controller
 {
     private function validateTurnstile($token) {
-        $secret = env('TURNSTILE_SECRET_KEY');
+        $secret = config('services.turnstile.secret_key');
         // Bypass in development if not configured or default placeholder
         if (empty($secret) || str_starts_with($secret, '0x4AAAAAAA')) {
             return true;

@@ -454,7 +454,7 @@
                 >
             </div>
 
-            <div class="cf-turnstile" data-sitekey="{{ env('TURNSTILE_SITE_KEY') }}" data-theme="dark" style="margin-bottom: 16px; display: flex; justify-content: center;"></div>
+            <div class="cf-turnstile" data-sitekey="{{ config('services.turnstile.site_key') }}" data-theme="dark" style="margin-bottom: 16px; display: flex; justify-content: center;"></div>
 
             <button type="submit" class="btn-submit">Daftar</button>
         </form>
