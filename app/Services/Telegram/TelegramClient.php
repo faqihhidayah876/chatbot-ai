@@ -20,27 +20,33 @@ class TelegramClient {
     }
 
     public function sendMessage(int|string $chatId, string $text): bool {
-        try {
-            $resp = $this->http(15)->post("{$this->base}/sendMessage", [
-                'chat_id'                  => $chatId,
-                'text'                     => $text,
-                'parse_mode'               => 'Markdown',
-                'disable_web_page_preview' => true,
-            ]);
-            if (!$resp->ok() || $resp->json('ok') !== true) {
-                // Jika error karena markdown tidak valid, coba kirim sebagai teks biasa
-                $retry = $this->http(15)->post("{$this->base}/sendMessage", [
+        // 1. Telegram max 4096 chars. Pecah teks jadi beberapa bagian.
+        $chunks = str_split($text, 4000);
+        $success = true;
+
+        foreach ($chunks as $chunk) {
+            try {
+                $resp = $this->http(15)->post("{$this->base}/sendMessage", [
                     'chat_id'                  => $chatId,
-                    'text'                     => strip_tags($text),
+                    'text'                     => $chunk,
+                    'parse_mode'               => 'Markdown',
                     'disable_web_page_preview' => true,
                 ]);
-                return $retry->ok() && $retry->json('ok') === true;
+                // Jika Markdown gagal (misal tabel bikin error), kirim sebagai teks biasa
+                if (!$resp->ok() || $resp->json('ok') !== true) {
+                    $this->http(15)->post("{$this->base}/sendMessage", [
+                        'chat_id'                  => $chatId,
+                        'text'                     => strip_tags($chunk),
+                        'disable_web_page_preview' => true,
+                    ]);
+                }
+            } catch (\Throwable $e) {
+                $success = false;
             }
-            return true;
-        } catch (\Throwable $e) {
-            Log::error('Telegram sendMessage exception', ['msg' => $e->getMessage()]);
-            return false;
+            // Jeda 500ms agar tidak kena rate limit Telegram
+            usleep(500000);
         }
+        return $success;
     }
 
     public function sendChatAction(int|string $chatId, string $action = 'typing'): void {

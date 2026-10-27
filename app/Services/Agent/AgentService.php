@@ -49,8 +49,13 @@ class AgentService {
     }
 
     protected function systemPrompt(User $user): string {
-        $soulPath = storage_path('app/agent/soul.md');
-        $soulContent = file_exists($soulPath) ? file_get_contents($soulPath) : "Kamu adalah SAHAJA Agent.";
+        $soulPath = storage_path("app/agent/soul_{$user->id}.md");
+        if (!file_exists($soulPath)) {
+            // Buat default jika belum ada
+            @mkdir(dirname($soulPath), 0775, true);
+            file_put_contents($soulPath, "# IDENTITAS\nKamu adalah SAHAJA Agent, asisten pribadi milik {$user->name}.\n\n# MEMORI\n- Belum ada catatan.");
+        }
+        $soulContent = file_get_contents($soulPath);
 
         return $soulContent . "\n\n"
             . "Pemilik akun: {$user->name} ({$user->email}).\n"
@@ -59,7 +64,8 @@ class AgentService {
             . "2. Jika user minta share, gunakan 'create_share_link'.\n"
             . "3. Jika user minta rangkum/baca isi, gunakan 'read_file_content'.\n"
             . "4. JIKA user menyuruhmu mengingat sesuatu (misal: 'ingat ya namaku Bos', 'catat kalau aku suka kopi', 'mulai sekarang panggil aku X'), WAJIB gunakan tool 'update_soul_memory'.\n"
-            . "5. Jika 'read_file_content' mengembalikan pesan 'TIDAK ADA TEKS', jelaskan ke user bahwa file itu hasil scan.";
+            . "5. Jika 'read_file_content' mengembalikan pesan 'TIDAK ADA TEKS', jelaskan ke user bahwa file itu hasil scan.\n"
+            . "6. Jika user minta menyimpan rangkuman/teks menjadi file Word (.docx) ke Cloud Sahaja, gunakan 'save_summary_as_docx'.";
     }
 
     protected function callMistral(array $messages, ?User $user = null): string {
@@ -146,6 +152,21 @@ class AgentService {
                     ],
                 ],
             ],
+            [
+                'type' => 'function',
+                'function' => [
+                    'name' => 'save_summary_as_docx',
+                    'description' => 'Menyimpan teks rangkuman menjadi file Word (.docx) dan mengunggahnya ke Cloud Sahaja.',
+                    'parameters' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'filename' => ['type' => 'string', 'description' => 'Nama file output, contoh: Rangkuman SCM.docx'],
+                            'content' => ['type' => 'string', 'description' => 'Teks lengkap hasil rangkuman yang akan dimasukkan ke dalam dokumen.'],
+                        ],
+                        'required' => ['filename', 'content'],
+                    ],
+                ],
+            ],
         ];
 
         try {
@@ -205,7 +226,7 @@ class AgentService {
                 } elseif ($functionName === 'update_soul_memory') {
                     $memoryText = $args['memory_text'] ?? '';
                     if (!empty(trim($memoryText))) {
-                        $soulPath = storage_path('app/agent/soul.md');
+                        $soulPath = storage_path("app/agent/soul_{$user->id}.md");
                         $soulDir = dirname($soulPath);
                         if (!file_exists($soulDir)) {
                             @mkdir($soulDir, 0775, true);
@@ -216,6 +237,10 @@ class AgentService {
                     } else {
                         $toolResult = "Gagal menyimpan memori kosong.";
                     }
+                } elseif ($functionName === 'save_summary_as_docx') {
+                    $filename = $args['filename'] ?? 'Dokumen.docx';
+                    $content = $args['content'] ?? '';
+                    $toolResult = $this->generateDocxToCloud($user, $filename, $content);
                 }
 
                 if ($toolResult !== "") {
@@ -411,6 +436,75 @@ class AgentService {
         } catch (\Throwable $e) {
             Log::error('Cloud DB generateShareLink error: ' . $e->getMessage());
             return "Gagal membuat link share.";
+        }
+    }
+
+    // Fungsi Eksekutor Tool: Generate Dokumen Word (.docx) & Upload ke Cloud Sahaja
+    protected function generateDocxToCloud(User $user, string $filename, string $content): string {
+        try {
+            $cloudUser = DB::connection('cloud_sahaja')->table('users')->where('email', $user->email)->first();
+            if (!$cloudUser) {
+                return "Gagal: Akun Cloud Sahaja tidak ditemukan.";
+            }
+
+            // 1. Generate DOCX
+            $phpWord = new \PhpOffice\PhpWord\PhpWord();
+            $section = $phpWord->addSection();
+
+            // Parse sederhana: pecah berdasarkan baris baru
+            $lines = explode("\n", $content);
+            foreach ($lines as $line) {
+                $trimmed = trim($line);
+                if (str_starts_with($trimmed, '#')) {
+                    // Jika heading
+                    $text = str_replace('#', '', $trimmed);
+                    $section->addText(trim($text), ['bold' => true, 'size' => 14]);
+                } else if (!empty($trimmed)) {
+                    $section->addText($trimmed);
+                }
+            }
+
+            $tempDir = storage_path('app/private');
+            if (!is_dir($tempDir)) {
+                @mkdir($tempDir, 0775, true);
+            }
+            $tempPath = $tempDir . DIRECTORY_SEPARATOR . 'temp_' . uniqid() . '.docx';
+            $objWriter = \PhpOffice\PhpWord\IOFactory::createWriter($phpWord, 'Word2007');
+            $objWriter->save($tempPath);
+
+            // 2. Pindahkan ke Cloud Sahaja
+            $baseStorage = rtrim(env('CLOUD_SAHAJA_STORAGE_PATH', '/var/www/cloud-sahaja/storage/app/private/'), '/\\');
+            $filesDir = str_ends_with($baseStorage, 'files') ? $baseStorage : $baseStorage . DIRECTORY_SEPARATOR . 'files';
+            $userDir = $filesDir . DIRECTORY_SEPARATOR . $cloudUser->id;
+
+            if (!is_dir($userDir)) {
+                @mkdir($userDir, 0775, true);
+            }
+
+            $storedName = (string) Str::uuid() . '.docx';
+            $destinationPath = $userDir . DIRECTORY_SEPARATOR . $storedName;
+
+            copy($tempPath, $destinationPath);
+            @unlink($tempPath); // Hapus file sementara
+
+            // 3. Simpan ke DB Cloud Sahaja
+            DB::connection('cloud_sahaja')->table('files')->insert([
+                'user_id' => $cloudUser->id,
+                'original_name' => $filename,
+                'stored_name' => $storedName,
+                'mime_type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                'size' => filesize($destinationPath),
+                'extension' => 'docx',
+                'is_folder' => 0,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            return "✅ Sukses! Rangkuman telah disimpan sebagai '{$filename}' dan diunggah ke Cloud Sahaja Anda.";
+
+        } catch (\Throwable $e) {
+            Log::error('Generate DOCX Error: ' . $e->getMessage());
+            return "❌ Gagal membuat dokumen Word: " . $e->getMessage();
         }
     }
 
