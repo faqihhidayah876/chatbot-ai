@@ -194,18 +194,32 @@ class AgentService {
         }
 
         try {
-            // Cek ke database Cloud Sahaja menggunakan email user
+            // 1. Ambil data user dari koneksi cloud_sahaja berdasarkan email
             $cloudUser = DB::connection('cloud_sahaja')->table('users')
                 ->where('email', $user->email)
                 ->first();
             
-            if ($cloudUser) {
-                $used = $cloudUser->storage_used ?? 0;
-                $total = $cloudUser->quota_mb ?? 1024; 
-                $sisa = $total - $used;
-                return "Sisa Kuota Cloud Sahaja milik user ini: {$sisa} MB dari total {$total} MB.";
+            if (!$cloudUser) {
+                return "Akun Cloud Sahaja dengan email {$user->email} belum terdaftar atau tidak ditemukan.";
             }
-            return "Akun Cloud Sahaja dengan email {$user->email} belum terdaftar atau tidak ditemukan.";
+
+            // 2. Baca nilai total kuota dari kolom quota (dalam satuan MB)
+            $totalMb = (float) ($cloudUser->quota ?? 5120);
+
+            // 3. Hitung total penyimpanan yang sudah terpakai dari tabel files (abaikan soft-delete)
+            $usedBytes = DB::connection('cloud_sahaja')->table('files')
+                ->where('user_id', $cloudUser->id)
+                ->whereNull('deleted_at')
+                ->sum('size') ?? 0;
+
+            // 4. Konversi total bytes terpakai ke MB
+            $usedMb = round($usedBytes / 1048576, 2);
+
+            // 5. Hitung sisa kuota (Total Kuota - Terpakai)
+            $sisaMb = max(0, round($totalMb - $usedMb, 2));
+
+            // 6. Kembalikan string jawaban yang rapi
+            return "Sisa Kuota Cloud Sahaja: {$sisaMb} MB dari total {$totalMb} MB (Terpakai: {$usedMb} MB).";
         } catch (\Throwable $e) {
             Log::error('Cloud DB Error: ' . $e->getMessage());
             return "Gagal terhubung ke database Cloud Sahaja. Pastikan file database dapat diakses.";
