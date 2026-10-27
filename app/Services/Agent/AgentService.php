@@ -63,9 +63,9 @@ class AgentService {
             . "1. Jika user minta melihat file/folder, gunakan 'list_files'.\n"
             . "2. Jika user minta share, gunakan 'create_share_link'.\n"
             . "3. Jika user minta rangkum/baca isi, gunakan 'read_file_content'.\n"
-            . "4. JIKA user menyuruhmu mengingat sesuatu (misal: 'ingat ya namaku Bos', 'catat kalau aku suka kopi', 'mulai sekarang panggil aku X'), WAJIB gunakan tool 'update_soul_memory'.\n"
-            . "5. Jika 'read_file_content' mengembalikan pesan 'TIDAK ADA TEKS', jelaskan ke user bahwa file itu hasil scan.\n"
-            . "6. Jika user minta menyimpan rangkuman/teks menjadi file Word (.docx) ke Cloud Sahaja, gunakan 'save_summary_as_docx'.";
+            . "4. JIKA user menyuruhmu membuat dokumen atau file dari teks (misal: 'simpan dalam bentuk pdf', 'buat file'), WAJIB gunakan tool 'save_summary_as_pdf'.\n"
+            . "5. JIKA user menyuruhmu mengingat sesuatu (misal: 'ingat ya namaku Bos', 'catat kalau aku suka kopi', 'mulai sekarang panggil aku X'), WAJIB gunakan tool 'update_soul_memory'.\n"
+            . "6. Jika 'read_file_content' mengembalikan pesan 'TIDAK ADA TEKS', jelaskan ke user bahwa file itu hasil scan.";
     }
 
     protected function callMistral(array $messages, ?User $user = null): string {
@@ -155,13 +155,13 @@ class AgentService {
             [
                 'type' => 'function',
                 'function' => [
-                    'name' => 'save_summary_as_docx',
-                    'description' => 'Menyimpan teks rangkuman menjadi file Word (.docx) dan mengunggahnya ke Cloud Sahaja.',
+                    'name' => 'save_summary_as_pdf',
+                    'description' => 'Menyimpan teks rangkuman menjadi file PDF dan mengunggahnya ke Cloud Sahaja agar bisa dipreview.',
                     'parameters' => [
                         'type' => 'object',
                         'properties' => [
-                            'filename' => ['type' => 'string', 'description' => 'Nama file output, contoh: Rangkuman SCM.docx'],
-                            'content' => ['type' => 'string', 'description' => 'Teks lengkap hasil rangkuman yang akan dimasukkan ke dalam dokumen.'],
+                            'filename' => ['type' => 'string', 'description' => 'Nama file output, contoh: Rangkuman SCM.pdf'],
+                            'content' => ['type' => 'string', 'description' => 'Teks lengkap hasil rangkuman yang akan dimasukkan ke dalam dokumen PDF.'],
                         ],
                         'required' => ['filename', 'content'],
                     ],
@@ -237,10 +237,10 @@ class AgentService {
                     } else {
                         $toolResult = "Gagal menyimpan memori kosong.";
                     }
-                } elseif ($functionName === 'save_summary_as_docx') {
-                    $filename = $args['filename'] ?? 'Dokumen.docx';
+                } elseif ($functionName === 'save_summary_as_pdf') {
+                    $filename = $args['filename'] ?? 'Rangkuman.pdf';
                     $content = $args['content'] ?? '';
-                    $toolResult = $this->generateDocxToCloud($user, $filename, $content);
+                    $toolResult = $this->generatePdfToCloud($user, $filename, $content);
                 }
 
                 if ($toolResult !== "") {
@@ -439,40 +439,66 @@ class AgentService {
         }
     }
 
-    // Fungsi Eksekutor Tool: Generate Dokumen Word (.docx) & Upload ke Cloud Sahaja
-    protected function generateDocxToCloud(User $user, string $filename, string $content): string {
+    // Fungsi Eksekutor Tool: Generate Dokumen PDF & Upload ke Cloud Sahaja
+    protected function generatePdfToCloud(User $user, string $filename, string $content): string {
         try {
             $cloudUser = DB::connection('cloud_sahaja')->table('users')->where('email', $user->email)->first();
             if (!$cloudUser) {
                 return "Gagal: Akun Cloud Sahaja tidak ditemukan.";
             }
 
-            // 1. Generate DOCX
-            $phpWord = new \PhpOffice\PhpWord\PhpWord();
-            $section = $phpWord->addSection();
-
-            // Parse sederhana: pecah berdasarkan baris baru
-            $lines = explode("\n", $content);
-            foreach ($lines as $line) {
-                $trimmed = trim($line);
-                if (str_starts_with($trimmed, '#')) {
-                    // Jika heading
-                    $text = str_replace('#', '', $trimmed);
-                    $section->addText(trim($text), ['bold' => true, 'size' => 14]);
-                } else if (!empty($trimmed)) {
-                    $section->addText($trimmed);
-                }
+            // 1. Validasi Konten Kosong
+            if (trim($content) === "") {
+                return "❌ Gagal: Teks rangkuman kosong.";
             }
 
+            // 2. Paksa Ekstensi .pdf
+            $cleanFilename = preg_replace('/\.(docs?|docx|txt)$/i', '.pdf', $filename);
+            if (!str_ends_with(strtolower($cleanFilename), '.pdf')) {
+                $cleanFilename .= '.pdf';
+            }
+
+            // 3. Convert Markdown ke HTML menggunakan bawaan Laravel
+            $htmlContent = Str::markdown($content);
+
+            // 4. Bungkus dengan styling agar rapi di PDF
+            $styledHtml = "
+                <html>
+                <head>
+                    <meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\"/>
+                    <style>
+                        body { font-family: sans-serif; font-size: 12px; line-height: 1.6; color: #333; }
+                        h1, h2, h3 { color: #111; margin-top: 20px; margin-bottom: 10px; }
+                        table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
+                        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                        th { background-color: #f2f2f2; font-weight: bold; }
+                        ul, ol { margin-bottom: 15px; padding-left: 20px; }
+                    </style>
+                </head>
+                <body>
+                    {$htmlContent}
+                </body>
+                </html>
+            ";
+
+            // 5. Generate PDF menggunakan Dompdf
+            $dompdf = new \Dompdf\Dompdf([
+                'isHtml5ParserEnabled' => true,
+                'isRemoteEnabled' => true,
+            ]);
+            $dompdf->loadHtml($styledHtml);
+            $dompdf->setPaper('A4', 'portrait');
+            $dompdf->render();
+
+            // 6. Simpan ke file sementara
             $tempDir = storage_path('app/private');
             if (!is_dir($tempDir)) {
                 @mkdir($tempDir, 0775, true);
             }
-            $tempPath = $tempDir . DIRECTORY_SEPARATOR . 'temp_' . uniqid() . '.docx';
-            $objWriter = \PhpOffice\PhpWord\IOFactory::createWriter($phpWord, 'Word2007');
-            $objWriter->save($tempPath);
+            $tempPath = $tempDir . DIRECTORY_SEPARATOR . 'temp_pdf_' . uniqid() . '.pdf';
+            file_put_contents($tempPath, $dompdf->output());
 
-            // 2. Pindahkan ke Cloud Sahaja
+            // 7. Upload ke Cloud Sahaja
             $baseStorage = rtrim(env('CLOUD_SAHAJA_STORAGE_PATH', '/var/www/cloud-sahaja/storage/app/private/'), '/\\');
             $filesDir = str_ends_with($baseStorage, 'files') ? $baseStorage : $baseStorage . DIRECTORY_SEPARATOR . 'files';
             $userDir = $filesDir . DIRECTORY_SEPARATOR . $cloudUser->id;
@@ -481,30 +507,30 @@ class AgentService {
                 @mkdir($userDir, 0775, true);
             }
 
-            $storedName = (string) Str::uuid() . '.docx';
+            $storedName = (string) Str::uuid() . '.pdf';
             $destinationPath = $userDir . DIRECTORY_SEPARATOR . $storedName;
 
             copy($tempPath, $destinationPath);
             @unlink($tempPath); // Hapus file sementara
 
-            // 3. Simpan ke DB Cloud Sahaja
+            // 8. Simpan ke DB Cloud Sahaja dengan MIME PDF
             DB::connection('cloud_sahaja')->table('files')->insert([
                 'user_id' => $cloudUser->id,
-                'original_name' => $filename,
+                'original_name' => $cleanFilename,
                 'stored_name' => $storedName,
-                'mime_type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                'mime_type' => 'application/pdf',
                 'size' => filesize($destinationPath),
-                'extension' => 'docx',
+                'extension' => 'pdf',
                 'is_folder' => 0,
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
 
-            return "✅ Sukses! Rangkuman telah disimpan sebagai '{$filename}' dan diunggah ke Cloud Sahaja Anda.";
+            return "✅ Sukses! Rangkuman telah disimpan sebagai '{$cleanFilename}' (" . round(filesize($destinationPath) / 1024, 2) . " KB). File PDF ini bisa langsung dipreview di browser!";
 
         } catch (\Throwable $e) {
-            Log::error('Generate DOCX Error: ' . $e->getMessage());
-            return "❌ Gagal membuat dokumen Word: " . $e->getMessage();
+            Log::error('Generate PDF Error: ' . $e->getMessage());
+            return "❌ Gagal membuat dokumen PDF: " . $e->getMessage();
         }
     }
 
