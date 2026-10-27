@@ -49,15 +49,17 @@ class AgentService {
     }
 
     protected function systemPrompt(User $user): string {
-        return "Kamu adalah SAHAJA Agent, asisten pribadi di ekosistem SAHAJA AI.\n"
+        $soulPath = storage_path('app/agent/soul.md');
+        $soulContent = file_exists($soulPath) ? file_get_contents($soulPath) : "Kamu adalah SAHAJA Agent.";
+
+        return $soulContent . "\n\n"
             . "Pemilik akun: {$user->name} ({$user->email}).\n"
-            . "Balas dalam Bahasa Indonesia yang ringkas, jelas, dan ramah.\n"
-            . "Gunakan tools yang tersedia jika user menanyakan status server, kuota, daftar file, atau membuat link share Cloud Sahaja.\n"
-            . "Jika user meminta hal di luar kemampuan tools yang ada, katakan apa adanya — jangan mengarang.\n\n"
             . "ATURAN TOOL:\n"
-            . "1. Jika user minta melihat daftar file/folder, gunakan 'list_files'.\n"
-            . "2. Jika user minta membuat link share, gunakan 'create_share_link'.\n"
-            . "3. Jika user minta MERANGKUM (summarize), MEMBACA ISI, atau MENJELASKAN ISI FILE, WAJIB langsung gunakan 'read_file_content' tanpa perlu memanggil 'list_files' terlebih dahulu.";
+            . "1. Jika user minta melihat file/folder, gunakan 'list_files'.\n"
+            . "2. Jika user minta share, gunakan 'create_share_link'.\n"
+            . "3. Jika user minta rangkum/baca isi, gunakan 'read_file_content'.\n"
+            . "4. JIKA user menyuruhmu mengingat sesuatu (misal: 'ingat ya namaku Bos', 'catat kalau aku suka kopi', 'mulai sekarang panggil aku X'), WAJIB gunakan tool 'update_soul_memory'.\n"
+            . "5. Jika 'read_file_content' mengembalikan pesan 'TIDAK ADA TEKS', jelaskan ke user bahwa file itu hasil scan.";
     }
 
     protected function callMistral(array $messages, ?User $user = null): string {
@@ -130,6 +132,20 @@ class AgentService {
                     ],
                 ],
             ],
+            [
+                'type' => 'function',
+                'function' => [
+                    'name' => 'update_soul_memory',
+                    'description' => 'Menyimpan memori baru, aturan, atau identitas ke dalam file soul.md agar diingat selamanya.',
+                    'parameters' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'memory_text' => ['type' => 'string', 'description' => 'Teks memori baru yang akan ditambahkan ke bawah file soul.md'],
+                        ],
+                        'required' => ['memory_text'],
+                    ],
+                ],
+            ],
         ];
 
         try {
@@ -186,6 +202,20 @@ class AgentService {
                 } elseif ($functionName === 'read_file_content') {
                     $filename = $args['filename'] ?? '';
                     $toolResult = $this->readCloudFileContent($user, $filename);
+                } elseif ($functionName === 'update_soul_memory') {
+                    $memoryText = $args['memory_text'] ?? '';
+                    if (!empty(trim($memoryText))) {
+                        $soulPath = storage_path('app/agent/soul.md');
+                        $soulDir = dirname($soulPath);
+                        if (!file_exists($soulDir)) {
+                            @mkdir($soulDir, 0775, true);
+                        }
+                        $timestamp = now()->timezone('Asia/Jakarta')->format('Y-m-d H:i');
+                        file_put_contents($soulPath, "\n- [{$timestamp}] {$memoryText}", FILE_APPEND);
+                        $toolResult = "Memori berhasil disimpan: '{$memoryText}'. Kamu akan mengingat ini selamanya.";
+                    } else {
+                        $toolResult = "Gagal menyimpan memori kosong.";
+                    }
                 }
 
                 if ($toolResult !== "") {
@@ -434,7 +464,7 @@ class AgentService {
             }
 
             if (empty(trim($text))) {
-                return "File berhasil ditemukan, tetapi teks tidak bisa diekstrak (kemungkinan PDF berupa hasil scan/gambar).";
+                return "SISTEM INFO: TIDAK ADA TEKS. File ini adalah hasil scan/gambar. Kamu (AI) tidak bisa membacanya. Beritahu user dengan sopan untuk mengunggah teks atau dokumen asli.";
             }
 
             return substr($text, 0, 15000);
