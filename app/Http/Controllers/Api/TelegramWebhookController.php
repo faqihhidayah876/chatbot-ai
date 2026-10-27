@@ -24,7 +24,48 @@ class TelegramWebhookController extends Controller {
             return response()->json(['ok' => false], 403);
         }
 
-        // 2. Ambil payload message
+        // 2. Handle Callback Query (Klik Tombol)
+        if ($request->has('callback_query')) {
+            $cb = $request->input('callback_query');
+            if (isset($cb['message']['chat']['id'], $cb['id'])) {
+                $chatId = (string) $cb['message']['chat']['id'];
+                $data = $cb['data'] ?? '';
+                $cbId = (string) $cb['id'];
+
+                $this->tg->answerCallbackQuery($cbId, 'Memproses...');
+
+                $user = User::where('telegram_chat_id', $chatId)->first();
+                if (!$user) {
+                    $this->tg->sendMessage($chatId, "Akun belum terhubung ke SAHAJA AI.\n\nBuka https://sahaja-ai.my.id/profile untuk menghubungkan.\nChat ID Anda: {$chatId}");
+                    return response()->json(['ok' => true]);
+                }
+
+                $this->tg->sendChatAction($chatId, 'typing');
+
+                // Terjemahkan tombol menjadi prompt untuk AI
+                $prompt = match ($data) {
+                    'cek_kuota' => 'Tolong cek sisa kuota Cloud Sahaja milik saya dong.',
+                    'status_server' => 'Tolong cek sisa hardisk server kita dong.',
+                    'bantuan' => 'Tampilkan panduan cara menggunakan SAHAJA Agent.',
+                    default => 'Halo',
+                };
+
+                try {
+                    $reply = $this->agent->chat($user, $prompt);
+                } catch (\Throwable $e) {
+                    Log::error('Agent callback chat failed', [
+                        'user_id' => $user->id,
+                        'msg'     => $e->getMessage(),
+                    ]);
+                    $reply = 'Maaf, ada kesalahan internal. Coba lagi.';
+                }
+
+                $this->tg->sendMessage($chatId, $reply);
+                return response()->json(['ok' => true]);
+            }
+        }
+
+        // 3. Handle Pesan Biasa
         $message = $request->input('message');
         if (!is_array($message) || !isset($message['text'], $message['chat']['id'])) {
             return response()->json(['ok' => true]);
@@ -36,18 +77,27 @@ class TelegramWebhookController extends Controller {
             return response()->json(['ok' => true]);
         }
 
-        // 3. Perintah /start
+        // 4. Handle Perintah /start
         if ($text === '/start') {
-            $this->tg->sendMessage($chatId,
-                "Halo! Saya SAHAJA Agent.\n\n"
-                . "Untuk mulai, hubungkan akun Telegram Anda di profil SAHAJA AI:\n"
-                . "https://sahaja-ai.my.id/profile\n\n"
-                . "Chat ID Anda: {$chatId}"
-            );
+            $welcomeText = "Halo! Saya **SAHAJA Agent**.\n\n"
+                . "Chat ID Anda: `{$chatId}`\n\n"
+                . "Silakan pilih menu di bawah ini:";
+
+            $buttons = [
+                [
+                    ['text' => '📊 Cek Kuota Saya', 'callback_data' => 'cek_kuota'],
+                    ['text' => '💻 Status Server', 'callback_data' => 'status_server']
+                ],
+                [
+                    ['text' => '❓ Bantuan', 'callback_data' => 'bantuan']
+                ]
+            ];
+
+            $this->tg->sendMessageWithInlineKeyboard($chatId, $welcomeText, $buttons);
             return response()->json(['ok' => true]);
         }
 
-        // 4. Identifikasi user
+        // 5. Identifikasi user
         $user = User::where('telegram_chat_id', $chatId)->first();
         if (!$user) {
             $this->tg->sendMessage($chatId,
@@ -58,7 +108,7 @@ class TelegramWebhookController extends Controller {
             return response()->json(['ok' => true]);
         }
 
-        // 5. Kirim indikator "typing", lalu proses AI
+        // 6. Kirim indikator "typing", lalu proses AI
         $this->tg->sendChatAction($chatId, 'typing');
 
         try {

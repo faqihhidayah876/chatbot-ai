@@ -86,4 +86,32 @@ class TelegramClient {
             return ['error' => $e->getMessage()];
         }
     }
+
+    public function sendMessageWithInlineKeyboard(int|string $chatId, string $text, array $buttons): bool {
+        try {
+            $resp = $this->http(15)->post("{$this->base}/sendMessage", [
+                'chat_id'                  => $chatId,
+                'text'                     => $text,
+                'parse_mode'               => 'Markdown',
+                'disable_web_page_preview' => true,
+                'reply_markup'             => json_encode(['inline_keyboard' => $buttons]),
+            ]);
+            return $resp->ok() && $resp->json('ok') === true;
+        } catch (\Throwable $e) {
+            Log::error('Telegram inline keyboard exception', ['msg' => $e->getMessage()]);
+            return false;
+        }
+    }
+
+    public function answerCallbackQuery(string $callbackQueryId, string $text = ''): bool {
+        try {
+            $resp = $this->http(5)->post("{$this->base}/answerCallbackQuery", [
+                'callback_query_id' => $callbackQueryId,
+                'text'              => $text,
+            ]);
+            return $resp->ok() && $resp->json('ok') === true;
+        } catch (\Throwable $e) {
+            return false;
+        }
+    }
 }

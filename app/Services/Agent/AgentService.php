@@ -51,7 +51,7 @@ class AgentService {
         return "Kamu adalah SAHAJA Agent, asisten pribadi di ekosistem SAHAJA AI.\n"
             . "Pemilik akun: {$user->name} ({$user->email}).\n"
             . "Balas dalam Bahasa Indonesia yang ringkas, jelas, dan ramah.\n"
-            . "Gunakan tools yang tersedia jika user menanyakan status server atau kuota penyimpanan Cloud Sahaja.\n"
+            . "Gunakan tools yang tersedia jika user menanyakan status server atau kuota Cloud Sahaja.\n"
             . "Jika user meminta hal di luar kemampuan tools yang ada, katakan apa adanya — jangan mengarang.";
     }
 
@@ -69,8 +69,16 @@ class AgentService {
             [
                 'type' => 'function',
                 'function' => [
-                    'name' => 'get_storage_info',
-                    'description' => 'Mengecek sisa kapasitas Hardisk Server dan sisa kuota penyimpanan Cloud Sahaja user.',
+                    'name' => 'get_user_quota',
+                    'description' => 'Mengecek sisa kuota penyimpanan Cloud Sahaja milik user yang sedang chat.',
+                    'parameters' => ['type' => 'object', 'properties' => (object) []],
+                ],
+            ],
+            [
+                'type' => 'function',
+                'function' => [
+                    'name' => 'get_server_status',
+                    'description' => 'Mengecek sisa kapasitas Hardisk fisik server.',
                     'parameters' => ['type' => 'object', 'properties' => (object) []],
                 ],
             ]
@@ -110,9 +118,14 @@ class AgentService {
                 
                 $messages[] = $choice; // Wajib menyimpan history tool call
                 
-                if ($functionName === 'get_storage_info') {
-                    $toolResult = $this->getStorageInfo($user);
-                    
+                $toolResult = "";
+                if ($functionName === 'get_user_quota') {
+                    $toolResult = $this->getUserQuota($user);
+                } elseif ($functionName === 'get_server_status') {
+                    $toolResult = $this->getServerStatus();
+                }
+
+                if ($toolResult !== "") {
                     $messages[] = [
                         'role' => 'tool',
                         'tool_call_id' => $toolCall['id'],
@@ -134,29 +147,36 @@ class AgentService {
         }
     }
 
-    // Fungsi Eksekutor Tool
-    protected function getStorageInfo(?User $user = null): string {
-        // 1. Cek Sisa HDD Server
-        $freeSpaceBytes = @disk_free_space("/") ?: (@disk_free_space(".") ?: 0);
-        $freeSpaceMB = round($freeSpaceBytes / 1048576, 2);
-
-        // 2. Cek Kuota Cloud Sahaja
-        $cloudQuotaStr = "";
-        try {
-            $email = $user->email ?? (auth()->user()->email ?? '');
-            if (!empty($email)) {
-                $cloudUser = DB::connection('cloud_sahaja')->table('users')
-                    ->where('email', $email)
-                    ->first();
-                
-                if ($cloudUser && isset($cloudUser->quota_mb)) {
-                    $cloudQuotaStr = "Sisa Kuota Cloud Sahaja: {$cloudUser->quota_mb} MB. ";
-                }
-            }
-        } catch (\Throwable $e) {
-            // Abaikan jika DB cloud tidak ditemukan
+    // Fungsi Eksekutor Tool: Kuota Cloud Sahaja User
+    protected function getUserQuota(?User $user = null): string {
+        if (!$user) {
+            return "Informasi user tidak ditemukan.";
         }
 
-        return "Informasi Server: Sisa HDD kosong adalah {$freeSpaceMB} MB. " . $cloudQuotaStr;
+        try {
+            // Cek ke database Cloud Sahaja menggunakan email user
+            $cloudUser = DB::connection('cloud_sahaja')->table('users')
+                ->where('email', $user->email)
+                ->first();
+            
+            if ($cloudUser) {
+                $used = $cloudUser->storage_used ?? 0;
+                $total = $cloudUser->quota_mb ?? 1024; 
+                $sisa = $total - $used;
+                return "Sisa Kuota Cloud Sahaja milik user ini: {$sisa} MB dari total {$total} MB.";
+            }
+            return "Akun Cloud Sahaja dengan email {$user->email} belum terdaftar atau tidak ditemukan.";
+        } catch (\Throwable $e) {
+            Log::error('Cloud DB Error: ' . $e->getMessage());
+            return "Gagal terhubung ke database Cloud Sahaja. Pastikan file database dapat diakses.";
+        }
+    }
+
+    // Fungsi Eksekutor Tool: Status Hardisk Server
+    protected function getServerStatus(): string {
+        $freeSpaceBytes = @disk_free_space("/") ?: (@disk_free_space(".") ?: 0);
+        $freeSpaceMB = round($freeSpaceBytes / 1048576, 2);
+        $freeSpaceGB = round($freeSpaceMB / 1024, 2);
+        return "Sisa kapasitas Hardisk server: {$freeSpaceMB} MB (~{$freeSpaceGB} GB).";
     }
 }
