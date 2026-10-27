@@ -7,6 +7,7 @@ use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class AgentService {
     /**
@@ -51,7 +52,7 @@ class AgentService {
         return "Kamu adalah SAHAJA Agent, asisten pribadi di ekosistem SAHAJA AI.\n"
             . "Pemilik akun: {$user->name} ({$user->email}).\n"
             . "Balas dalam Bahasa Indonesia yang ringkas, jelas, dan ramah.\n"
-            . "Gunakan tools yang tersedia jika user menanyakan status server atau kuota Cloud Sahaja.\n"
+            . "Gunakan tools yang tersedia jika user menanyakan status server, kuota, daftar file, atau membuat link share Cloud Sahaja.\n"
             . "Jika user meminta hal di luar kemampuan tools yang ada, katakan apa adanya — jangan mengarang.";
     }
 
@@ -81,7 +82,35 @@ class AgentService {
                     'description' => 'Mengecek sisa kapasitas Hardisk fisik server.',
                     'parameters' => ['type' => 'object', 'properties' => (object) []],
                 ],
-            ]
+            ],
+            [
+                'type' => 'function',
+                'function' => [
+                    'name' => 'list_files',
+                    'description' => 'Menampilkan 5 file terbaru milik user di Cloud Sahaja. Bisa difilter berdasarkan kategori (pdf, image, dll).',
+                    'parameters' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'category' => ['type' => 'string', 'description' => 'Kategori file (opsional)'],
+                        ],
+                    ],
+                ],
+            ],
+            [
+                'type' => 'function',
+                'function' => [
+                    'name' => 'create_share_link',
+                    'description' => 'Membuat link share publik untuk file tertentu di Cloud Sahaja.',
+                    'parameters' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'filename' => ['type' => 'string', 'description' => 'Nama file yang ingin di-share'],
+                            'expiry' => ['type' => 'string', 'description' => 'Masa aktif link (1h, 1d, 7d, forever)'],
+                        ],
+                        'required' => ['filename'],
+                    ],
+                ],
+            ],
         ];
 
         try {
@@ -118,11 +147,22 @@ class AgentService {
                 
                 $messages[] = $choice; // Wajib menyimpan history tool call
                 
+                // Parse arguments (handles JSON string or array)
+                $rawArgs = $toolCall['function']['arguments'] ?? [];
+                $args = is_string($rawArgs) ? (json_decode($rawArgs, true) ?? []) : (array) $rawArgs;
+
                 $toolResult = "";
                 if ($functionName === 'get_user_quota') {
                     $toolResult = $this->getUserQuota($user);
                 } elseif ($functionName === 'get_server_status') {
                     $toolResult = $this->getServerStatus();
+                } elseif ($functionName === 'list_files') {
+                    $category = $args['category'] ?? null;
+                    $toolResult = $this->getCloudFiles($user, $category);
+                } elseif ($functionName === 'create_share_link') {
+                    $filename = $args['filename'] ?? '';
+                    $expiry = $args['expiry'] ?? '1d';
+                    $toolResult = $this->generateShareLink($user, $filename, $expiry);
                 }
 
                 if ($toolResult !== "") {
@@ -178,5 +218,82 @@ class AgentService {
         $freeSpaceMB = round($freeSpaceBytes / 1048576, 2);
         $freeSpaceGB = round($freeSpaceMB / 1024, 2);
         return "Sisa kapasitas Hardisk server: {$freeSpaceMB} MB (~{$freeSpaceGB} GB).";
+    }
+
+    // Fungsi Eksekutor Tool: Daftar File Cloud Sahaja User
+    protected function getCloudFiles(?User $user, ?string $category): string {
+        if (!$user) {
+            return "Informasi user tidak ditemukan.";
+        }
+
+        try {
+            // Asumsi tabel files di Cloud Sahaja. Sesuaikan nama tabel/kolom jika berbeda.
+            $query = DB::connection('cloud_sahaja')->table('files')
+                ->where('user_id', function($q) use ($user) {
+                    $q->select('id')->from('users')->where('email', $user->email);
+                })
+                ->whereNull('deleted_at'); // Abaikan sampah
+
+            if ($category) {
+                $query->where('mime_type', 'LIKE', "%{$category}%");
+            }
+
+            $files = $query->orderBy('created_at', 'desc')->limit(5)->get();
+
+            if ($files->isEmpty()) return "Tidak ada file ditemukan.";
+
+            $result = "5 File terbaru Anda:\n";
+            foreach ($files as $file) {
+                $sizeMb = round(($file->size ?? 0) / 1048576, 2);
+                $result .= "- {$file->name} ({$sizeMb} MB)\n";
+            }
+            return $result;
+        } catch (\Throwable $e) {
+            Log::error('Cloud DB getCloudFiles error: ' . $e->getMessage());
+            return "Gagal mengambil data file dari Cloud Sahaja.";
+        }
+    }
+
+    // Fungsi Eksekutor Tool: Buat Share Link File
+    protected function generateShareLink(?User $user, string $filename, string $expiry): string {
+        if (!$user) {
+            return "Informasi user tidak ditemukan.";
+        }
+
+        try {
+            $file = DB::connection('cloud_sahaja')->table('files')
+                ->where('user_id', function($q) use ($user) {
+                    $q->select('id')->from('users')->where('email', $user->email);
+                })
+                ->where('name', 'LIKE', "%{$filename}%")
+                ->first();
+
+            if (!$file) return "File '{$filename}' tidak ditemukan.";
+
+            // Buat token share (sesuaikan dengan skema tabel share di Cloud Sahaja)
+            $token = Str::random(32);
+            $expiresAt = null;
+            if ($expiry !== 'forever' && !empty($expiry)) {
+                try {
+                    $expiresAt = now()->add($expiry);
+                } catch (\Throwable $te) {
+                    $expiresAt = now()->addDay();
+                }
+            }
+
+            DB::connection('cloud_sahaja')->table('shares')->insert([
+                'file_id' => $file->id,
+                'token' => $token,
+                'expires_at' => $expiresAt,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            $url = "https://cloud.sahaja-ai.my.id/share/{$token}";
+            return "Link share untuk '{$file->name}': {$url}";
+        } catch (\Throwable $e) {
+            Log::error('Cloud DB generateShareLink error: ' . $e->getMessage());
+            return "Gagal membuat link share.";
+        }
     }
 }

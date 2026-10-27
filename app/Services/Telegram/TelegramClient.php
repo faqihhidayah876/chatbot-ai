@@ -59,7 +59,7 @@ class TelegramClient {
             $resp = $this->http(20)->post("{$this->base}/setWebhook", [
                 'url'             => $url,
                 'secret_token'    => $secret,
-                'allowed_updates' => ['message'],
+                'allowed_updates' => ['message', 'callback_query'],
             ]);
             return $resp->ok() && $resp->json('ok') === true;
         } catch (\Throwable $e) {
@@ -111,6 +111,18 @@ class TelegramClient {
             ]);
             return $resp->ok() && $resp->json('ok') === true;
         } catch (\Throwable $e) {
+            return false;
+        }
+    }
+
+    public function setMyCommands(array $commands): bool {
+        try {
+            $resp = $this->http(20)->post("{$this->base}/setMyCommands", [
+                'commands' => $commands,
+            ]);
+            return $resp->ok() && $resp->json('ok') === true;
+        } catch (\Throwable $e) {
+            Log::error('Telegram setMyCommands exception', ['msg' => $e->getMessage()]);
             return false;
         }
     }

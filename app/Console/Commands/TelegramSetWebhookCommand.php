@@ -35,7 +35,17 @@ class TelegramSetWebhookCommand extends Command {
         }
 
         $ok = $tg->setWebhook($url, $secret);
-        $this->info($ok ? "Webhook diset ke: {$url}" : 'Gagal set webhook (lihat log).');
-        return $ok ? self::SUCCESS : self::FAILURE;
+        if ($ok) {
+            $this->info("Webhook diset ke: {$url}");
+            $tg->setMyCommands([
+                ['command' => 'start', 'description' => 'Mulai bot & tampilkan menu'],
+                ['command' => 'help', 'description' => 'Bantuan penggunaan']
+            ]);
+            $this->info('Menu bot (commands) berhasil didaftarkan.');
+            return self::SUCCESS;
+        }
+
+        $this->error('Gagal set webhook (lihat log).');
+        return self::FAILURE;
     }
 }
