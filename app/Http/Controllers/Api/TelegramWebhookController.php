@@ -166,48 +166,49 @@ class TelegramWebhookController extends Controller {
                     $this->tg->sendMessage($chatId, '❌ Fitur rangkum saat ini hanya untuk file PDF.');
                 }
             } else {
-                // 2. Siapkan direktori Cloud Sahaja (sub-folder 'files/' di private storage)
-                $baseStorage = rtrim(env('CLOUD_SAHAJA_STORAGE_PATH', '/var/www/cloud-sahaja/storage/app/private/'), '/\\');
-                $cloudFilesDir = str_ends_with($baseStorage, 'files') ? $baseStorage : $baseStorage . DIRECTORY_SEPARATOR . 'files';
+                // 1. Dapatkan user Cloud Sahaja berdasarkan email
+                $cloudUser = DB::connection('cloud_sahaja')->table('users')
+                    ->where('email', $user->email)->first();
 
-                if (!file_exists($cloudFilesDir)) {
-                    @mkdir($cloudFilesDir, 0775, true);
+                if (!$cloudUser) {
+                    $this->tg->sendMessage($chatId, "❌ Akun Cloud Sahaja dengan email {$user->email} tidak ditemukan.");
+                    @unlink($tempPath);
+                    return response()->json(['ok' => true]);
                 }
 
-                // 3. Buat nama file unik (UUID) dan simpan ke folder files/
-                $extension = pathinfo($fileName, PATHINFO_EXTENSION);
-                $storedFileName = (string) Str::uuid() . ($extension ? '.' . $extension : '');
-                $destinationPath = $cloudFilesDir . DIRECTORY_SEPARATOR . $storedFileName;
+                // 2. Siapkan direktori Cloud Sahaja: files/{user_id}/ di dalam private storage
+                $baseStorage = rtrim(env('CLOUD_SAHAJA_STORAGE_PATH', '/var/www/cloud-sahaja/storage/app/private/'), '/\\');
+                if (str_ends_with($baseStorage, 'files')) {
+                    $userFilesDir = $baseStorage . DIRECTORY_SEPARATOR . $cloudUser->id;
+                } else {
+                    $userFilesDir = $baseStorage . DIRECTORY_SEPARATOR . 'files' . DIRECTORY_SEPARATOR . $cloudUser->id;
+                }
 
-                // Cloud Sahaja mencatat relative path terhadap disk private dengan prefix 'files/'
-                $dbStoredName = 'files/' . $storedFileName;
+                if (!file_exists($userFilesDir)) {
+                    @mkdir($userFilesDir, 0775, true);
+                }
+
+                // 3. Buat nama file unik (UUID + extension) dan simpan ke folder files/{user_id}/
+                $extension = pathinfo($fileName, PATHINFO_EXTENSION);
+                $storedName = (string) Str::uuid() . ($extension ? '.' . $extension : '');
+                $destinationPath = $userFilesDir . DIRECTORY_SEPARATOR . $storedName;
 
                 if (file_put_contents($destinationPath, $fileContent)) {
                     try {
-                        // 4. Dapatkan ID user di Cloud Sahaja berdasarkan email
-                        $cloudUser = DB::connection('cloud_sahaja')->table('users')
-                            ->where('email', $user->email)->first();
+                        // 4. Masukkan ke database Cloud Sahaja (stored_name HANYA UUID + extension tanpa prefix)
+                        DB::connection('cloud_sahaja')->table('files')->insert([
+                            'user_id' => $cloudUser->id,
+                            'original_name' => $fileName,
+                            'stored_name' => $storedName,
+                            'mime_type' => @mime_content_type($destinationPath) ?: 'application/octet-stream',
+                            'size' => filesize($destinationPath),
+                            'extension' => $extension,
+                            'is_folder' => 0,
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ]);
 
-                        if ($cloudUser) {
-                            // 5. Masukkan ke database Cloud Sahaja
-                            DB::connection('cloud_sahaja')->table('files')->insert([
-                                'user_id' => $cloudUser->id,
-                                'original_name' => $fileName,
-                                'stored_name' => $dbStoredName,
-                                'mime_type' => @mime_content_type($destinationPath) ?: 'application/octet-stream',
-                                'size' => filesize($destinationPath),
-                                'extension' => $extension,
-                                'is_folder' => 0,
-                                'created_at' => now(),
-                                'updated_at' => now(),
-                            ]);
-
-                            $this->tg->sendMessage($chatId, "✅ File `{$fileName}` berhasil disimpan ke Cloud Sahaja!");
-                        } else {
-                            // Hapus file jika user tidak ada di DB Cloud
-                            @unlink($destinationPath);
-                            $this->tg->sendMessage($chatId, "❌ Akun Cloud Sahaja tidak ditemukan.");
-                        }
+                        $this->tg->sendMessage($chatId, "✅ File `{$fileName}` berhasil disimpan ke Cloud Sahaja!");
                     } catch (\Throwable $e) {
                         Log::error('Upload Error: ' . $e->getMessage());
                         @unlink($destinationPath);

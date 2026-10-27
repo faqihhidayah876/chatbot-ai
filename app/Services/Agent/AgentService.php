@@ -410,22 +410,32 @@ class AgentService {
                 return "File '{$filename}' tidak ditemukan di Cloud Sahaja.";
             }
 
-            // Path file fisik di server (base private disk: /var/www/cloud-sahaja/storage/app/private/)
+            // Path file fisik di server Cloud Sahaja: files/{user_id}/{stored_name}
             $storageBase = rtrim(env('CLOUD_SAHAJA_STORAGE_PATH', '/var/www/cloud-sahaja/storage/app/private/'), '/\\');
-            if (str_ends_with($storageBase, 'files') && str_starts_with($file->stored_name, 'files/')) {
+            if (str_ends_with($storageBase, 'files')) {
                 $storageBase = dirname($storageBase);
             }
 
-            $filePath = $storageBase . DIRECTORY_SEPARATOR . $file->stored_name;
+            // Urutan pengecekan kandidat path fisik:
+            // 1. files/{user_id}/{stored_name} (Struktur resmi Cloud Sahaja)
+            // 2. files/{stored_name}
+            // 3. {stored_name}
+            $candidates = [
+                $storageBase . DIRECTORY_SEPARATOR . 'files' . DIRECTORY_SEPARATOR . $file->user_id . DIRECTORY_SEPARATOR . $file->stored_name,
+                $storageBase . DIRECTORY_SEPARATOR . 'files' . DIRECTORY_SEPARATOR . $file->stored_name,
+                $storageBase . DIRECTORY_SEPARATOR . $file->stored_name,
+            ];
 
-            if (!file_exists($filePath)) {
-                // Fallback jika stored_name belum diawali 'files/' tapi file berada di subfolder files/
-                $altPath = $storageBase . DIRECTORY_SEPARATOR . 'files' . DIRECTORY_SEPARATOR . $file->stored_name;
-                if (file_exists($altPath)) {
-                    $filePath = $altPath;
-                } else {
-                    return "File fisik tidak ditemukan di server.";
+            $filePath = null;
+            foreach ($candidates as $candidate) {
+                if (file_exists($candidate)) {
+                    $filePath = $candidate;
+                    break;
                 }
+            }
+
+            if (!$filePath) {
+                return "File fisik tidak ditemukan di server.";
             }
 
             // Ekstrak teks (asumsi PDF atau TXT)
