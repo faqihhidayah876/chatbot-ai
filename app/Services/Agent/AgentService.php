@@ -55,10 +55,9 @@ class AgentService {
             . "Gunakan tools yang tersedia jika user menanyakan status server, kuota, daftar file, atau membuat link share Cloud Sahaja.\n"
             . "Jika user meminta hal di luar kemampuan tools yang ada, katakan apa adanya — jangan mengarang.\n\n"
             . "ATURAN TOOL:\n"
-            . "1. Jika user minta mencari file atau melihat daftar file/folder, gunakan tool 'list_files'.\n"
-            . "2. Jika user minta MEMBUAT LINK SHARE untuk sebuah file (misal: 'buat link share', 'bagikan file'), WAJIB gunakan tool 'create_share_link'. JANGAN gunakan 'list_files'.\n"
-            . "3. Jika user meminta share link, kamu hanya butuh parameter 'filename' dan 'expiry'. JANGAN mencari folder.\n"
-            . "4. Jika user minta MERANGKUM atau MEMBACA ISI file, WAJIB gunakan tool 'read_file_content'. JANGAN gunakan 'list_files' untuk merangkum file.";
+            . "1. Jika user minta melihat daftar file/folder, gunakan 'list_files'.\n"
+            . "2. Jika user minta membuat link share, gunakan 'create_share_link'.\n"
+            . "3. Jika user minta MERANGKUM (summarize), MEMBACA ISI, atau MENJELASKAN ISI FILE, WAJIB langsung gunakan 'read_file_content' tanpa perlu memanggil 'list_files' terlebih dahulu.";
     }
 
     protected function callMistral(array $messages, ?User $user = null): string {
@@ -398,7 +397,7 @@ class AgentService {
                 return "Akun Cloud Sahaja tidak ditemukan.";
             }
 
-            // Cari file berdasarkan nama
+            // 1. Cari file di database
             $file = DB::connection('cloud_sahaja')->table('files')
                 ->where('user_id', $cloudUser->id)
                 ->where('original_name', 'LIKE', "%{$filename}%")
@@ -407,51 +406,38 @@ class AgentService {
                 ->first();
 
             if (!$file) {
-                return "File '{$filename}' tidak ditemukan di Cloud Sahaja.";
+                return "File '{$filename}' tidak ditemukan di database Cloud Sahaja.";
             }
 
-            // Path file fisik di server Cloud Sahaja: files/{user_id}/{stored_name}
-            $storageBase = rtrim(env('CLOUD_SAHAJA_STORAGE_PATH', '/var/www/cloud-sahaja/storage/app/private/'), '/\\');
-            if (str_ends_with($storageBase, 'files')) {
-                $storageBase = dirname($storageBase);
-            }
+            // 2. Tentukan path fisik (WAJIB menyertakan $cloudUser->id)
+            $baseStorage = rtrim(env('CLOUD_SAHAJA_STORAGE_PATH', '/var/www/cloud-sahaja/storage/app/private/'), '/\\');
+            $filesDir = str_ends_with($baseStorage, 'files') ? $baseStorage : $baseStorage . DIRECTORY_SEPARATOR . 'files';
+            $filePath = $filesDir . DIRECTORY_SEPARATOR . $cloudUser->id . DIRECTORY_SEPARATOR . $file->stored_name;
 
-            // Urutan pengecekan kandidat path fisik:
-            // 1. files/{user_id}/{stored_name} (Struktur resmi Cloud Sahaja)
-            // 2. files/{stored_name}
-            // 3. {stored_name}
-            $candidates = [
-                $storageBase . DIRECTORY_SEPARATOR . 'files' . DIRECTORY_SEPARATOR . $file->user_id . DIRECTORY_SEPARATOR . $file->stored_name,
-                $storageBase . DIRECTORY_SEPARATOR . 'files' . DIRECTORY_SEPARATOR . $file->stored_name,
-                $storageBase . DIRECTORY_SEPARATOR . $file->stored_name,
-            ];
-
-            $filePath = null;
-            foreach ($candidates as $candidate) {
-                if (file_exists($candidate)) {
-                    $filePath = $candidate;
-                    break;
+            // Fallback jika ternyata file masih nyangkut di root folder files/ (seperti file lama)
+            if (!file_exists($filePath)) {
+                $fallbackPath = $filesDir . DIRECTORY_SEPARATOR . $file->stored_name;
+                if (file_exists($fallbackPath)) {
+                    $filePath = $fallbackPath;
+                } else {
+                    return "File '{$filename}' ada di database, tapi file fisiknya tidak ditemukan di server. Pastikan file tidak terhapus.";
                 }
             }
 
-            if (!$filePath) {
-                return "File fisik tidak ditemukan di server.";
-            }
-
-            // Ekstrak teks (asumsi PDF atau TXT)
+            // 3. Ekstrak teks
             $text = "";
             if (str_ends_with(strtolower($file->original_name), '.pdf')) {
+                // Gunakan pdftotext (pastikan package poppler-utils terinstall)
                 $text = (string) shell_exec("pdftotext " . escapeshellarg($filePath) . " -");
             } else {
                 $text = (string) @file_get_contents($filePath);
             }
 
             if (empty(trim($text))) {
-                return "File kosong atau teks tidak bisa diekstrak (mungkin hasil scan).";
+                return "File berhasil ditemukan, tetapi teks tidak bisa diekstrak (kemungkinan PDF berupa hasil scan/gambar).";
             }
 
-            // Batasi teks agar tidak melebihi batas token AI (misal 10.000 karakter)
-            return substr($text, 0, 10000);
+            return substr($text, 0, 15000);
 
         } catch (\Throwable $e) {
             Log::error('readCloudFileContent Error: ' . $e->getMessage());
