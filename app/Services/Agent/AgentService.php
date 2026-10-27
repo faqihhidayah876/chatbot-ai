@@ -206,9 +206,10 @@ class AgentService {
             // 2. Baca nilai total kuota dari kolom quota (dalam satuan MB)
             $totalMb = (float) ($cloudUser->quota ?? 5120);
 
-            // 3. Hitung total penyimpanan yang sudah terpakai dari tabel files (abaikan soft-delete)
+            // 3. Hitung total penyimpanan yang sudah terpakai dari tabel files (abaikan soft-delete dan folder)
             $usedBytes = DB::connection('cloud_sahaja')->table('files')
                 ->where('user_id', $cloudUser->id)
+                ->where('is_folder', 0)
                 ->whereNull('deleted_at')
                 ->sum('size') ?? 0;
 
@@ -241,11 +242,17 @@ class AgentService {
         }
 
         try {
-            // Asumsi tabel files di Cloud Sahaja. Sesuaikan nama tabel/kolom jika berbeda.
+            $cloudUser = DB::connection('cloud_sahaja')->table('users')
+                ->where('email', $user->email)
+                ->first();
+
+            if (!$cloudUser) {
+                return "Akun Cloud Sahaja dengan email {$user->email} belum terdaftar atau tidak ditemukan.";
+            }
+
             $query = DB::connection('cloud_sahaja')->table('files')
-                ->where('user_id', function($q) use ($user) {
-                    $q->select('id')->from('users')->where('email', $user->email);
-                })
+                ->where('user_id', $cloudUser->id)
+                ->where('is_folder', 0)
                 ->whereNull('deleted_at'); // Abaikan sampah
 
             if ($category) {
@@ -254,14 +261,16 @@ class AgentService {
 
             $files = $query->orderBy('created_at', 'desc')->limit(5)->get();
 
-            if ($files->isEmpty()) return "Tidak ada file ditemukan.";
+            if ($files->isEmpty()) {
+                return "Tidak ada file ditemukan.";
+            }
 
             $result = "5 File terbaru Anda:\n";
             foreach ($files as $file) {
                 $sizeMb = round(($file->size ?? 0) / 1048576, 2);
-                $result .= "- {$file->name} ({$sizeMb} MB)\n";
+                $result .= "- {$file->original_name} ({$sizeMb} MB)\n";
             }
-            return $result;
+            return trim($result);
         } catch (\Throwable $e) {
             Log::error('Cloud DB getCloudFiles error: ' . $e->getMessage());
             return "Gagal mengambil data file dari Cloud Sahaja.";
@@ -275,17 +284,26 @@ class AgentService {
         }
 
         try {
-            $file = DB::connection('cloud_sahaja')->table('files')
-                ->where('user_id', function($q) use ($user) {
-                    $q->select('id')->from('users')->where('email', $user->email);
-                })
-                ->where('name', 'LIKE', "%{$filename}%")
+            $cloudUser = DB::connection('cloud_sahaja')->table('users')
+                ->where('email', $user->email)
                 ->first();
 
-            if (!$file) return "File '{$filename}' tidak ditemukan.";
+            if (!$cloudUser) {
+                return "Akun Cloud Sahaja dengan email {$user->email} belum terdaftar atau tidak ditemukan.";
+            }
 
-            // Buat token share (sesuaikan dengan skema tabel share di Cloud Sahaja)
-            $token = Str::random(32);
+            $file = DB::connection('cloud_sahaja')->table('files')
+                ->where('user_id', $cloudUser->id)
+                ->where('is_folder', 0)
+                ->whereNull('deleted_at')
+                ->where('original_name', 'LIKE', "%{$filename}%")
+                ->first();
+
+            if (!$file) {
+                return "File '{$filename}' tidak ditemukan di Cloud Sahaja.";
+            }
+
+            $token = Str::random(16);
             $expiresAt = null;
             if ($expiry !== 'forever' && !empty($expiry)) {
                 try {
@@ -295,16 +313,15 @@ class AgentService {
                 }
             }
 
-            DB::connection('cloud_sahaja')->table('shares')->insert([
-                'file_id' => $file->id,
-                'token' => $token,
-                'expires_at' => $expiresAt,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
+            DB::connection('cloud_sahaja')->table('files')
+                ->where('id', $file->id)
+                ->update([
+                    'share_token' => $token,
+                    'share_expires_at' => $expiresAt,
+                ]);
 
             $url = "https://cloud.sahaja-ai.my.id/share/{$token}";
-            return "Link share untuk '{$file->name}': {$url}";
+            return "https://cloud.sahaja-ai.my.id/share/{$token}";
         } catch (\Throwable $e) {
             Log::error('Cloud DB generateShareLink error: ' . $e->getMessage());
             return "Gagal membuat link share.";
