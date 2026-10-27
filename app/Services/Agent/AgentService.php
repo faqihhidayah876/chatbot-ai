@@ -196,62 +196,67 @@ class AgentService {
 
             $choice = $resp->json('choices.0.message');
             
-            // 2. Cek apakah AI meminta eksekusi Tool
+            // 2. Cek apakah AI meminta eksekusi Tool (Support Parallel Tool Calls)
             if (isset($choice['tool_calls']) && count($choice['tool_calls']) > 0) {
-                $toolCall = $choice['tool_calls'][0];
-                $functionName = $toolCall['function']['name'];
-                
-                $messages[] = $choice; // Wajib menyimpan history tool call
-                
-                // Parse arguments (handles JSON string or array)
-                $rawArgs = $toolCall['function']['arguments'] ?? [];
-                $args = is_string($rawArgs) ? (json_decode($rawArgs, true) ?? []) : (array) $rawArgs;
+                // 1. Simpan pesan asli dari assistant (berisi semua permintaan tool)
+                $messages[] = $choice;
 
-                $toolResult = "";
-                if ($functionName === 'get_user_quota') {
-                    $toolResult = $this->getUserQuota($user);
-                } elseif ($functionName === 'get_server_status') {
-                    $toolResult = $this->getServerStatus();
-                } elseif ($functionName === 'list_files') {
-                    $category = $args['category'] ?? null;
-                    $folderName = $args['folder_name'] ?? null;
-                    $toolResult = $this->getCloudFiles($user, $category, $folderName);
-                } elseif ($functionName === 'create_share_link') {
-                    $filename = $args['filename'] ?? '';
-                    $expiry = $args['expiry'] ?? '1d';
-                    $toolResult = $this->generateShareLink($user, $filename, $expiry);
-                } elseif ($functionName === 'read_file_content') {
-                    $filename = $args['filename'] ?? '';
-                    $toolResult = $this->readCloudFileContent($user, $filename);
-                } elseif ($functionName === 'update_soul_memory') {
-                    $memoryText = $args['memory_text'] ?? '';
-                    if (!empty(trim($memoryText))) {
-                        $soulPath = storage_path("app/agent/soul_{$user->id}.md");
-                        $soulDir = dirname($soulPath);
-                        if (!file_exists($soulDir)) {
-                            @mkdir($soulDir, 0775, true);
+                $hasToolResult = false;
+
+                // 2. Looping semua tool yang diminta
+                foreach ($choice['tool_calls'] as $toolCall) {
+                    $functionName = $toolCall['function']['name'] ?? '';
+                    $rawArgs = $toolCall['function']['arguments'] ?? [];
+                    $args = is_string($rawArgs) ? (json_decode($rawArgs, true) ?? []) : (array) $rawArgs;
+
+                    $toolResult = "";
+                    if ($functionName === 'get_user_quota') {
+                        $toolResult = $this->getUserQuota($user);
+                    } elseif ($functionName === 'get_server_status') {
+                        $toolResult = $this->getServerStatus();
+                    } elseif ($functionName === 'list_files') {
+                        $category = $args['category'] ?? null;
+                        $folderName = $args['folder_name'] ?? null;
+                        $toolResult = $this->getCloudFiles($user, $category, $folderName);
+                    } elseif ($functionName === 'create_share_link') {
+                        $filename = $args['filename'] ?? '';
+                        $expiry = $args['expiry'] ?? '1d';
+                        $toolResult = $this->generateShareLink($user, $filename, $expiry);
+                    } elseif ($functionName === 'read_file_content') {
+                        $filename = $args['filename'] ?? '';
+                        $toolResult = $this->readCloudFileContent($user, $filename);
+                    } elseif ($functionName === 'save_summary_as_pdf') {
+                        $filename = $args['filename'] ?? 'Rangkuman.pdf';
+                        $content = $args['content'] ?? '';
+                        $toolResult = $this->generatePdfToCloud($user, $filename, $content);
+                    } elseif ($functionName === 'update_soul_memory') {
+                        $memoryText = $args['memory_text'] ?? '';
+                        if (!empty(trim($memoryText))) {
+                            $soulPath = storage_path("app/agent/soul_{$user->id}.md");
+                            $soulDir = dirname($soulPath);
+                            if (!file_exists($soulDir)) {
+                                @mkdir($soulDir, 0775, true);
+                            }
+                            $timestamp = now()->timezone('Asia/Jakarta')->format('Y-m-d H:i');
+                            file_put_contents($soulPath, "\n- [{$timestamp}] {$memoryText}", FILE_APPEND);
+                            $toolResult = "Memori berhasil disimpan: '{$memoryText}'. Kamu akan mengingat ini selamanya.";
+                        } else {
+                            $toolResult = "Gagal menyimpan memori kosong.";
                         }
-                        $timestamp = now()->timezone('Asia/Jakarta')->format('Y-m-d H:i');
-                        file_put_contents($soulPath, "\n- [{$timestamp}] {$memoryText}", FILE_APPEND);
-                        $toolResult = "Memori berhasil disimpan: '{$memoryText}'. Kamu akan mengingat ini selamanya.";
-                    } else {
-                        $toolResult = "Gagal menyimpan memori kosong.";
                     }
-                } elseif ($functionName === 'save_summary_as_pdf') {
-                    $filename = $args['filename'] ?? 'Rangkuman.pdf';
-                    $content = $args['content'] ?? '';
-                    $toolResult = $this->generatePdfToCloud($user, $filename, $content);
-                }
 
-                if ($toolResult !== "") {
+                    // 3. Masukkan respons untuk tool ini ke history
                     $messages[] = [
                         'role' => 'tool',
                         'tool_call_id' => $toolCall['id'],
                         'name' => $functionName,
-                        'content' => $toolResult
+                        'content' => (string) $toolResult,
                     ];
+                    $hasToolResult = true;
+                }
 
-                    // Panggil Mistral lagi untuk merangkai jawaban akhir
+                // 4. Panggil Mistral lagi setelah SEMUA tool dieksekusi
+                if ($hasToolResult) {
                     return $this->callMistral($messages, $user);
                 }
             }
