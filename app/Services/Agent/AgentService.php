@@ -57,7 +57,8 @@ class AgentService {
             . "ATURAN TOOL:\n"
             . "1. Jika user minta mencari file atau melihat daftar file/folder, gunakan tool 'list_files'.\n"
             . "2. Jika user minta MEMBUAT LINK SHARE untuk sebuah file (misal: 'buat link share', 'bagikan file'), WAJIB gunakan tool 'create_share_link'. JANGAN gunakan 'list_files'.\n"
-            . "3. Jika user meminta share link, kamu hanya butuh parameter 'filename' dan 'expiry'. JANGAN mencari folder.";
+            . "3. Jika user meminta share link, kamu hanya butuh parameter 'filename' dan 'expiry'. JANGAN mencari folder.\n"
+            . "4. Jika user minta MERANGKUM atau MEMBACA ISI file, WAJIB gunakan tool 'read_file_content'. JANGAN gunakan 'list_files' untuk merangkum file.";
     }
 
     protected function callMistral(array $messages, ?User $user = null): string {
@@ -116,6 +117,20 @@ class AgentService {
                     ],
                 ],
             ],
+            [
+                'type' => 'function',
+                'function' => [
+                    'name' => 'read_file_content',
+                    'description' => 'Membaca isi teks dari file (khusus PDF/TXT) yang ada di Cloud Sahaja. Gunakan tool ini jika user minta "rangkum", "baca isi", atau "jelaskan isi file".',
+                    'parameters' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'filename' => ['type' => 'string', 'description' => 'Nama file asli, contoh: Laporan.pdf'],
+                        ],
+                        'required' => ['filename'],
+                    ],
+                ],
+            ],
         ];
 
         try {
@@ -169,6 +184,9 @@ class AgentService {
                     $filename = $args['filename'] ?? '';
                     $expiry = $args['expiry'] ?? '1d';
                     $toolResult = $this->generateShareLink($user, $filename, $expiry);
+                } elseif ($functionName === 'read_file_content') {
+                    $filename = $args['filename'] ?? '';
+                    $toolResult = $this->readCloudFileContent($user, $filename);
                 }
 
                 if ($toolResult !== "") {
@@ -313,6 +331,8 @@ class AgentService {
             return "Informasi user tidak ditemukan.";
         }
 
+        $filename = trim($filename);
+
         try {
             $cloudUser = DB::connection('cloud_sahaja')->table('users')
                 ->where('email', $user->email)
@@ -355,6 +375,60 @@ class AgentService {
         } catch (\Throwable $e) {
             Log::error('Cloud DB generateShareLink error: ' . $e->getMessage());
             return "Gagal membuat link share.";
+        }
+    }
+
+    // Fungsi Eksekutor Tool: Membaca Isi File Teks / PDF dari Cloud Sahaja
+    protected function readCloudFileContent(?User $user, string $filename): string {
+        if (!$user) {
+            return "Informasi user tidak ditemukan.";
+        }
+
+        try {
+            $filename = trim($filename);
+            $cloudUser = DB::connection('cloud_sahaja')->table('users')->where('email', $user->email)->first();
+            if (!$cloudUser) {
+                return "Akun Cloud Sahaja tidak ditemukan.";
+            }
+
+            // Cari file berdasarkan nama
+            $file = DB::connection('cloud_sahaja')->table('files')
+                ->where('user_id', $cloudUser->id)
+                ->where('original_name', 'LIKE', "%{$filename}%")
+                ->where('is_folder', 0)
+                ->whereNull('deleted_at')
+                ->first();
+
+            if (!$file) {
+                return "File '{$filename}' tidak ditemukan di Cloud Sahaja.";
+            }
+
+            // Path file fisik di server
+            $storagePath = env('CLOUD_SAHAJA_STORAGE_PATH', '/var/www/cloud-sahaja/storage/app/private/files/');
+            $filePath = rtrim($storagePath, '/\\') . DIRECTORY_SEPARATOR . $file->stored_name;
+
+            if (!file_exists($filePath)) {
+                return "File fisik tidak ditemukan di server.";
+            }
+
+            // Ekstrak teks (asumsi PDF atau TXT)
+            $text = "";
+            if (str_ends_with(strtolower($file->original_name), '.pdf')) {
+                $text = (string) shell_exec("pdftotext " . escapeshellarg($filePath) . " -");
+            } else {
+                $text = (string) @file_get_contents($filePath);
+            }
+
+            if (empty(trim($text))) {
+                return "File kosong atau teks tidak bisa diekstrak (mungkin hasil scan).";
+            }
+
+            // Batasi teks agar tidak melebihi batas token AI (misal 10.000 karakter)
+            return substr($text, 0, 10000);
+
+        } catch (\Throwable $e) {
+            Log::error('readCloudFileContent Error: ' . $e->getMessage());
+            return "Gagal membaca isi file dari Cloud Sahaja.";
         }
     }
 }
