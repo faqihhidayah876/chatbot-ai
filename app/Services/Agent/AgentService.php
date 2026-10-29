@@ -520,17 +520,24 @@ class AgentService {
     // Fungsi Eksekutor Tool: Generate Dokumen PDF & Upload ke Cloud Sahaja
     protected function generatePdfToCloud(User $user, string $filename, string $content): string {
         try {
+            ini_set('memory_limit', '256M'); // Naikkan batas RAM untuk Dompdf
+
             $cloudUser = DB::connection('cloud_sahaja')->table('users')->where('email', $user->email)->first();
             if (!$cloudUser) return "Gagal: Akun Cloud Sahaja tidak ditemukan.";
             if (trim($content) === "") return "❌ Gagal: Teks rangkuman kosong.";
 
-            // 1. Bersihkan nama file (Hapus double .pdf jika AI salah ketik)
+            // Batasi teks agar tidak OOM
+            if (strlen($content) > 30000) {
+                $content = substr($content, 0, 30000) . "\n\n[... Teks dipotong karena batas memori]";
+            }
+
+            // 1. Bersihkan nama file
             $cleanFilename = preg_replace('/\.(docs?|docx|txt)$/i', '.pdf', $filename);
             $cleanFilename = preg_replace('/\.pdf\.pdf$/i', '.pdf', $cleanFilename); 
             if (!str_ends_with(strtolower($cleanFilename), '.pdf')) $cleanFilename .= '.pdf';
 
             // 2. Render PDF
-            $htmlContent = Str::markdown($content);
+            $htmlContent = \Illuminate\Support\Str::markdown($content);
             $styledHtml = "<html><head><style>body { font-family: sans-serif; font-size: 12px; } table { width: 100%; border-collapse: collapse; } th, td { border: 1px solid #ddd; padding: 8px; }</style></head><body>{$htmlContent}</body></html>";
             
             $dompdf = new \Dompdf\Dompdf();
@@ -538,20 +545,32 @@ class AgentService {
             $dompdf->setPaper('A4', 'portrait');
             $dompdf->render();
 
+            $pdfOutput = $dompdf->output();
+            if (empty($pdfOutput)) {
+                throw new \Exception("Dompdf mengembalikan output kosong (Gagal render).");
+            }
+
             // 3. Siapkan Folder
             $baseStorage = rtrim(env('CLOUD_SAHAJA_STORAGE_PATH', '/var/www/cloud-sahaja/storage/app/private/'), '/\\');
             $filesDir = str_ends_with($baseStorage, 'files') ? $baseStorage : $baseStorage . DIRECTORY_SEPARATOR . 'files';
             $userDir = $filesDir . DIRECTORY_SEPARATOR . $cloudUser->id;
 
-            if (!is_dir($userDir)) @mkdir($userDir, 0775, true);
+            if (!is_dir($userDir)) {
+                if (!@mkdir($userDir, 0775, true) && !is_dir($userDir)) {
+                    throw new \Exception("Gagal membuat folder user di Cloud Sahaja.");
+                }
+            }
 
             // 4. Simpan File
-            $storedName = (string) Str::uuid() . '.pdf';
+            $storedName = (string) \Illuminate\Support\Str::uuid() . '.pdf';
             $destinationPath = $userDir . DIRECTORY_SEPARATOR . $storedName;
-            @file_put_contents($destinationPath, $dompdf->output());
+            
+            if (@file_put_contents($destinationPath, $pdfOutput) === false) {
+                throw new \Exception("Gagal menulis file PDF ke server. Cek izin folder.");
+            }
 
             // 5. Buat Token Share Otomatis
-            $shareToken = Str::random(16);
+            $shareToken = \Illuminate\Support\Str::random(16);
             $previewUrl = "https://cloud.sahaja-ai.my.id/share/{$shareToken}";
 
             // 6. Simpan DB
@@ -572,7 +591,7 @@ class AgentService {
             return "✅ Sukses! Rangkuman disimpan sebagai '{$cleanFilename}'. Link preview otomatis: {$previewUrl}";
 
         } catch (\Throwable $e) {
-            Log::error('Generate PDF Error: ' . $e->getMessage());
+            \Log::error('Generate PDF Error: ' . $e->getMessage());
             return "❌ Gagal membuat PDF: " . $e->getMessage();
         }
     }
