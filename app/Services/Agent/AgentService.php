@@ -564,39 +564,57 @@ class AgentService {
                 return "File '{$filename}' tidak ditemukan di database Cloud Sahaja.";
             }
 
-            // 2. Tentukan path fisik (WAJIB menyertakan $cloudUser->id)
-            $baseStorage = rtrim(env('CLOUD_SAHAJA_STORAGE_PATH', '/var/www/cloud-sahaja/storage/app/private/'), '/\\');
-            $filesDir = str_ends_with($baseStorage, 'files') ? $baseStorage : $baseStorage . DIRECTORY_SEPARATOR . 'files';
+            // 2. Tentukan path fisik
+            $baseStorage = env('CLOUD_SAHAJA_STORAGE_PATH');
+            $filesDir = $baseStorage 
+                ? (str_ends_with(rtrim($baseStorage, '/\\'), 'files') ? rtrim($baseStorage, '/\\') : rtrim($baseStorage, '/\\') . DIRECTORY_SEPARATOR . 'files')
+                : '/var/www/cloud-sahaja/storage/app/private/files';
+
             $filePath = $filesDir . DIRECTORY_SEPARATOR . $cloudUser->id . DIRECTORY_SEPARATOR . $file->stored_name;
 
-            // Fallback jika ternyata file masih nyangkut di root folder files/ (seperti file lama)
             if (!file_exists($filePath)) {
                 $fallbackPath = $filesDir . DIRECTORY_SEPARATOR . $file->stored_name;
                 if (file_exists($fallbackPath)) {
                     $filePath = $fallbackPath;
                 } else {
-                    return "File '{$filename}' ada di database, tapi file fisiknya tidak ditemukan di server. Pastikan file tidak terhapus.";
+                    return "File '{$filename}' ada di database, tapi file fisiknya tidak ditemukan di server.";
                 }
             }
 
             // 3. Ekstrak teks
             $text = "";
-            if (str_ends_with(strtolower($file->original_name), '.pdf')) {
-                // Gunakan pdftotext (pastikan package poppler-utils terinstall)
-                $text = (string) shell_exec("pdftotext " . escapeshellarg($filePath) . " -");
+            $ext = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
+
+            if ($ext === 'pdf') {
+                // 1. Gunakan absolute path /usr/bin/pdftotext (fallback ke pdftotext jika di lingkungan Windows)
+                // 2. Tangkap stderr (2>&1) untuk melihat error jika ada
+                $bin = (PHP_OS_FAMILY === 'Windows') ? 'pdftotext' : '/usr/bin/pdftotext';
+                $command = "{$bin} " . escapeshellarg($filePath) . " - 2>&1";
+                $text = (string) shell_exec($command);
+
+                // Cek jika hasilnya mengandung kata error dari pdftotext
+                if ($text && str_contains(strtolower($text), 'error')) {
+                    Log::error("pdftotext error: " . $text);
+                    return "Gagal mengekstrak PDF: " . substr($text, 0, 100);
+                }
             } else {
                 $text = (string) @file_get_contents($filePath);
             }
 
             if (empty(trim($text))) {
-                return "SISTEM INFO: TIDAK ADA TEKS. File ini adalah hasil scan/gambar. Kamu (AI) tidak bisa membacanya. Beritahu user dengan sopan untuk mengunggah teks atau dokumen asli.";
+                return "SISTEM INFO: TIDAK ADA TEKS. File ini adalah hasil scan/gambar atau PDF dilindungi password. Kamu (AI) tidak bisa membacanya. Beritahu user dengan sopan untuk mengunggah teks atau dokumen asli.";
             }
 
-            return substr($text, 0, 15000);
+            // Jika teks terlalu panjang, potong di batas aman (misal 20.000 karakter)
+            if (strlen($text) > 20000) {
+                $text = substr($text, 0, 20000) . "\n\n[... TEKS DIPOTONG KARENA TERLALU PANJANG ...]";
+            }
+
+            return $text;
 
         } catch (\Throwable $e) {
             Log::error('readCloudFileContent Error: ' . $e->getMessage());
-            return "Gagal membaca isi file dari Cloud Sahaja.";
+            return "Gagal membaca isi file dari Cloud Sahaja: " . $e->getMessage();
         }
     }
 }
