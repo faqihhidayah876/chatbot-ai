@@ -83,7 +83,8 @@ class AgentService {
             . "3. Jika user minta rangkum/baca isi, gunakan 'read_file_content'.\n"
             . "4. JIKA user menyuruhmu membuat dokumen atau file dari teks, WAJIB gunakan tool 'save_summary_as_pdf'.\n"
             . "5. JIKA user menyuruhmu mengingat sesuatu, WAJIB gunakan tool 'update_soul_memory'.\n"
-            . "6. Jika 'read_file_content' mengembalikan pesan 'TIDAK ADA TEKS', jelaskan ke user bahwa file itu hasil scan.";
+            . "6. Jika 'read_file_content' mengembalikan pesan 'TIDAK ADA TEKS', jelaskan ke user bahwa file itu hasil scan.\n"
+            . "7. Jika user minta MENCABUT atau MENGHAPUS link share, WAJIB gunakan tool 'revoke_share_link'.";
     }
 
     protected function callMistral(array $messages, ?User $user = null): string {
@@ -137,6 +138,20 @@ class AgentService {
                         'properties' => [
                             'filename' => ['type' => 'string', 'description' => 'Nama file yang ingin di-share'],
                             'expiry' => ['type' => 'string', 'description' => 'Masa aktif link (1h, 1d, 7d, forever)'],
+                        ],
+                        'required' => ['filename'],
+                    ],
+                ],
+            ],
+            [
+                'type' => 'function',
+                'function' => [
+                    'name' => 'revoke_share_link',
+                    'description' => 'Mencabut atau menghapus link share publik dari sebuah file agar tidak bisa diakses lagi.',
+                    'parameters' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'filename' => ['type' => 'string', 'description' => 'Nama file yang link share-nya ingin dicabut'],
                         ],
                         'required' => ['filename'],
                     ],
@@ -246,6 +261,9 @@ class AgentService {
                         $filename = $args['filename'] ?? '';
                         $expiry = $args['expiry'] ?? '1d';
                         $toolResult = $this->generateShareLink($user, $filename, $expiry);
+                    } elseif ($functionName === 'revoke_share_link') {
+                        $filename = $args['filename'] ?? '';
+                        $toolResult = $this->revokeShareLink($user, $filename);
                     } elseif ($functionName === 'read_file_content') {
                         $filename = $args['filename'] ?? '';
                         $toolResult = $this->readCloudFileContent($user, $filename);
@@ -468,81 +486,76 @@ class AgentService {
         }
     }
 
+    // Fungsi Eksekutor Tool: Mencabut Link Share Publik
+    protected function revokeShareLink(User $user, string $filename): string {
+        try {
+            $cloudUser = DB::connection('cloud_sahaja')->table('users')->where('email', $user->email)->first();
+            if (!$cloudUser) return "Akun Cloud Sahaja tidak ditemukan.";
+
+            $file = DB::connection('cloud_sahaja')->table('files')
+                ->where('user_id', $cloudUser->id)
+                ->where('is_folder', 0)
+                ->where('original_name', 'LIKE', "%{$filename}%")
+                ->first();
+
+            if (!$file) return "File '{$filename}' tidak ditemukan.";
+
+            // Hapus token dan set private
+            DB::connection('cloud_sahaja')->table('files')
+                ->where('id', $file->id)
+                ->update([
+                    'share_token' => null,
+                    'is_public' => 0,
+                    'share_expires_at' => null,
+                ]);
+
+            return "✅ Link share untuk file '{$file->original_name}' berhasil dicabut. File sekarang bersifat privat.";
+        } catch (\Throwable $e) {
+            Log::error('Revoke Error: ' . $e->getMessage());
+            return "Gagal mencabut link share.";
+        }
+    }
+
     // Fungsi Eksekutor Tool: Generate Dokumen PDF & Upload ke Cloud Sahaja
     protected function generatePdfToCloud(User $user, string $filename, string $content): string {
         try {
             $cloudUser = DB::connection('cloud_sahaja')->table('users')->where('email', $user->email)->first();
-            if (!$cloudUser) {
-                return "Gagal: Akun Cloud Sahaja tidak ditemukan.";
-            }
+            if (!$cloudUser) return "Gagal: Akun Cloud Sahaja tidak ditemukan.";
+            if (trim($content) === "") return "❌ Gagal: Teks rangkuman kosong.";
 
-            // 1. Validasi Konten Kosong
-            if (trim($content) === "") {
-                return "❌ Gagal: Teks rangkuman kosong.";
-            }
-
-            // 2. Paksa Ekstensi .pdf
             $cleanFilename = preg_replace('/\.(docs?|docx|txt)$/i', '.pdf', $filename);
-            if (!str_ends_with(strtolower($cleanFilename), '.pdf')) {
-                $cleanFilename .= '.pdf';
-            }
+            if (!str_ends_with(strtolower($cleanFilename), '.pdf')) $cleanFilename .= '.pdf';
 
-            // 3. Convert Markdown ke HTML menggunakan bawaan Laravel
+            // Render PDF
             $htmlContent = Str::markdown($content);
+            $styledHtml = "<html><head><style>body { font-family: sans-serif; font-size: 12px; } table { width: 100%; border-collapse: collapse; } th, td { border: 1px solid #ddd; padding: 8px; }</style></head><body>{$htmlContent}</body></html>";
 
-            // 4. Bungkus dengan styling agar rapi di PDF
-            $styledHtml = "
-                <html>
-                <head>
-                    <meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\"/>
-                    <style>
-                        body { font-family: sans-serif; font-size: 12px; line-height: 1.6; color: #333; }
-                        h1, h2, h3 { color: #111; margin-top: 20px; margin-bottom: 10px; }
-                        table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
-                        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-                        th { background-color: #f2f2f2; font-weight: bold; }
-                        ul, ol { margin-bottom: 15px; padding-left: 20px; }
-                    </style>
-                </head>
-                <body>
-                    {$htmlContent}
-                </body>
-                </html>
-            ";
-
-            // 5. Generate PDF menggunakan Dompdf
-            $dompdf = new \Dompdf\Dompdf([
-                'isHtml5ParserEnabled' => true,
-                'isRemoteEnabled' => true,
-            ]);
+            $dompdf = new \Dompdf\Dompdf();
             $dompdf->loadHtml($styledHtml);
             $dompdf->setPaper('A4', 'portrait');
             $dompdf->render();
 
-            // 6. Simpan ke file sementara
-            $tempDir = storage_path('app/private');
-            if (!is_dir($tempDir)) {
-                @mkdir($tempDir, 0775, true);
-            }
-            $tempPath = $tempDir . DIRECTORY_SEPARATOR . 'temp_pdf_' . uniqid() . '.pdf';
-            file_put_contents($tempPath, $dompdf->output());
-
-            // 7. Upload ke Cloud Sahaja
+            // Siapkan Folder
             $baseStorage = rtrim(env('CLOUD_SAHAJA_STORAGE_PATH', '/var/www/cloud-sahaja/storage/app/private/'), '/\\');
             $filesDir = str_ends_with($baseStorage, 'files') ? $baseStorage : $baseStorage . DIRECTORY_SEPARATOR . 'files';
             $userDir = $filesDir . DIRECTORY_SEPARATOR . $cloudUser->id;
 
             if (!is_dir($userDir)) {
-                @mkdir($userDir, 0775, true);
+                if (!@mkdir($userDir, 0775, true)) {
+                    return "❌ Gagal membuat folder penyimpanan di server (Cek izin akses).";
+                }
             }
 
+            // Simpan File
             $storedName = (string) Str::uuid() . '.pdf';
             $destinationPath = $userDir . DIRECTORY_SEPARATOR . $storedName;
 
-            copy($tempPath, $destinationPath);
-            @unlink($tempPath); // Hapus file sementara
+            $pdfOutput = $dompdf->output();
+            if (@file_put_contents($destinationPath, $pdfOutput) === false) {
+                return "❌ Gagal menulis file PDF ke server. Pastikan folder Cloud Sahaja memiliki izin www-data.";
+            }
 
-            // 8. Simpan ke DB Cloud Sahaja dengan MIME PDF
+            // Simpan DB
             DB::connection('cloud_sahaja')->table('files')->insert([
                 'user_id' => $cloudUser->id,
                 'original_name' => $cleanFilename,
@@ -555,11 +568,11 @@ class AgentService {
                 'updated_at' => now(),
             ]);
 
-            return "✅ Sukses! Rangkuman telah disimpan sebagai '{$cleanFilename}' (" . round(filesize($destinationPath) / 1024, 2) . " KB). File PDF ini bisa langsung dipreview di browser!";
+            return "✅ Sukses! Rangkuman disimpan sebagai '{$cleanFilename}' di Cloud Sahaja.";
 
         } catch (\Throwable $e) {
             Log::error('Generate PDF Error: ' . $e->getMessage());
-            return "❌ Gagal membuat dokumen PDF: " . $e->getMessage();
+            return "❌ Gagal membuat PDF: " . $e->getMessage();
         }
     }
 
