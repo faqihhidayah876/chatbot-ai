@@ -14,48 +14,66 @@ class AgentService {
      * Proses 1 pesan masuk → kembalikan teks balasan.
      */
     public function chat(User $user, string $incoming): string {
-        $limit   = (int) config('agent.history_limit', 12);
-        $history = AgentMemory::where('user_id', $user->id)
-            ->orderByDesc('id')
-            ->limit($limit)
-            ->get()
-            ->reverse()
-            ->values();
+        try {
+            $limit   = (int) config('agent.history_limit', 12);
+            $history = AgentMemory::where('user_id', $user->id)
+                ->orderByDesc('id')
+                ->limit($limit)
+                ->get()
+                ->reverse()
+                ->values();
 
-        // Simpan pesan user SEBELUM memanggil AI (agar urutan konsisten)
-        AgentMemory::create([
-            'user_id' => $user->id,
-            'role'    => 'user',
-            'content' => $incoming,
-        ]);
+            // Simpan pesan user SEBELUM memanggil AI (agar urutan konsisten)
+            AgentMemory::create([
+                'user_id' => $user->id,
+                'role'    => 'user',
+                'content' => $incoming,
+            ]);
 
-        $messages = [
-            ['role' => 'system', 'content' => $this->systemPrompt($user)],
-        ];
-        foreach ($history as $h) {
-            $messages[] = ['role' => $h->role, 'content' => $h->content];
+            $messages = [
+                ['role' => 'system', 'content' => $this->systemPrompt($user)],
+            ];
+            foreach ($history as $h) {
+                $messages[] = ['role' => $h->role, 'content' => $h->content];
+            }
+            $messages[] = ['role' => 'user', 'content' => $incoming];
+
+            $reply = $this->callMistral($messages, $user);
+
+            AgentMemory::create([
+                'user_id' => $user->id,
+                'role'    => 'assistant',
+                'content' => $reply,
+            ]);
+
+            return $reply;
+        } catch (\Throwable $e) {
+            Log::error('AgentService::chat Fatal Error', [
+                'user_id' => $user->id,
+                'msg'     => $e->getMessage(),
+                'file'    => $e->getFile(),
+                'line'    => $e->getLine()
+            ]);
+            return "⚠️ Maaf, sistem sedang sibuk (Database/Server Error). Mohon coba beberapa saat lagi.";
         }
-        $messages[] = ['role' => 'user', 'content' => $incoming];
-
-        $reply = $this->callMistral($messages, $user);
-
-        AgentMemory::create([
-            'user_id' => $user->id,
-            'role'    => 'assistant',
-            'content' => $reply,
-        ]);
-
-        return $reply;
     }
 
     protected function systemPrompt(User $user): string {
         $soulPath = storage_path("app/agent/soul_{$user->id}.md");
-        if (!file_exists($soulPath)) {
-            // Buat default jika belum ada
-            @mkdir(dirname($soulPath), 0775, true);
-            file_put_contents($soulPath, "# IDENTITAS\nKamu adalah SAHAJA Agent, asisten pribadi milik {$user->name}.\n\n# MEMORI\n- Belum ada catatan.");
+        $soulContent = "";
+        try {
+            if (!file_exists($soulPath)) {
+                @mkdir(dirname($soulPath), 0775, true);
+                @file_put_contents($soulPath, "# IDENTITAS\nKamu adalah SAHAJA Agent.");
+            }
+            $soulContent = @file_get_contents($soulPath);
+        } catch (\Throwable $e) {
+            Log::warning('Gagal baca soul.md: ' . $e->getMessage());
         }
-        $soulContent = file_get_contents($soulPath);
+
+        if (empty($soulContent)) {
+            $soulContent = "Kamu adalah SAHAJA Agent, asisten pribadi milik {$user->name}.";
+        }
 
         return $soulContent . "\n\n"
             . "Pemilik akun: {$user->name} ({$user->email}).\n"
@@ -63,8 +81,8 @@ class AgentService {
             . "1. Jika user minta melihat file/folder, gunakan 'list_files'.\n"
             . "2. Jika user minta share, gunakan 'create_share_link'.\n"
             . "3. Jika user minta rangkum/baca isi, gunakan 'read_file_content'.\n"
-            . "4. JIKA user menyuruhmu membuat dokumen atau file dari teks (misal: 'simpan dalam bentuk pdf', 'buat file'), WAJIB gunakan tool 'save_summary_as_pdf'.\n"
-            . "5. JIKA user menyuruhmu mengingat sesuatu (misal: 'ingat ya namaku Bos', 'catat kalau aku suka kopi', 'mulai sekarang panggil aku X'), WAJIB gunakan tool 'update_soul_memory'.\n"
+            . "4. JIKA user menyuruhmu membuat dokumen atau file dari teks, WAJIB gunakan tool 'save_summary_as_pdf'.\n"
+            . "5. JIKA user menyuruhmu mengingat sesuatu, WAJIB gunakan tool 'update_soul_memory'.\n"
             . "6. Jika 'read_file_content' mengembalikan pesan 'TIDAK ADA TEKS', jelaskan ke user bahwa file itu hasil scan.";
     }
 
@@ -187,11 +205,17 @@ class AgentService {
             ])->post($endpoint, $payload);
 
             if (!$resp->ok()) {
+                $errBody = $resp->body();
                 Log::error('Mistral error', [
                     'status' => $resp->status(),
-                    'body'   => $resp->body(),
+                    'body'   => $errBody,
                 ]);
-                return 'Maaf, AI sedang gangguan.';
+
+                // Jika error karena kuota/rate limit
+                if ($resp->status() === 429) {
+                    return "Maaf, kuota AI (Mistral) sedang penuh. Coba lagi nanti.";
+                }
+                return 'Maaf, AI sedang gangguan (Error ' . $resp->status() . ').';
             }
 
             $choice = $resp->json('choices.0.message');
