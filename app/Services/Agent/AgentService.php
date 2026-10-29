@@ -84,7 +84,8 @@ class AgentService {
             . "4. JIKA user menyuruhmu membuat dokumen atau file dari teks, WAJIB gunakan tool 'save_summary_as_pdf'.\n"
             . "5. JIKA user menyuruhmu mengingat sesuatu, WAJIB gunakan tool 'update_soul_memory'.\n"
             . "6. Jika 'read_file_content' mengembalikan pesan 'TIDAK ADA TEKS', jelaskan ke user bahwa file itu hasil scan.\n"
-            . "7. Jika user minta MENCABUT atau MENGHAPUS link share, WAJIB gunakan tool 'revoke_share_link'.";
+            . "7. Jika user minta MENCABUT atau MENGHAPUS link share, WAJIB gunakan tool 'revoke_share_link'.\n"
+            . "8. JIKA tool 'save_summary_as_pdf' berhasil, tool tersebut AKAN MENGEMBALIKAN LINK PREVIEW. Kamu WAJIB memberikan link persis seperti yang diberikan oleh tool tersebut. DILARANG KERAS mengarang atau memodifikasi link!\n";
     }
 
     protected function callMistral(array $messages, ?User $user = null): string {
@@ -523,39 +524,37 @@ class AgentService {
             if (!$cloudUser) return "Gagal: Akun Cloud Sahaja tidak ditemukan.";
             if (trim($content) === "") return "❌ Gagal: Teks rangkuman kosong.";
 
+            // 1. Bersihkan nama file (Hapus double .pdf jika AI salah ketik)
             $cleanFilename = preg_replace('/\.(docs?|docx|txt)$/i', '.pdf', $filename);
+            $cleanFilename = preg_replace('/\.pdf\.pdf$/i', '.pdf', $cleanFilename); 
             if (!str_ends_with(strtolower($cleanFilename), '.pdf')) $cleanFilename .= '.pdf';
 
-            // Render PDF
+            // 2. Render PDF
             $htmlContent = Str::markdown($content);
             $styledHtml = "<html><head><style>body { font-family: sans-serif; font-size: 12px; } table { width: 100%; border-collapse: collapse; } th, td { border: 1px solid #ddd; padding: 8px; }</style></head><body>{$htmlContent}</body></html>";
-
+            
             $dompdf = new \Dompdf\Dompdf();
             $dompdf->loadHtml($styledHtml);
             $dompdf->setPaper('A4', 'portrait');
             $dompdf->render();
 
-            // Siapkan Folder
+            // 3. Siapkan Folder
             $baseStorage = rtrim(env('CLOUD_SAHAJA_STORAGE_PATH', '/var/www/cloud-sahaja/storage/app/private/'), '/\\');
             $filesDir = str_ends_with($baseStorage, 'files') ? $baseStorage : $baseStorage . DIRECTORY_SEPARATOR . 'files';
             $userDir = $filesDir . DIRECTORY_SEPARATOR . $cloudUser->id;
 
-            if (!is_dir($userDir)) {
-                if (!@mkdir($userDir, 0775, true)) {
-                    return "❌ Gagal membuat folder penyimpanan di server (Cek izin akses).";
-                }
-            }
+            if (!is_dir($userDir)) @mkdir($userDir, 0775, true);
 
-            // Simpan File
+            // 4. Simpan File
             $storedName = (string) Str::uuid() . '.pdf';
             $destinationPath = $userDir . DIRECTORY_SEPARATOR . $storedName;
+            @file_put_contents($destinationPath, $dompdf->output());
 
-            $pdfOutput = $dompdf->output();
-            if (@file_put_contents($destinationPath, $pdfOutput) === false) {
-                return "❌ Gagal menulis file PDF ke server. Pastikan folder Cloud Sahaja memiliki izin www-data.";
-            }
+            // 5. Buat Token Share Otomatis
+            $shareToken = Str::random(16);
+            $previewUrl = "https://cloud.sahaja-ai.my.id/share/{$shareToken}";
 
-            // Simpan DB
+            // 6. Simpan DB
             DB::connection('cloud_sahaja')->table('files')->insert([
                 'user_id' => $cloudUser->id,
                 'original_name' => $cleanFilename,
@@ -563,12 +562,14 @@ class AgentService {
                 'mime_type' => 'application/pdf',
                 'size' => filesize($destinationPath),
                 'extension' => 'pdf',
+                'share_token' => $shareToken,
+                'is_public' => 1,
                 'is_folder' => 0,
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
 
-            return "✅ Sukses! Rangkuman disimpan sebagai '{$cleanFilename}' di Cloud Sahaja.";
+            return "✅ Sukses! Rangkuman disimpan sebagai '{$cleanFilename}'. Link preview otomatis: {$previewUrl}";
 
         } catch (\Throwable $e) {
             Log::error('Generate PDF Error: ' . $e->getMessage());
